@@ -43,3 +43,14 @@ blob:
         provider: s3
         bucket: banzaicloud.com
         folder: "downloads/backyards-cli/{{ .Version }}"
+
+brews:
+    -
+        github:
+            owner: banzaicloud
+            name: homebrew-tap
+        folder: Formula
+        homepage: https://banzaicloud.com/
+        description: Command-line interface for Backyards
+        test: |
+            system "#{bin}/backyards --version"
