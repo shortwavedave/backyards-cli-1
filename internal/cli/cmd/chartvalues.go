@@ -24,7 +24,8 @@ import (
 type AuthMethod string
 
 const (
-	anonymous AuthMethod = "anonymous"
+	anonymous     AuthMethod = "anonymous"
+	impersonation AuthMethod = "impersonation"
 )
 
 type Values struct {

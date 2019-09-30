@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -70,8 +71,12 @@ type InstallOptions struct {
 	installCertManager bool
 	disableCertManager bool
 	disableAuditSink   bool
+	enableAuth         bool
 	installEverything  bool
 	runDemo            bool
+
+	apiImage string
+	webImage string
 }
 
 // patchStringValue specifies a patch operation for a string value
@@ -144,6 +149,10 @@ The command can install every component at once with the '--install-everything' 
 	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Send load to demo application and opens up dashboard")
 	cmd.Flags().BoolVar(&options.disableCertManager, "disable-cert-manager", options.disableCertManager, "Disable dependency on cert-manager and on it's resources")
 	cmd.Flags().BoolVar(&options.disableAuditSink, "disable-auditsink", options.disableAuditSink, "Disable deploying the auditsink service and sending audit logs over http")
+	cmd.Flags().BoolVar(&options.enableAuth, "enable-auth", options.enableAuth, "Enable authentication with impersonation")
+
+	cmd.Flags().StringVar(&options.apiImage, "api-image", options.apiImage, "Image for the API")
+	cmd.Flags().StringVar(&options.webImage, "web-image", options.webImage, "Image for the frontend")
 
 	cmd.Flags().BoolVarP(&options.dumpResources, "dump-resources", "d", options.dumpResources, "Dump resources to stdout instead of applying them")
 
@@ -165,6 +174,28 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	values, err := getValues(options.releaseName, options.istioNamespace, func(values *Values) {
 		values.CertManager.Enabled = !options.disableCertManager
 		values.AuditSink.Enabled = !options.disableAuditSink
+		if options.enableAuth {
+			values.Auth.Method = impersonation
+			values.Impersonation.Enabled = true
+		}
+		if options.apiImage != "" {
+			imageParts := strings.Split(options.apiImage, ":")
+			values.Application.Image.Repository = imageParts[0]
+			if len(imageParts) > 1 {
+				values.Application.Image.Tag = imageParts[1]
+			} else {
+				values.Application.Image.Tag = "latest"
+			}
+		}
+		if options.webImage != "" {
+			imageParts := strings.Split(options.webImage, ":")
+			values.Web.Image.Repository = imageParts[0]
+			if len(imageParts) > 1 {
+				values.Web.Image.Tag = imageParts[1]
+			} else {
+				values.Web.Image.Tag = "latest"
+			}
+		}
 	})
 	if err != nil {
 		return err
@@ -388,8 +419,7 @@ func (c *installCommand) runDemo(cli cli.CLI, options *InstallOptions) error {
 	}
 
 	dbOptions := NewDashboardOptions()
-	dbOptions.URI = "?namespaces=" + demoapp.GetNamespace()
-	dbOptions.Port = 0
+	dbOptions.QueryParams["namespaces"] = demoapp.GetNamespace()
 	dbCmd := NewDashboardCommand(cli, dbOptions)
 	err = dbCmd.RunE(dbCmd, nil)
 	if err != nil {

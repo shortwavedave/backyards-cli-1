@@ -25,6 +25,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
+
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/canary"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
@@ -36,7 +38,8 @@ import (
 )
 
 const (
-	defaultNamespace = "backyards-system"
+	defaultNamespace   = "backyards-system"
+	defaultPortForward = 50500
 )
 
 var (
@@ -45,6 +48,9 @@ var (
 	kubeContext        string
 	verbose            bool
 	outputFormat       string
+	baseURL            string
+	portForward        int
+	ca                 string
 
 	namespaceRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
 )
@@ -61,6 +67,13 @@ var RootCmd = &cobra.Command{
 			log.SetLevel(log.DebugLevel)
 		} else {
 			log.SetLevel(log.InfoLevel)
+		}
+
+		if viper.GetInt("port-forward") < 0 {
+			return errors.NewWithDetails(
+				"port must be greater than or equal to zero",
+				"port", viper.GetInt("port-forward"),
+			)
 		}
 
 		namespaceFromEnv := os.Getenv("BACKYARDS_NAMESPACE")
@@ -122,6 +135,14 @@ func init() {
 	flags.Bool("interactive", false, "ask questions interactively even if stdin or stdout is non-tty")
 	_ = viper.BindPFlag("formatting.force-interactive", flags.Lookup("interactive"))
 
+	flags.StringVarP(&baseURL, "base-url", "u", baseURL, "Custom Backyards base URL. Uses automatic port forwarding if empty.")
+	_ = viper.BindPFlag("backyards.url", flags.Lookup("base-url"))
+	flags.StringVarP(&ca, "cacert", ca, "", "The CA to use for verifying Backyards' server certificate.")
+	_ = viper.BindPFlag("backyards.cacert", flags.Lookup("cacert"))
+
+	flags.IntVarP(&portForward, "port-forward", "p", defaultPortForward, "Automatically port-forward Backyards on this local port (when set to 0, a random port will be used) otherwise use `--base-url`.")
+	_ = viper.BindPFlag("backyards.portforward", flags.Lookup("port-forward"))
+
 	cli := cli.NewCli(os.Stdout, RootCmd)
 
 	RootCmd.AddCommand(cmd.NewVersionCommand(cli))
@@ -134,4 +155,9 @@ func init() {
 	RootCmd.AddCommand(routing.NewRootCmd(cli))
 	RootCmd.AddCommand(certmanager.NewRootCmd(cli))
 	RootCmd.AddCommand(graph.NewGraphCmd(cli, "base.json"))
+	RootCmd.AddCommand(login.NewLoginCmd(cli))
+
+	RootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		return cli.Stop()
+	}
 }

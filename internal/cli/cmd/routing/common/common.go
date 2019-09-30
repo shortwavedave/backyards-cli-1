@@ -16,6 +16,9 @@ package common
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -24,6 +27,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis/istio/v1alpha3"
+
+	"github.com/banzaicloud/backyards-cli/pkg/auth"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
@@ -117,18 +122,48 @@ func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
 		return nil, err
 	}
 
-	pf, err := cli.GetPortforwardForIGW(0)
+	url, err := cli.GetEndpointURL("/api/graphql")
 	if err != nil {
 		return nil, err
 	}
 
-	err = pf.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	client := graphql.NewClient(pf.GetURL("/api/graphql"))
+	client := graphql.NewClient(url)
 	client.SetJWTToken(token)
 
 	return client, nil
+}
+
+func GetAuthClient(cli cli.CLI) (auth.Client, error) {
+	config, err := cli.GetK8sConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	url, err := cli.GetEndpointURL("/api/login")
+	if err != nil {
+		return nil, err
+	}
+
+	var client *http.Client
+	ca, err := cli.GetEndpointCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get endpoint CA")
+	}
+	if ca != nil {
+		// Get the SystemCertPool, continue with an empty pool on error
+		rootCAs, _ := x509.SystemCertPool()
+		if rootCAs == nil {
+			rootCAs = x509.NewCertPool()
+		}
+		rootCAs.AppendCertsFromPEM(ca)
+		tlsConfig := &tls.Config{
+			RootCAs: rootCAs,
+		}
+		transport := &http.Transport{TLSClientConfig: tlsConfig}
+		client = &http.Client{Transport: transport}
+	} else {
+		client = http.DefaultClient
+	}
+
+	return auth.NewClient(config, client, url), nil
 }

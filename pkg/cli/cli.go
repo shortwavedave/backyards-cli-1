@@ -15,7 +15,9 @@
 package cli
 
 import (
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"sync"
 
@@ -43,7 +45,6 @@ var (
 		"app.kubernetes.io/instance":  "backyards",
 	}
 	BackyardsServiceAccountName = "backyards"
-	lmOnce                      sync.Once
 )
 
 type CLI interface {
@@ -55,20 +56,30 @@ type CLI interface {
 	GetRootCommand() *cobra.Command
 	GetK8sClient() (k8sclient.Client, error)
 	GetK8sConfig() (*rest.Config, error)
-	GetPortforwardForPod(podLabels map[string]string, namespace string, localPort, remotePort int) (*portforward.Portforward, error)
-	GetPortforwardForIGW(localPort int) (*portforward.Portforward, error)
 	LabelManager() k8s.LabelManager
+
+	// GetEndpointURL returns the Backyards base URL
+	// which may create a port-forward on a predefined or random port
+	// unless a custom endpoint url is defined
+	GetEndpointURL(path string) (string, error)
+	GetEndpointCA() ([]byte, error)
+	Stop() error
 }
 
 type backyardsCLI struct {
 	out          io.Writer
 	rootCmd      *cobra.Command
 	labelManager k8s.LabelManager
+	lmOnce       sync.Once
+	pfOnce       sync.Once
+	pf           *portforward.Portforward
 }
 
 func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
 	return &backyardsCLI{
 		out:     out,
+		pfOnce:  sync.Once{},
+		lmOnce:  sync.Once{},
 		rootCmd: rootCmd,
 	}
 }
@@ -164,9 +175,48 @@ func (c *backyardsCLI) GetK8sConfig() (*rest.Config, error) {
 	return config, nil
 }
 
+func (c *backyardsCLI) GetEndpointURL(path string) (string, error) {
+	url := viper.GetString("backyards.url")
+	if url == "" {
+		var err error
+		c.pfOnce.Do(func() {
+			c.pf, err = c.GetPortforwardForIGW(viper.GetInt("backyards.portforward"))
+			if err != nil {
+				return
+			}
+			err = c.pf.Run()
+			if err != nil {
+				return
+			}
+		})
+		if err != nil {
+			return "", err
+		}
+		if c.pf == nil {
+			return "", errors.New("portforward instance is not initialized")
+		}
+		return c.pf.GetURL(path), nil
+	}
+	return fmt.Sprintf("%s%s", url, path), nil
+}
+
 func (c *backyardsCLI) LabelManager() k8s.LabelManager {
-	lmOnce.Do(func() {
+	c.lmOnce.Do(func() {
 		c.labelManager = internalk8s.NewLabelManager(c.InteractiveTerminal(), c.GetRootCommand().Version)
 	})
 	return c.labelManager
+}
+
+func (c *backyardsCLI) GetEndpointCA() ([]byte, error) {
+	if viper.GetString("backyards.cacert") != "" {
+		return ioutil.ReadFile(viper.GetString("backyards.cacert"))
+	}
+	return nil, nil
+}
+
+func (c *backyardsCLI) Stop() error {
+	if c.pf != nil {
+		c.pf.Stop()
+	}
+	return nil
 }
