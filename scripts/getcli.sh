@@ -38,8 +38,8 @@ main() {
             install_tar ;;
         brew)
             install_brew ;;
-        go)
-            install_go ;;
+        # go)
+        #     install_go ;;
         *)
             usage $cmd >&2
             exit 1
@@ -77,10 +77,10 @@ install_tar() {
     fi
 }
 
-install_go() {
-    go get github.com/banzaicloud/backyards-cli/cmd/backyards
-    SUDO install -m 755 ${GOPATH:-~/go}/bin/backyards "`path`/backyards"
-}
+# install_go() {
+#     go get github.com/banzaicloud/backyards-cli/cmd/backyards
+#     SUDO install -m 755 ${GOPATH:-~/go}/bin/backyards "`path`/backyards"
+# }
 
 have() {
     type "$@" >/dev/null 2>&1
