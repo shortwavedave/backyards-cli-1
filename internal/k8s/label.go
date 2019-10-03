@@ -36,6 +36,8 @@ type labelManager struct {
 type response string
 
 const (
+	CLIVersionLabel = "backyards.banzaicloud.io/cli-version"
+
 	Skip      response = "Skip this resource"
 	SkipAll   response = "Skip all"
 	Manage    response = "Manage this resource from now on"
@@ -59,7 +61,7 @@ func (lm *labelManager) CheckLabelsBeforeCreate(desired *unstructured.Unstructur
 
 func (lm *labelManager) CheckLabelsBeforeDelete(actual *unstructured.Unstructured) (bool, error) {
 	labels := actual.GetLabels()
-	if _, ok := labels["backyards.banzaicloud.io/cli-version"]; !ok {
+	if _, ok := labels[CLIVersionLabel]; !ok {
 		if lm.deleteAll {
 			return false, nil
 		} else if !lm.skipAll {
@@ -101,7 +103,7 @@ func (lm *labelManager) CheckLabelsBeforeUpdate(actual, desired *unstructured.Un
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	if _, ok := labels["backyards.banzaicloud.io/cli-version"]; !ok {
+	if _, ok := labels[CLIVersionLabel]; !ok {
 		if lm.manageAll {
 			lm.setDesiredLabels(desired)
 			return false, nil
@@ -150,8 +152,8 @@ func (lm *labelManager) setDesiredLabels(desired *unstructured.Unstructured) {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	if _, ok := labels["backyards.banzaicloud.io/cli-version"]; !ok {
-		labels["backyards.banzaicloud.io/cli-version"] = lm.version
+	if _, ok := labels[CLIVersionLabel]; !ok {
+		labels[CLIVersionLabel] = lm.version
 	}
 	desired.SetLabels(labels)
 }

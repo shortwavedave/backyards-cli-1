@@ -30,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
+
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanager"
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercainjector"
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercrds"
@@ -139,7 +141,7 @@ func (c *installCommand) validate(namespace string) error {
 		}
 		return errors.WrapIf(err, "failed to get target namespace for cert-manager")
 	}
-	if _, ok := targetNamespace.Labels["backyards.banzaicloud.io/cli-version"]; !ok {
+	if _, ok := targetNamespace.Labels[internalk8s.CLIVersionLabel]; !ok {
 		return errors.New("cert-manager namespace already exists but not managed by Backyards, " +
 			"remove previous cert-manager to continue or skip installing cert-manager using CLI flags")
 	}

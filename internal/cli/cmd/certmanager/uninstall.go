@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
+
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
@@ -128,7 +130,7 @@ func (c *uninstallCommand) validate(namespace string, opts *UninstallOptions) er
 		}
 		return errors.WrapIf(err, "failed to get target namespace for cert-manager")
 	}
-	if manager, ok := targetNamespace.Labels["app.kubernetes.io/managed-by"]; ok && manager == "backyards-cli" {
+	if _, ok := targetNamespace.Labels[internalk8s.CLIVersionLabel]; ok {
 		return nil
 	}
 	if opts.Force {
