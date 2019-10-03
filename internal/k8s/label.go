@@ -20,8 +20,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 )
 
 type labelManager struct {

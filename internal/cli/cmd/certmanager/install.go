@@ -23,18 +23,19 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/MakeNowJust/heredoc"
-	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanager"
-	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercainjector"
-	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercrds"
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
-	"github.com/banzaicloud/backyards-cli/pkg/helm"
-	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanager"
+	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercainjector"
+	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercrds"
+	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/backyards-cli/pkg/helm"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 )
 
 type installCommand struct {
@@ -139,7 +140,7 @@ func (c *installCommand) validate(namespace string) error {
 		return errors.WrapIf(err, "failed to get target namespace for cert-manager")
 	}
 	if _, ok := targetNamespace.Labels["backyards.banzaicloud.io/cli-version"]; !ok {
-		return errors.New("cert-manager namespace already exists but not managed by Backyards, "+
+		return errors.New("cert-manager namespace already exists but not managed by Backyards, " +
 			"remove previous cert-manager to continue or skip installing cert-manager using CLI flags")
 	}
 	return nil

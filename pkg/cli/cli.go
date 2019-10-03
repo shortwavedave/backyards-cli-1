@@ -20,14 +20,15 @@ import (
 	"sync"
 
 	"emperror.dev/errors"
-	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
-	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
 	"knative.dev/pkg/apis/istio/v1alpha3"
+
+	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s/portforward"
@@ -42,7 +43,7 @@ var (
 		"app.kubernetes.io/instance":  "backyards",
 	}
 	BackyardsServiceAccountName = "backyards"
-	lmOnce sync.Once
+	lmOnce                      sync.Once
 )
 
 type CLI interface {
@@ -67,8 +68,8 @@ type backyardsCLI struct {
 
 func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
 	return &backyardsCLI{
-		out:          out,
-		rootCmd:      rootCmd,
+		out:     out,
+		rootCmd: rootCmd,
 	}
 }
 

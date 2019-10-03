@@ -20,9 +20,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
-	"github.com/banzaicloud/backyards-cli/pkg/helm"
-	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
@@ -30,6 +27,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/backyards-cli/pkg/helm"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 )
 
 type uninstallCommand struct {

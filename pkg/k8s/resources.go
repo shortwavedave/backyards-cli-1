@@ -21,15 +21,12 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"istio.io/operator/pkg/object"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8smeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
@@ -68,7 +65,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 		}, actual); err == nil {
 			skip, err := labelManager.CheckLabelsBeforeUpdate(actual, desired)
 			if err != nil {
-				log.Error("%s failed to check labels: %s", GetFormattedName(actual), err)
+				log.Errorf("%s failed to check labels: %s", GetFormattedName(actual), err)
 				continue
 			}
 			if skip {
@@ -101,7 +98,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			}
 			skip, err := labelManager.CheckLabelsBeforeCreate(desired)
 			if err != nil {
-				log.Error("%s failed to check labels: %s", GetFormattedName(desired), err)
+				log.Errorf("%s failed to check labels: %s", GetFormattedName(desired), err)
 				continue
 			}
 			if skip {
@@ -143,7 +140,7 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 		}, actual); err == nil {
 			skip, err := labelManager.CheckLabelsBeforeDelete(actual)
 			if err != nil {
-				log.Error("%s failed to check labels: %s", GetFormattedName(actual), err)
+				log.Errorf("%s failed to check labels: %s", GetFormattedName(actual), err)
 				continue
 			}
 			if skip {
@@ -181,72 +178,6 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 	}
 
 	return nil
-}
-
-func WaitForCRD(backoff wait.Backoff) PostResourceApplyFunc {
-	return func(client k8sclient.Client, resource Object) error {
-		if resource.GetKind() != "CustomResourceDefinition" {
-			return nil
-		}
-
-		objectName := GetFormattedName(resource)
-
-		err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-			var crd apiextensionsv1beta1.CustomResourceDefinition
-			log.Debugf("wait for %s to be available", objectName)
-			err := client.Get(context.Background(), types.NamespacedName{
-				Name:      resource.GetName(),
-				Namespace: resource.GetNamespace(),
-			}, &crd)
-			if err == nil {
-				for _, cond := range crd.Status.Conditions {
-					switch cond.Type {
-					case apiextensionsv1beta1.Established:
-						if cond.Status == apiextensionsv1beta1.ConditionTrue {
-							return true, nil
-						}
-					case apiextensionsv1beta1.NamesAccepted:
-						if cond.Status == apiextensionsv1beta1.ConditionFalse {
-							return false, errors.New(cond.Reason)
-						}
-					}
-				}
-			} else {
-				log.Error(err)
-			}
-			return false, nil
-		})
-		if err != nil {
-			return errors.WrapIf(err, "could not start exponential backoff to wait for crd")
-		}
-
-		return nil
-	}
-}
-
-func WaitForFinalizers(backoff wait.Backoff) PostResourceDeleteFunc {
-	return func(client k8sclient.Client, resource Object) error {
-		if len(resource.GetFinalizers()) > 0 {
-			objectName := GetFormattedName(resource)
-			err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-				obj := resource.(*unstructured.Unstructured)
-				log.Debugf("wait for %s to be deleted", objectName)
-				err := client.Get(context.Background(), types.NamespacedName{
-					Name:      resource.GetName(),
-					Namespace: resource.GetNamespace(),
-				}, obj)
-				if k8serrors.IsNotFound(err) {
-					return true, nil
-				}
-				return false, nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
 }
 
 func GetFormattedName(object Object) string {
