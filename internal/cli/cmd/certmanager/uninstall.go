@@ -15,17 +15,21 @@
 package certmanager
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/spf13/cobra"
-	"istio.io/operator/pkg/object"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"istio.io/operator/pkg/object"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type uninstallCommand struct {
@@ -34,6 +38,8 @@ type uninstallCommand struct {
 
 type UninstallOptions struct {
 	DumpResources bool
+	Skip          bool
+	Force         bool
 }
 
 func NewUninstallOptions() *UninstallOptions {
@@ -67,11 +73,23 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 	}
 
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
+	cmd.Flags().BoolVar(&options.Skip, "skip", false, "Skip uninstalling cert-manager")
+	cmd.Flags().BoolVar(&options.Force, "force", false, "Force uninstalling cert-manager")
 
 	return cmd
 }
 
 func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
+	if options.Skip {
+		logrus.Info("Skip uninstalling cert-manager")
+		return nil
+	}
+
+	err := c.validate(CertManagerNamespace, options)
+	if err != nil {
+		return err
+	}
+
 	objects, err := getCertManagerObjects(CertManagerNamespace)
 	if err != nil {
 		return err
@@ -95,13 +113,38 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 	return nil
 }
 
+func (c *uninstallCommand) validate(namespace string, opts *UninstallOptions) error {
+	var err error
+	client, err := c.cli.GetK8sClient()
+	if err != nil {
+		return err
+	}
+	targetNamespace := &corev1.Namespace{}
+	err = client.Get(context.Background(), types.NamespacedName{Name: namespace}, targetNamespace)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return errors.WrapIf(err, "failed to get target namespace for cert-manager")
+	}
+	if manager, ok := targetNamespace.Labels["app.kubernetes.io/managed-by"]; ok && manager == "backyards-cli" {
+		return nil
+	}
+	if opts.Force {
+		logrus.Warn("Force uninstalling cert-manager")
+		return nil
+	}
+	return errors.Errorf("cert-manager already installed but not managed by backyards, " +
+		"please skip or force uninstalling cert-manager using the cli flags")
+}
+
 func (c *uninstallCommand) deleteResources(objects object.K8sObjects) error {
 	client, err := c.cli.GetK8sClient()
 	if err != nil {
 		return err
 	}
 
-	err = k8s.DeleteResources(client, objects, k8s.WaitForResourceConditions(wait.Backoff{
+	err = k8s.DeleteResources(client, c.cli.LabelManager(), objects, k8s.WaitForResourceConditions(wait.Backoff{
 		Duration: time.Second * 5,
 		Factor:   1,
 		Jitter:   0,

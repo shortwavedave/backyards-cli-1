@@ -119,7 +119,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 			return err
 		}
 
-		err = k8s.ApplyResources(client, objects)
+		err = k8s.ApplyResources(client, cli.LabelManager(), objects)
 		if err != nil {
 			return err
 		}

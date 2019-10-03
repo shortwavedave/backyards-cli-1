@@ -76,6 +76,11 @@ build-debug: ## Build a binary with remote debugging capabilities
 debug: build-debug
 	dlv --listen=:40000 --log --headless=true --api-version=2 exec "${BUILD_DIR}/debug/${BINARY_NAME}" -- ${ARGS}
 
+.PHONY: run
+run: build
+	"${BUILD_DIR}/${BINARY_NAME}" ${ARGS}
+
+
 .PHONY: generate-docs
 generate-docs: ## Generate documentation for Backyards CLI
 	rm -rf cmd/docs/*.md

@@ -17,14 +17,17 @@ package cli
 import (
 	"io"
 	"os"
+	"sync"
 
 	"emperror.dev/errors"
+	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
-	v1alpha3 "knative.dev/pkg/apis/istio/v1alpha3"
+	"knative.dev/pkg/apis/istio/v1alpha3"
 
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s/portforward"
@@ -39,6 +42,7 @@ var (
 		"app.kubernetes.io/instance":  "backyards",
 	}
 	BackyardsServiceAccountName = "backyards"
+	lmOnce sync.Once
 )
 
 type CLI interface {
@@ -52,17 +56,19 @@ type CLI interface {
 	GetK8sConfig() (*rest.Config, error)
 	GetPortforwardForPod(podLabels map[string]string, namespace string, localPort, remotePort int) (*portforward.Portforward, error)
 	GetPortforwardForIGW(localPort int) (*portforward.Portforward, error)
+	LabelManager() k8s.LabelManager
 }
 
 type backyardsCLI struct {
-	out     io.Writer
-	rootCmd *cobra.Command
+	out          io.Writer
+	rootCmd      *cobra.Command
+	labelManager k8s.LabelManager
 }
 
 func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
 	return &backyardsCLI{
-		out:     out,
-		rootCmd: rootCmd,
+		out:          out,
+		rootCmd:      rootCmd,
 	}
 }
 
@@ -155,4 +161,11 @@ func (c *backyardsCLI) GetK8sConfig() (*rest.Config, error) {
 	}
 
 	return config, nil
+}
+
+func (c *backyardsCLI) LabelManager() k8s.LabelManager {
+	lmOnce.Do(func() {
+		c.labelManager = internalk8s.NewLabelManager(c.InteractiveTerminal(), c.GetRootCommand().Version)
+	})
+	return c.labelManager
 }

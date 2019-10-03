@@ -41,9 +41,15 @@ type Object interface {
 	schema.ObjectKind
 }
 
+type LabelManager interface {
+	CheckLabelsBeforeUpdate(actual, desired *unstructured.Unstructured) (bool, error)
+	CheckLabelsBeforeCreate(actual *unstructured.Unstructured) (bool, error)
+	CheckLabelsBeforeDelete(actual *unstructured.Unstructured) (bool, error)
+}
+
 type PostResourceApplyFunc func(k8sclient.Client, Object) error
 
-func ApplyResources(client k8sclient.Client, objects object.K8sObjects, waitFuncs ...WaitForResourceConditionsFunc) error {
+func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects object.K8sObjects, waitFuncs ...WaitForResourceConditionsFunc) error {
 	var err error
 
 	for _, obj := range objects {
@@ -60,6 +66,15 @@ func ApplyResources(client k8sclient.Client, objects object.K8sObjects, waitFunc
 			Name:      actual.GetName(),
 			Namespace: actual.GetNamespace(),
 		}, actual); err == nil {
+			skip, err := labelManager.CheckLabelsBeforeUpdate(actual, desired)
+			if err != nil {
+				log.Error("%s failed to check labels: %s", GetFormattedName(actual), err)
+				continue
+			}
+			if skip {
+				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				continue
+			}
 			desired.SetResourceVersion(actual.GetResourceVersion())
 			patchResult, err := patch.DefaultPatchMaker.Calculate(actual, desired)
 			if err != nil {
@@ -84,7 +99,15 @@ func ApplyResources(client k8sclient.Client, objects object.K8sObjects, waitFunc
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(desired); err != nil {
 				log.Error(err, "failed to set last applied annotation", "desired", desired)
 			}
-
+			skip, err := labelManager.CheckLabelsBeforeCreate(desired)
+			if err != nil {
+				log.Error("%s failed to check labels: %s", GetFormattedName(desired), err)
+				continue
+			}
+			if skip {
+				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				continue
+			}
 			err = client.Create(context.Background(), desired)
 			if err != nil {
 				return errors.WrapIfWithDetails(err, "could not create resource", "name", objectName)
@@ -108,16 +131,25 @@ func ApplyResources(client k8sclient.Client, objects object.K8sObjects, waitFunc
 
 type PostResourceDeleteFunc func(k8sclient.Client, Object) error
 
-func DeleteResources(client k8sclient.Client, objects object.K8sObjects, waitFuncs ...WaitForResourceConditionsFunc) error {
+func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects object.K8sObjects, waitFuncs ...WaitForResourceConditionsFunc) error {
 	var err error
 
 	for _, obj := range objects {
 		actual := obj.UnstructuredObject().DeepCopy()
-		objectName := getFormattedName(actual)
+		objectName := GetFormattedName(actual)
 		if err = client.Get(context.Background(), types.NamespacedName{
 			Name:      actual.GetName(),
 			Namespace: actual.GetNamespace(),
 		}, actual); err == nil {
+			skip, err := labelManager.CheckLabelsBeforeDelete(actual)
+			if err != nil {
+				log.Error("%s failed to check labels: %s", GetFormattedName(actual), err)
+				continue
+			}
+			if skip {
+				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				continue
+			}
 			err = client.Delete(context.Background(), obj.UnstructuredObject())
 			if k8serrors.IsNotFound(err) || k8smeta.IsNoMatchError(err) {
 				log.Error(errors.WrapIf(err, "could not delete"))
@@ -157,7 +189,7 @@ func WaitForCRD(backoff wait.Backoff) PostResourceApplyFunc {
 			return nil
 		}
 
-		objectName := getFormattedName(resource)
+		objectName := GetFormattedName(resource)
 
 		err := wait.ExponentialBackoff(backoff, func() (bool, error) {
 			var crd apiextensionsv1beta1.CustomResourceDefinition
@@ -195,7 +227,7 @@ func WaitForCRD(backoff wait.Backoff) PostResourceApplyFunc {
 func WaitForFinalizers(backoff wait.Backoff) PostResourceDeleteFunc {
 	return func(client k8sclient.Client, resource Object) error {
 		if len(resource.GetFinalizers()) > 0 {
-			objectName := getFormattedName(resource)
+			objectName := GetFormattedName(resource)
 			err := wait.ExponentialBackoff(backoff, func() (bool, error) {
 				obj := resource.(*unstructured.Unstructured)
 				log.Debugf("wait for %s to be deleted", objectName)
@@ -217,13 +249,17 @@ func WaitForFinalizers(backoff wait.Backoff) PostResourceDeleteFunc {
 	}
 }
 
-func getFormattedName(object Object) string {
+func GetFormattedName(object Object) string {
 	var group string
 	if object.GroupVersionKind().Group != "" {
 		group = "." + object.GroupVersionKind().Group
 	}
 
-	return fmt.Sprintf("%s%s/%s", strings.ToLower(object.GetKind()), group, object.GetName())
+	namespace := "-"
+	if object.GetNamespace() != "" {
+		namespace = object.GetNamespace()
+	}
+	return fmt.Sprintf("%s%s/%s/%s", strings.ToLower(object.GetKind()), group, namespace, object.GetName())
 }
 
 func prepareObjectBeforeUpdate(actual, desired *unstructured.Unstructured) *unstructured.Unstructured {

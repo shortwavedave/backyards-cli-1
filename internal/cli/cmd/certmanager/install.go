@@ -23,21 +23,18 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/MakeNowJust/heredoc"
-	"github.com/spf13/cobra"
-	"istio.io/operator/pkg/object"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
-
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanager"
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercainjector"
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/certmanagercrds"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
+	"github.com/spf13/cobra"
+	"istio.io/operator/pkg/object"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type installCommand struct {
@@ -100,7 +97,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 			return err
 		}
 
-		err = k8s.ApplyResources(client, objects)
+		err = k8s.ApplyResources(client, cli.LabelManager(), objects)
 		if err != nil {
 			return err
 		}
@@ -125,34 +122,25 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	return nil
 }
 
+// validate detects only that the cert-manager namespace exists or not for better UX.
+// Conflicting CRDs and all other resources will be detected by the k8s resource applier anyways.
 func (c *installCommand) validate(namespace string) error {
-	if exists, err := c.crdExists("certificates.certmanager.k8s.io"); err != nil {
-		return errors.WrapIf(err, "failed to check cert-manager certificate CRD")
-	} else if exists {
-		config, err := c.cli.GetK8sConfig()
-		if err != nil {
-			return errors.WrapIf(err, "failed to get k8s config to validate cert-manager")
-		}
-		client, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			return errors.WrapIf(err, "failed to get k8s client to validate cert-manager")
-		}
-		targetNamespace, err := client.CoreV1().Namespaces().Get(namespace, v1.GetOptions{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return errors.New("cert-manager already installed and not managed by us, " +
-					"please remove previous cert-manager to continue")
-			}
-			return errors.WrapIf(err, "failed to get target namespace for cert-manager")
-		}
-		if manager, ok := targetNamespace.Labels["app.kubernetes.io/managed-by"]; ok && manager == "backyards-cli" {
+	var err error
+	client, err := c.cli.GetK8sClient()
+	if err != nil {
+		return err
+	}
+	targetNamespace := &corev1.Namespace{}
+	err = client.Get(context.Background(), types.NamespacedName{Name: namespace}, targetNamespace)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
 			return nil
-		} else if ok {
-			return errors.Errorf("cert-manager already installed but the owner is unknown: %s; "+
-				"please remove previous cert-manager to continue", manager)
 		}
-		return errors.New("cert-manager already installed but the owner is unknown; " +
-			"please remove previous cert-manager to continue")
+		return errors.WrapIf(err, "failed to get target namespace for cert-manager")
+	}
+	if _, ok := targetNamespace.Labels["backyards.banzaicloud.io/cli-version"]; !ok {
+		return errors.New("cert-manager namespace already exists but not managed by Backyards, "+
+			"remove previous cert-manager to continue or skip installing cert-manager using CLI flags")
 	}
 	return nil
 }
@@ -232,25 +220,4 @@ func getCertManagerObjects(namespace string) (object.K8sObjects, error) {
 	}
 
 	return append(crdObjects, append(namespaceObj, append(cainjectorObjects, objects...)...)...), nil
-}
-
-func (c *installCommand) crdExists(crdName string) (bool, error) {
-	cl, err := c.cli.GetK8sClient()
-	if err != nil {
-		return false, err
-	}
-
-	var crd apiextensions.CustomResourceDefinition
-
-	err = cl.Get(context.Background(), types.NamespacedName{
-		Name: crdName,
-	}, &crd)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, errors.WrapIfWithDetails(err, "could not get CRD", "name", crdName)
-	}
-
-	return true, nil
 }

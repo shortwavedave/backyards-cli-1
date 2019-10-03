@@ -165,7 +165,7 @@ func (c *installCommand) applyResources(crds, objects object.K8sObjects) error {
 	}
 
 	// apply CRDs first
-	err = k8s.ApplyResources(client, crds)
+	err = k8s.ApplyResources(client, c.cli.LabelManager(), crds)
 	if err != nil {
 		return errors.WrapIf(err, "could not apply k8s resources")
 	}
@@ -189,7 +189,7 @@ func (c *installCommand) applyResources(crds, objects object.K8sObjects) error {
 	}
 
 	// apply the rest of the resources
-	err = k8s.ApplyResources(client, objects)
+	err = k8s.ApplyResources(client, c.cli.LabelManager(), objects)
 	if err != nil {
 		return errors.WrapIf(err, "could not apply k8s resources")
 	}

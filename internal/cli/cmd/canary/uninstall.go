@@ -109,7 +109,7 @@ func (c *uninstallCommand) deleteResources(objects object.K8sObjects) error {
 		return err
 	}
 
-	err = k8s.DeleteResources(client, objects, k8s.WaitForResourceConditions(wait.Backoff{
+	err = k8s.DeleteResources(client, c.cli.LabelManager(), objects, k8s.WaitForResourceConditions(wait.Backoff{
 		Duration: time.Second * 5,
 		Factor:   1,
 		Jitter:   0,

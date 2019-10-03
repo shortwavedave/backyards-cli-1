@@ -114,7 +114,7 @@ func WaitForResourceConditions(backoff wait.Backoff, checkFuncs ...ResourceCondi
 }
 
 func waitForResourceConditions(client k8sclient.Client, object *unstructured.Unstructured, backoff wait.Backoff, checkFuncs ...ResourceConditionCheck) error {
-	log.Infof("%s - pending", getFormattedName(object))
+	log.Infof("%s - pending", GetFormattedName(object))
 	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
 		resource := object.DeepCopy()
 		err := client.Get(context.Background(), types.NamespacedName{
@@ -134,7 +134,7 @@ func waitForResourceConditions(client k8sclient.Client, object *unstructured.Uns
 		return err
 	}
 
-	log.Infof("%s - ok", getFormattedName(object))
+	log.Infof("%s - ok", GetFormattedName(object))
 
 	return nil
 }
