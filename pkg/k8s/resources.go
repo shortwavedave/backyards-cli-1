@@ -53,11 +53,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 		actual := obj.UnstructuredObject().DeepCopy()
 		desired := obj.UnstructuredObject().DeepCopy()
 
-		var group string
-		if desired.GroupVersionKind().Group != "" {
-			group = "." + desired.GroupVersionKind().Group
-		}
-		objectName := fmt.Sprintf("%s%s/%s", strings.ToLower(desired.GetKind()), group, desired.GetName())
+		objectName := GetFormattedName(desired)
 
 		if err = client.Get(context.Background(), types.NamespacedName{
 			Name:      actual.GetName(),
@@ -65,11 +61,11 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 		}, actual); err == nil {
 			skip, err := labelManager.CheckLabelsBeforeUpdate(actual, desired)
 			if err != nil {
-				log.Errorf("%s failed to check labels: %s", GetFormattedName(actual), err)
+				log.Errorf("%s failed to check labels: %s", objectName, err)
 				continue
 			}
 			if skip {
-				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				log.Warnf("%s skipping resource", objectName)
 				continue
 			}
 			desired.SetResourceVersion(actual.GetResourceVersion())
@@ -77,7 +73,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			if err != nil {
 				log.Error(err, "could not match objects", "object", actual.GetKind())
 			} else if patchResult.IsEmpty() {
-				log.Infof("%s unchanged", objectName)
+				log.Infof("%s unchanged", GetFormattedName(actual))
 				continue
 			}
 
@@ -91,18 +87,18 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			if err != nil {
 				return errors.WrapIfWithDetails(err, "could not update resource", "name", objectName)
 			}
-			log.Infof("%s configured", objectName)
+			log.Infof("%s configured",  objectName)
 		} else {
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(desired); err != nil {
 				log.Error(err, "failed to set last applied annotation", "desired", desired)
 			}
 			skip, err := labelManager.CheckLabelsBeforeCreate(desired)
 			if err != nil {
-				log.Errorf("%s failed to check labels: %s", GetFormattedName(desired), err)
+				log.Errorf("%s failed to check labels: %s", objectName, err)
 				continue
 			}
 			if skip {
-				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				log.Warnf("%s skipping resource", objectName)
 				continue
 			}
 			err = client.Create(context.Background(), desired)
@@ -140,11 +136,11 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 		}, actual); err == nil {
 			skip, err := labelManager.CheckLabelsBeforeDelete(actual)
 			if err != nil {
-				log.Errorf("%s failed to check labels: %s", GetFormattedName(actual), err)
+				log.Errorf("%s failed to check labels: %s", objectName, err)
 				continue
 			}
 			if skip {
-				log.Warnf("%s skipping resource", GetFormattedName(actual))
+				log.Warnf("%s skipping resource", objectName)
 				continue
 			}
 			err = client.Delete(context.Background(), obj.UnstructuredObject())
@@ -186,11 +182,11 @@ func GetFormattedName(object Object) string {
 		group = "." + object.GroupVersionKind().Group
 	}
 
-	namespace := "-"
+	namespace := ""
 	if object.GetNamespace() != "" {
-		namespace = object.GetNamespace()
+		namespace = object.GetNamespace() + "/"
 	}
-	return fmt.Sprintf("%s%s/%s/%s", strings.ToLower(object.GetKind()), group, namespace, object.GetName())
+	return fmt.Sprintf("%s%s:%s%s", strings.ToLower(object.GetKind()), group, namespace, object.GetName())
 }
 
 func prepareObjectBeforeUpdate(actual, desired *unstructured.Unstructured) *unstructured.Unstructured {

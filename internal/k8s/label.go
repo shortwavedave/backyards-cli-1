@@ -64,7 +64,8 @@ func (lm *labelManager) CheckLabelsBeforeDelete(actual *unstructured.Unstructure
 	if _, ok := labels[CLIVersionLabel]; !ok {
 		if lm.deleteAll {
 			return false, nil
-		} else if !lm.skipAll {
+		}
+		if !lm.skipAll {
 			if lm.interactive {
 				var r string
 				prompt := &survey.Select{
@@ -107,7 +108,8 @@ func (lm *labelManager) CheckLabelsBeforeUpdate(actual, desired *unstructured.Un
 		if lm.manageAll {
 			lm.setDesiredLabels(desired)
 			return false, nil
-		} else if !lm.skipAll {
+		}
+		if !lm.skipAll {
 			if lm.interactive {
 				var r string
 				prompt := &survey.Select{
