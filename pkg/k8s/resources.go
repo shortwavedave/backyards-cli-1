@@ -87,7 +87,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			if err != nil {
 				return errors.WrapIfWithDetails(err, "could not update resource", "name", objectName)
 			}
-			log.Infof("%s configured",  objectName)
+			log.Infof("%s configured", objectName)
 		} else {
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(desired); err != nil {
 				log.Error(err, "failed to set last applied annotation", "desired", desired)
