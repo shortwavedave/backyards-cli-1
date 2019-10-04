@@ -93,7 +93,7 @@ It can only dump the applicable resources with the '--dump-resources' option.
 	cmd.Flags().StringVar(&options.releaseName, "release-name", "canary-operator", "Name of the release")
 	cmd.Flags().StringVar(&options.istioNamespace, "istio-namespace", "istio-system", "Namespace of Istio sidecar injector")
 	cmd.Flags().StringVar(&options.canaryOperatorNamespace, "canary-namespace", "backyards-canary", "Namespace for the canary operator")
-	cmd.Flags().StringVar(&options.prometheusURL, "prometheus-url", "http://backyards-prometheus.backyards-system", "Prometheus URL for metrics")
+	cmd.Flags().StringVar(&options.prometheusURL, "prometheus-url", "http://backyards-prometheus.backyards-system:9090/prometheus", "Prometheus URL for metrics")
 
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
 
