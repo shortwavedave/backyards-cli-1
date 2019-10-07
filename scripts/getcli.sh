@@ -7,9 +7,9 @@ usage() {
     echo "Install latest release of backyards-cli. https://github.com/banzaicloud/backyards-cli"
     echo
     if have curl; then
-        echo "Usage: curl https://getbackyards.sh/cli | sh [-s -- auto|deb|rpm|brew|tar|go]"
+        echo "Usage: curl https://getbackyards.sh | sh [-s -- auto|deb|rpm|brew|tar]"
     elif have wget; then
-        echo "Usage: wget -O- https://getbackyards.sh/cli | sh [-s -- auto|deb|rpm|brew|tar|go]"
+        echo "Usage: wget -O- https://getbackyards.sh | sh [-s -- auto|deb|rpm|brew|tar]"
     else
         echo "Usage: $1 [auto|deb|rpm|brew|tar|go]"
     fi
