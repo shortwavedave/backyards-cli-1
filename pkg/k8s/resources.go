@@ -152,17 +152,24 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 				log.Error(err)
 			}
 
+			deletionTimedOut := false
 			if len(waitFuncs) > 0 {
 				for _, fn := range waitFuncs {
 					err = fn(client, actual)
 					if err != nil {
+						deletionTimedOut = true
 						log.Error(err)
 						continue
 					}
 				}
 			}
 
-			log.Infof("%s deleted", objectName)
+			if deletionTimedOut {
+				log.Errorf("%s deletion timed out", objectName)
+			} else {
+				log.Infof("%s deleted", objectName)
+			}
+
 		} else {
 			err = errors.WrapIf(err, "could not delete")
 			if k8serrors.IsNotFound(err) {
