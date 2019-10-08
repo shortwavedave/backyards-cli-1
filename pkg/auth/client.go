@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"emperror.dev/errors"
+	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 )
@@ -96,15 +97,22 @@ func (c *client) Login() (*ResponseBody, error) {
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		parsedResponse := &ResponseBody{}
+		parsedResponse := &servererror.Problem{}
 		responseBody, err := ioutil.ReadAll(response.Body)
 		if err != nil {
-			return parsedResponse, errors.Wrap(err, "failed to read response body")
+			return nil, errors.Wrap(err, "failed to read response body")
+		}
+		err = json.NewDecoder(bytes.NewBuffer(responseBody)).Decode(parsedResponse)
+		if err != nil {
+			return nil, errors.WrapWithDetails(err, "failed to decode response", "response", string(responseBody))
 		}
 		if response.StatusCode < 500 {
-			return nil, errors.New("invalid request")
+			if parsedResponse.ErrorCode == servererror.AuthDisabledErrorCode {
+				return nil, servererror.AuthDisabledError
+			}
+			return nil, errors.Errorf("invalid request %s: `%s`", response.Status, responseBody)
 		}
-		return nil, errors.Errorf("server error [%d] %s: %s", response.StatusCode, response.Status, responseBody)
+		return nil, errors.Errorf("server error: %s `%s`", response.Status, responseBody)
 	}
 
 	parsedResponse := &ResponseBody{}

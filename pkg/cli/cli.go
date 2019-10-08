@@ -19,10 +19,13 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"emperror.dev/errors"
 	"github.com/mattn/go-isatty"
+	"github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -219,4 +222,69 @@ func (c *backyardsCLI) Stop() error {
 		c.pf.Stop()
 	}
 	return nil
+}
+
+
+// initConfig reads in config file and ENV variables if set.
+func (c *backyardsCLI) initConfig(configFile string) {
+	if configFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(configFile)
+	} else if envCfg := os.Getenv("BACKYARDS_CONFIG"); envCfg != "" {
+		// Use config file from BACKYARDS_CONFIG env var.
+		viper.SetConfigFile(envCfg)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			logrus.Fatalf("can't compose the default config file path: %v", err)
+		}
+
+		viper.AddConfigPath(filepath.Join(home, ".banzai/backyards"))
+		viper.SetConfigName("config")
+	}
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		logrus.Debug("Using config file:", viper.ConfigFileUsed())
+	}
+}
+
+func (c *backyardsCLI) saveConfig() {
+	logrus.Debug("writing config")
+
+	if viper.ConfigFileUsed() == "" {
+		logrus.Debug("no config file defined, falling back to default location $HOME/.banzai/backyards")
+
+		home, _ := homedir.Dir()
+		configPath := filepath.Join(home, ".banzai/backyards")
+		err := os.MkdirAll(configPath, os.ModePerm)
+		if err != nil {
+			logrus.Fatal(errors.WrapIf(err, "failed to create config dir"))
+		}
+
+		configPath = filepath.Join(configPath, "config.yaml")
+		err = viper.WriteConfigAs(configPath)
+		if err != nil {
+			logrus.Fatal(errors.WrapIf(err, "failed to write config"))
+		}
+
+		logrus.Infof("config created at %v", configPath)
+		return
+	}
+
+	if _, err := os.Stat(filepath.Dir(viper.ConfigFileUsed())); os.IsNotExist(err) {
+		logrus.Debug("creating config dir")
+
+		configPath := filepath.Dir(viper.ConfigFileUsed())
+		err := os.MkdirAll(configPath, 0700)
+		if err != nil {
+			logrus.Fatal(errors.WrapIf(err, "failed to create config dir"))
+		}
+	}
+
+	err := viper.WriteConfig()
+	if err != nil {
+		logrus.Fatalf("failed to write config: %v", err)
+	}
 }

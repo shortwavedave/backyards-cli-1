@@ -15,6 +15,7 @@
 package login
 
 import (
+	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -30,7 +31,7 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 		Aliases: []string{"l"},
 		Short:   "Log in to Backyards",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := Login(cli)
+			err := Login(cli, nil)
 			return err
 		},
 	}
@@ -38,17 +39,26 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 	return cmd
 }
 
-func Login(cli cli.CLI) (*auth.ResponseBody, error) {
+func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) (error) {
 	authClient, err := common.GetAuthClient(cli)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	authInfo, err := authClient.Login()
 	if err != nil {
-		return nil, err
+		if err != servererror.AuthDisabledError {
+			return err
+		}
 	}
-	logrus.Infof("logged in as %s", authInfo.User.Name)
-	logrus.Debugf("token: %s", authInfo.User.Token)
-	logrus.Debugf("wrapped token: %s", authInfo.User.WrappedToken)
-	return authInfo, nil
+	if authInfo != nil {
+		logrus.Infof("Logged in as %s", authInfo.User.Name)
+		logrus.Debugf("Token: %s", authInfo.User.Token)
+		logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
+		if onAuth != nil {
+			onAuth(authInfo)
+		}
+	} else {
+		logrus.Debug("Backyards authentication is disabled")
+	}
+	return nil
 }

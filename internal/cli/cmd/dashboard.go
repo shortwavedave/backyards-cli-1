@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/banzaicloud/backyards-cli/pkg/auth"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,7 +34,6 @@ type dashboardCommand struct{}
 
 type DashboardOptions struct {
 	QueryParams  map[string]string
-	Login        bool
 	WrappedToken string
 }
 
@@ -51,13 +51,11 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 		Short: "Open the Backyards dashboard in a web browser",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			if options.Login {
-				authInfo, err := login.Login(cli)
-				if err != nil {
-					return err
-				}
+			err := login.Login(cli, func(authInfo *auth.ResponseBody) {
 				options.WrappedToken = authInfo.User.WrappedToken
+			})
+			if err != nil {
+				return err
 			}
 			err = c.run(cli, options)
 			if err != nil {
@@ -66,9 +64,6 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 			return nil
 		},
 	}
-
-	cmd.PersistentFlags().BoolVar(&options.Login, "login", options.Login,
-		"Login to Backyards automatically using Kubernetes credentials")
 
 	return cmd
 }
