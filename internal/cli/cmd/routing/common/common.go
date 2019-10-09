@@ -113,12 +113,12 @@ func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
 		return nil, err
 	}
 
-	url, err := cli.GetEndpointURL("/api/graphql")
+	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
 		return nil, err
 	}
 
-	client := graphql.NewClient(url)
+	client := graphql.NewClient(endpoint, "/api/graphql")
 	client.SetJWTToken(token)
 
 	return client, nil

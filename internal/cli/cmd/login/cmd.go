@@ -15,7 +15,6 @@
 package login
 
 import (
-	"emperror.dev/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -70,17 +69,14 @@ func getAuthClient(cli cli.CLI) (auth.Client, error) {
 		return nil, err
 	}
 
-	url, err := cli.GetEndpointURL("/api/login")
+	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
 		return nil, err
 	}
 
-	ca, err := cli.GetEndpointCA()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get endpoint CA")
-	}
-	if ca != nil {
-		config.TLSClientConfig.CAData = ca
+	url := endpoint.URLForPath("/api/login")
+	if endpoint.CA() != nil {
+		config.TLSClientConfig.CAData = endpoint.CA()
 	}
 
 	return auth.NewClient(config, url), nil

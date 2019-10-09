@@ -73,7 +73,12 @@ func (c *dashboardCommand) run(cli cli.CLI, options *DashboardOptions) error {
 	var err error
 	var url string
 
-	url, err = cli.GetEndpointURL("")
+	endpoint, err := cli.InitializedEndpoint()
+	if err != nil {
+		return err
+	}
+
+	url = endpoint.URLForPath("")
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
@@ -81,10 +86,6 @@ func (c *dashboardCommand) run(cli cli.CLI, options *DashboardOptions) error {
 		<-signals
 		signal.Stop(signals)
 	}()
-
-	if err != nil {
-		return err
-	}
 
 	url, err = withQueryParams(url, options.QueryParams)
 	if err != nil {

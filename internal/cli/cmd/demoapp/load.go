@@ -78,7 +78,7 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 	var err error
 	var response graphql.GenerateLoadResponse
 
-	url, err := cli.GetEndpointURL("/api/graphql")
+	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 		"duration": options.Duration,
 	}).Info("sending load to demo application")
 	go func() {
-		client := graphql.NewClient(url)
+		client := graphql.NewClient(endpoint, "/api/graphql")
 		response, err = client.GenerateLoad(graphql.GenerateLoadRequest{
 			Namespace: options.namespace,
 			Service:   "frontpage",

@@ -58,11 +58,12 @@ type CLI interface {
 	GetK8sConfig() (*rest.Config, error)
 	LabelManager() k8s.LabelManager
 
-	// GetEndpointURL returns the Backyards base URL
-	// which may create a port-forward on a predefined or random port
-	// unless a custom endpoint url is defined
-	GetEndpointURL(path string) (string, error)
-	GetEndpointCA() ([]byte, error)
+	// An endpoint can be currently:
+	// - external HTTP(s) endpoint
+	// - local port-forward to an HTTP(s) endpoint
+	// - local HTTP(s) proxy (planned to replace port-forward)
+	InitializedEndpoint() (Endpoint, error)
+
 	Stop() error
 }
 
@@ -207,7 +208,39 @@ func (c *backyardsCLI) LabelManager() k8s.LabelManager {
 	return c.labelManager
 }
 
-func (c *backyardsCLI) GetEndpointCA() ([]byte, error) {
+func (c *backyardsCLI) InitializedEndpoint() (Endpoint, error) {
+	url := viper.GetString("backyards.url")
+	ca, err := getEndpointCA()
+	if err != nil {
+		return nil, err
+	}
+	if url == "" {
+		var err error
+		c.pfOnce.Do(func() {
+			c.pf, err = c.GetPortforwardForIGW(viper.GetInt("backyards.portforward"))
+			if err != nil {
+				return
+			}
+			err = c.pf.Run()
+			if err != nil {
+				return
+			}
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &portForwardEndpoint{
+			pf: c.pf,
+			ca: ca,
+		}, nil
+	}
+	return &externalEndpoint{
+		baseURL: url,
+		ca:      ca,
+	}, nil
+}
+
+func getEndpointCA() ([]byte, error) {
 	if viper.GetString("backyards.cacert") != "" {
 		return ioutil.ReadFile(viper.GetString("backyards.cacert"))
 	}
