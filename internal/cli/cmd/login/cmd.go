@@ -15,9 +15,10 @@
 package login
 
 import (
-	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 
 	"github.com/banzaicloud/backyards-cli/pkg/auth"
 
@@ -39,14 +40,14 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 	return cmd
 }
 
-func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) (error) {
+func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 	authClient, err := common.GetAuthClient(cli)
 	if err != nil {
 		return err
 	}
 	authInfo, err := authClient.Login()
 	if err != nil {
-		if err != servererror.AuthDisabledError {
+		if err != servererror.ErrAuthDisabled {
 			return err
 		}
 	}

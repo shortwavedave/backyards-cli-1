@@ -22,9 +22,10 @@ import (
 	"net/http"
 
 	"emperror.dev/errors"
-	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
+
+	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 )
 
 type Client interface {
@@ -108,7 +109,7 @@ func (c *client) Login() (*ResponseBody, error) {
 		}
 		if response.StatusCode < 500 {
 			if parsedResponse.ErrorCode == servererror.AuthDisabledErrorCode {
-				return nil, servererror.AuthDisabledError
+				return nil, servererror.ErrAuthDisabled
 			}
 			return nil, errors.Errorf("invalid request %s: `%s`", response.Status, responseBody)
 		}

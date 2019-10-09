@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	AuthDisabledError = errors.New("authentication is disabled")
+	ErrAuthDisabled = errors.New("authentication is disabled")
 )
 
 type Problem struct {
