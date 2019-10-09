@@ -20,22 +20,23 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"emperror.dev/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 
 	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 )
+
+const defaultLoginTimeout = time.Second * 2
 
 type Client interface {
 	Login() (*ResponseBody, error)
 }
 
 type client struct {
-	config     *rest.Config
-	httpClient *http.Client
-	url        string
+	config *rest.Config
+	url    string
 }
 
 type AuthenticationMode string
@@ -70,30 +71,17 @@ type ResponseBody struct {
 	} `json:"user"`
 }
 
-func NewClient(config *rest.Config, httpClient *http.Client, url string) Client {
+func NewClient(config *rest.Config, url string) Client {
 	return &client{
-		config:     config,
-		httpClient: httpClient,
-		url:        url,
+		config: config,
+		url:    url,
 	}
 }
 
 func (c *client) Login() (*ResponseBody, error) {
-	rb, err := c.requestBody()
+	response, err := c.sendRequest(c.url)
 	if err != nil {
 		return nil, err
-	}
-
-	b := &bytes.Buffer{}
-	err = json.NewEncoder(b).Encode(rb)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode request")
-	}
-
-	logrus.Infof("Logging in to %s", c.url)
-	response, err := c.httpClient.Post(c.url, "application/json", b)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to send request")
 	}
 	defer response.Body.Close()
 
@@ -164,6 +152,29 @@ func (c *client) requestBody() (*RequestBody, error) {
 		rb.ClientCert.Cert = base64.StdEncoding.EncodeToString(c.config.TLSClientConfig.CertData)
 		rb.ClientCert.Key = base64.StdEncoding.EncodeToString(c.config.TLSClientConfig.KeyData)
 		return rb, nil
+	} else if c.config.ExecProvider != nil || c.config.AuthProvider != nil {
+		return rb, nil
 	}
 	return nil, errors.NewWithDetails("no credentials found in the provided config")
+}
+
+func (c *client) sendRequest(url string) (*http.Response, error) {
+	transport, err := rest.TransportFor(c.config)
+	if err != nil {
+		return nil, err
+	}
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   defaultLoginTimeout,
+	}
+	rb, err := c.requestBody()
+	if err != nil {
+		return nil, err
+	}
+	b := &bytes.Buffer{}
+	err = json.NewEncoder(b).Encode(rb)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode request")
+	}
+	return httpClient.Post(url, "application/json", b)
 }

@@ -15,6 +15,7 @@
 package login
 
 import (
+	"emperror.dev/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -22,7 +23,6 @@ import (
 
 	"github.com/banzaicloud/backyards-cli/pkg/auth"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -41,7 +41,7 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 }
 
 func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
-	authClient, err := common.GetAuthClient(cli)
+	authClient, err := getAuthClient(cli)
 	if err != nil {
 		return err
 	}
@@ -62,4 +62,26 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		logrus.Debug("Backyards authentication is disabled")
 	}
 	return nil
+}
+
+func getAuthClient(cli cli.CLI) (auth.Client, error) {
+	config, err := cli.GetK8sConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	url, err := cli.GetEndpointURL("/api/login")
+	if err != nil {
+		return nil, err
+	}
+
+	ca, err := cli.GetEndpointCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get endpoint CA")
+	}
+	if ca != nil {
+		config.TLSClientConfig.CAData = ca
+	}
+
+	return auth.NewClient(config, url), nil
 }
