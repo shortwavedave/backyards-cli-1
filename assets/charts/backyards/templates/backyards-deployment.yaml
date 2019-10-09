@@ -3,11 +3,6 @@ kind: Deployment
 metadata:
   name: {{ include "backyards.fullname" . }}
   namespace: {{ .Release.Namespace }}
-  annotations:
-    hpa.autoscaling.banzaicloud.io/minReplicas: "{{ .Values.autoscaling.minReplicas }}"
-    hpa.autoscaling.banzaicloud.io/maxReplicas: "{{ .Values.autoscaling.maxReplicas }}"
-    cpu.hpa.autoscaling.banzaicloud.io/targetAverageUtilization: "{{ .Values.autoscaling.targetCPUUtilizationPercentage }}"
-    memory.hpa.autoscaling.banzaicloud.io/targetAverageUtilization: "{{ .Values.autoscaling.targetMemoryUtilizationPercentage }}"
   labels:
     app: {{ include "backyards.name" . }}
     app.kubernetes.io/name: {{ include "backyards.name" . }}
