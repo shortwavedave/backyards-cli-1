@@ -73,7 +73,7 @@ func (c *dashboardCommand) run(cli cli.CLI, options *DashboardOptions) error {
 	var err error
 	var url string
 
-	endpoint, err := cli.InitializedEndpoint()
+	endpoint, err := cli.PersistentEndpoint()
 	if err != nil {
 		return err
 	}

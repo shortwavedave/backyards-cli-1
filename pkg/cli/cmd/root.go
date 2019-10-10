@@ -38,8 +38,7 @@ import (
 )
 
 const (
-	defaultNamespace   = "backyards-system"
-	defaultPortForward = 50500
+	defaultNamespace = "backyards-system"
 )
 
 var (
@@ -140,7 +139,7 @@ func init() {
 	flags.StringVarP(&ca, "cacert", ca, "", "The CA to use for verifying Backyards' server certificate.")
 	_ = viper.BindPFlag("backyards.cacert", flags.Lookup("cacert"))
 
-	flags.IntVarP(&portForward, "port-forward", "p", defaultPortForward, "Automatically port-forward Backyards on this local port (when set to 0, a random port will be used) otherwise use `--base-url`.")
+	flags.IntVarP(&portForward, "port-forward", "p", portForward, "Automatically port-forward Backyards on this local port (when set to 0, a random port will be used) otherwise use `--base-url`.")
 	_ = viper.BindPFlag("backyards.portforward", flags.Lookup("port-forward"))
 
 	cli := cli.NewCli(os.Stdout, RootCmd)
