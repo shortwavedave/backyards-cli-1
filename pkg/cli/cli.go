@@ -22,11 +22,10 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/mattn/go-isatty"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
-	"knative.dev/pkg/apis/istio/v1alpha3"
 
 	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
@@ -34,7 +33,6 @@ import (
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s/portforward"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
-	istiov1beta1 "github.com/banzaicloud/istio-operator/pkg/apis/istio/v1beta1"
 )
 
 var (
@@ -130,6 +128,8 @@ func (c *backyardsCLI) GetPortforwardForPod(podLabels map[string]string, namespa
 		return nil, err
 	}
 
+	logrus.Debugf("Creating port forward: local port %d namespace: %s pod labels: %s remote port: %d",
+		localPort, namespace, podLabels, remotePort)
 	pf, err := portforward.New(client, config, podLabels, namespace, localPort, remotePort)
 	if err != nil {
 		return nil, err
@@ -142,19 +142,6 @@ func (c *backyardsCLI) GetK8sClient() (k8sclient.Client, error) {
 	config, err := k8sclient.GetConfigWithContext(viper.GetString("kubeconfig"), viper.GetString("kubecontext"))
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not get k8s config")
-	}
-
-	err = istiov1beta1.AddToScheme(k8sclient.GetScheme())
-	if err != nil {
-		return nil, errors.WrapIf(err, "could not add istio-operator/v1beta1 to scheme")
-	}
-	err = apiextensionsv1beta1.AddToScheme(k8sclient.GetScheme())
-	if err != nil {
-		return nil, errors.WrapIf(err, "could not add apiextensions/v1beta1 to scheme")
-	}
-	err = v1alpha3.AddToScheme(k8sclient.GetScheme())
-	if err != nil {
-		return nil, errors.WrapIf(err, "could not add istio/v1alpha3 to scheme")
 	}
 
 	client, err := k8sclient.NewClient(config, k8sclient.Options{})

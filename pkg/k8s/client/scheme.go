@@ -14,8 +14,12 @@
 package client
 
 import (
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"knative.dev/pkg/apis/istio/v1alpha3"
+
+	istiov1beta1 "github.com/banzaicloud/istio-operator/pkg/apis/istio/v1beta1"
 )
 
 var (
@@ -24,6 +28,9 @@ var (
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
+	_ = istiov1beta1.AddToScheme(scheme)
+	_ = apiextensionsv1beta1.AddToScheme(scheme)
+	_ = v1alpha3.AddToScheme(scheme)
 }
 
 // GetScheme gets an initialized runtime.Scheme with k8s core added by default

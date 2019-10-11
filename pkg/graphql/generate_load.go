@@ -35,10 +35,10 @@ type GenerateLoadResponse map[string]int
 
 func (c *client) GenerateLoad(req GenerateLoadRequest) (GenerateLoadResponse, error) {
 	request := heredoc.Doc(`
-	mutation load($namespace: String!, $service: String!, $port: Int!, $endpoint: String!, $method: String!, $body: String, $headers: Map, $frequency: Int!, $duration: Int!) {
-		generateLoad(namespace: $namespace, service: $service, port: $port, endpoint: $endpoint, method: $method, body: $body, headers: $headers, frequency: $frequency, duration: $duration)
-	}
-`)
+		mutation load($namespace: String!, $service: String!, $port: Int!, $endpoint: String!, $method: String!, $body: String, $headers: Map, $frequency: Int!, $duration: Int!) {
+			generateLoad(namespace: $namespace, service: $service, port: $port, endpoint: $endpoint, method: $method, body: $body, headers: $headers, frequency: $frequency, duration: $duration)
+		}
+	`)
 
 	r := c.NewRequest(request)
 
