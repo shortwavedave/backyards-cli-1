@@ -24,7 +24,8 @@ import (
 type AuthMethod string
 
 const (
-	anonymous AuthMethod = "anonymous"
+	anonymous     AuthMethod = "anonymous"
+	impersonation AuthMethod = "impersonation"
 )
 
 type Values struct {
@@ -168,11 +169,11 @@ type Values struct {
 	Impersonation struct {
 		Enabled bool `json:"enabled"`
 		Config  struct {
-			Users           []string `json:"users"`
-			Groups          []string `json:"groups"`
-			ServiceAccounts []string `json:"serviceaccounts"`
-			Scopes          []string `json:"scopes"`
-		} `json:"config"`
+			Users           []string `json:"users,omitempty"`
+			Groups          []string `json:"groups,omitempty"`
+			ServiceAccounts []string `json:"serviceaccounts,omitempty"`
+			Scopes          []string `json:"scopes,omitempty"`
+		} `json:"config,omitempty"`
 	} `json:"impersonation"`
 }
 

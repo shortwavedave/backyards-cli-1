@@ -17,9 +17,10 @@ package demoapp
 import (
 	"sync"
 
-	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
@@ -75,27 +76,20 @@ func NewLoadCommand(cli cli.CLI, options *LoadOptions) *cobra.Command {
 }
 
 func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
-	var err error
 	var response graphql.GenerateLoadResponse
-
-	pf, err := cli.GetPortforwardForIGW(0)
-	if err != nil {
-		return err
-	}
-
-	err = pf.Run()
-	if err != nil {
-		return err
-	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	log.WithFields(log.Fields{
 		"rps":      options.Frequency,
 		"duration": options.Duration,
-	}).Info("sending load to demo application")
+	}).Info("Sending load to demo application")
 	go func() {
-		client := graphql.NewClient(pf.GetURL("/api/graphql"))
+		client, err := common.GetGraphQLClient(cli)
+		if err != nil {
+			log.Error(err)
+			return
+		}
 		response, err = client.GenerateLoad(graphql.GenerateLoadRequest{
 			Namespace: options.namespace,
 			Service:   "frontpage",
@@ -106,6 +100,10 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 			Duration:  options.Duration,
 			Headers:   nil,
 		})
+		if err != nil {
+			log.Error(err)
+			return
+		}
 
 		log.Info("loader stopped")
 		for code, count := range response {
@@ -120,10 +118,6 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 
 	if !options.Nowait {
 		wg.Wait()
-	}
-
-	if err != nil {
-		return errors.WrapIf(err, "error during load generation")
 	}
 
 	return nil

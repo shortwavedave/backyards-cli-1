@@ -16,6 +16,7 @@ package cli
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"sync"
 
@@ -37,13 +38,13 @@ import (
 )
 
 var (
-	IGWPort        = 80
-	IGWMatchLabels = map[string]string{
+	defaultPortForward = 50500
+	IGWPort            = 80
+	IGWMatchLabels     = map[string]string{
 		"app.kubernetes.io/component": "ingressgateway",
 		"app.kubernetes.io/instance":  "backyards",
 	}
 	BackyardsServiceAccountName = "backyards"
-	lmOnce                      sync.Once
 )
 
 type CLI interface {
@@ -55,20 +56,29 @@ type CLI interface {
 	GetRootCommand() *cobra.Command
 	GetK8sClient() (k8sclient.Client, error)
 	GetK8sConfig() (*rest.Config, error)
-	GetPortforwardForPod(podLabels map[string]string, namespace string, localPort, remotePort int) (*portforward.Portforward, error)
-	GetPortforwardForIGW(localPort int) (*portforward.Portforward, error)
 	LabelManager() k8s.LabelManager
+
+	// An endpoint can be currently:
+	// - external HTTP(s) endpoint
+	// - local port-forward to an HTTP(s) endpoint
+	// - planned: local HTTP(s) proxy
+	InitializedEndpoint() (Endpoint, error)
+	PersistentEndpoint() (Endpoint, error)
+
+	Stop() error
 }
 
 type backyardsCLI struct {
 	out          io.Writer
 	rootCmd      *cobra.Command
 	labelManager k8s.LabelManager
+	lmOnce       sync.Once
 }
 
 func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
 	return &backyardsCLI{
 		out:     out,
+		lmOnce:  sync.Once{},
 		rootCmd: rootCmd,
 	}
 }
@@ -165,8 +175,57 @@ func (c *backyardsCLI) GetK8sConfig() (*rest.Config, error) {
 }
 
 func (c *backyardsCLI) LabelManager() k8s.LabelManager {
-	lmOnce.Do(func() {
+	c.lmOnce.Do(func() {
 		c.labelManager = internalk8s.NewLabelManager(c.InteractiveTerminal(), c.GetRootCommand().Version)
 	})
 	return c.labelManager
+}
+
+func (c *backyardsCLI) InitializedEndpoint() (Endpoint, error) {
+	return c.endpoint(0)
+}
+
+func (c *backyardsCLI) PersistentEndpoint() (Endpoint, error) {
+	return c.endpoint(defaultPortForward)
+}
+
+func (c *backyardsCLI) endpoint(persistentPort int) (Endpoint, error) {
+	url := viper.GetString("backyards.url")
+	ca, err := getEndpointCA()
+	if err != nil {
+		return nil, err
+	}
+	if url == "" {
+		port := viper.GetInt("backyards.portforward")
+		if port == 0 && persistentPort > 0 {
+			port = persistentPort
+		}
+		pf, err := c.GetPortforwardForIGW(port)
+		if err != nil {
+			return nil, err
+		}
+		err = pf.Run()
+		if err != nil {
+			return nil, err
+		}
+		return &portForwardEndpoint{
+			pf: pf,
+			ca: ca,
+		}, nil
+	}
+	return &externalEndpoint{
+		baseURL: url,
+		ca:      ca,
+	}, nil
+}
+
+func getEndpointCA() ([]byte, error) {
+	if viper.GetString("backyards.cacert") != "" {
+		return ioutil.ReadFile(viper.GetString("backyards.cacert"))
+	}
+	return nil, nil
+}
+
+func (c *backyardsCLI) Stop() error {
+	return nil
 }

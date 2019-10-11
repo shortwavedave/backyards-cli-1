@@ -121,6 +121,10 @@ bin/golangci-lint-${GOLANGCI_VERSION}:
 lint: bin/golangci-lint ## Run linter
 	bin/golangci-lint run
 
+.PHONY: lint-fix
+lint-fix: bin/golangci-lint ## Run linter
+	bin/golangci-lint run --fix
+
 bin/licensei: bin/licensei-${LICENSEI_VERSION}
 	@ln -sf licensei-${LICENSEI_VERSION} bin/licensei
 bin/licensei-${LICENSEI_VERSION}:

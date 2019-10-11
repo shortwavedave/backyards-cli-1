@@ -15,35 +15,32 @@
 package cmd
 
 import (
+	"fmt"
+	neturl "net/url"
 	"os"
 	"os/signal"
-	"time"
 
-	"emperror.dev/errors"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
-)
+	"github.com/banzaicloud/backyards-cli/pkg/auth"
 
-var (
-	defaultLocalPort = 50500
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
+
+	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 type dashboardCommand struct{}
 
 type DashboardOptions struct {
-	URI  string
-	Port int
-	wait time.Duration
+	QueryParams  map[string]string
+	WrappedToken string
 }
 
 func NewDashboardOptions() *DashboardOptions {
 	return &DashboardOptions{
-		URI:  "",
-		Port: defaultLocalPort,
-		wait: 300 * time.Second,
+		QueryParams: make(map[string]string),
 	}
 }
 
@@ -55,53 +52,90 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 		Short: "Open the Backyards dashboard in a web browser",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if options.Port < 0 {
-				log.Error(errors.NewWithDetails("port must be greater than or equal to zero", "port", options.Port))
-				return nil
-			}
-
-			err := c.run(cli, options)
+			err := login.Login(cli, func(authInfo *auth.ResponseBody) {
+				options.WrappedToken = authInfo.User.WrappedToken
+			})
 			if err != nil {
 				return err
 			}
-
+			err = c.run(cli, options)
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}
-
-	cmd.PersistentFlags().IntVarP(&options.Port, "port", "p", options.Port, "The local port on which to serve requests (when set to 0, a random port will be used)")
 
 	return cmd
 }
 
 func (c *dashboardCommand) run(cli cli.CLI, options *DashboardOptions) error {
+	var err error
+	var url string
+
+	endpoint, err := cli.PersistentEndpoint()
+	if err != nil {
+		return err
+	}
+
+	url = endpoint.URLForPath("")
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
-	defer signal.Stop(signals)
-
-	pf, err := cli.GetPortforwardForIGW(options.Port)
-	if err != nil {
-		return errors.WrapIf(err, "cloud not create port forwarder")
-	}
-
-	go func() {
+	defer func() {
 		<-signals
-		pf.Stop()
+		signal.Stop(signals)
 	}()
 
-	err = pf.Run()
+	url, err = withQueryParams(url, options.QueryParams)
 	if err != nil {
-		return errors.WrapIf(err, "could not run port forwarder")
+		return err
 	}
 
-	url := pf.GetURL(options.URI)
-	log.Infof("Backyards UI is available at %s", url)
+	log.Infof("Opening Backyards UI at %s", url)
+
+	if options.WrappedToken != "" {
+		url, err = withQueryParams(url, map[string]string{"wrapped-token": options.WrappedToken})
+		if err != nil {
+			return err
+		}
+		url, err = withPath(url, "/api/login")
+		if err != nil {
+			return err
+		}
+		log.Debugf("Open %s", url)
+	}
+
 	err = browser.OpenURL(url)
 	if err != nil {
 		return err
 	}
 
-	pf.WaitForStop()
-
 	return nil
+}
+
+func withQueryParams(url string, params map[string]string) (string, error) {
+	uri, err := neturl.ParseRequestURI(url)
+	if err != nil {
+		return "", err
+	}
+
+	q := uri.Query()
+	for k, v := range params {
+		q.Set(k, v)
+	}
+	uri.RawQuery = q.Encode()
+
+	return uri.String(), nil
+}
+
+func withPath(url string, path string) (string, error) {
+	uri, err := neturl.ParseRequestURI(url)
+	if err != nil {
+		return "", err
+	}
+
+	uri.Path = fmt.Sprintf("%s%s", uri.Path, path)
+
+	return uri.String(), nil
 }

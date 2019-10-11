@@ -16,6 +16,8 @@ package graphql
 
 import (
 	"github.com/machinebox/graphql"
+
+	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 type Client interface {
@@ -32,9 +34,9 @@ type client struct {
 	client   *graphql.Client
 }
 
-func NewClient(url string, opt ...graphql.ClientOption) Client {
+func NewClient(endpoint cli.Endpoint, path string) Client {
 	return &client{
-		client: graphql.NewClient(url, opt...),
+		client: graphql.NewClient(endpoint.URLForPath(path), graphql.WithHTTPClient(endpoint.HTTPClient())),
 	}
 }
 

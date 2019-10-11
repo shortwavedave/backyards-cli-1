@@ -94,22 +94,19 @@ func NewGraphCmd(cli cli.CLI, fileName string) *cobra.Command {
 				return err
 			}
 
-			pf, err := cli.GetPortforwardForIGW(0)
+			endpoint, err := cli.InitializedEndpoint()
 			if err != nil {
 				return err
 			}
 
-			err = pf.Run()
-			if err != nil {
-				return err
-			}
+			url := endpoint.URLForPath("/prometheus")
 
 			udss := []model.Datasource{
 				{
 					ID: "ds",
 					DatasourceSource: model.DatasourceSource{
 						Prometheus: &model.PrometheusDatasource{
-							Address: pf.GetURL("/prometheus"),
+							Address: url,
 						},
 					},
 				},

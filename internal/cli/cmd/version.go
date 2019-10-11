@@ -84,17 +84,14 @@ func (c *versionCommand) run(cli cli.CLI, options *versionOptions) {
 }
 
 func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
-	pf, err := cli.GetPortforwardForIGW(0)
+	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
 		return defaultVersionString
 	}
 
-	err = pf.Run()
-	if err != nil {
-		return defaultVersionString
-	}
-
-	resp, err := http.Get(pf.GetURL(versionEndpoint))
+	url := endpoint.URLForPath(versionEndpoint)
+	// nolint G107
+	resp, err := http.Get(url)
 	if err != nil {
 		return defaultVersionString
 	}
