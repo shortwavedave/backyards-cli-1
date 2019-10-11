@@ -88,6 +88,7 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	if err != nil {
 		return defaultVersionString
 	}
+	defer endpoint.Close()
 
 	url := endpoint.URLForPath(versionEndpoint)
 	// nolint G107

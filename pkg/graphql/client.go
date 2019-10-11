@@ -27,16 +27,19 @@ type Client interface {
 	DisableHTTPRoute(req DisableHTTPRouteRequest) (DisableHTTPRouteResponse, error)
 	ApplyGlobalTrafficPolicy(req ApplyGlobalTrafficPolicyRequest) (ApplyGlobalTrafficPolicyResponse, error)
 	DisableGlobalTrafficPolicy(req DisableGlobalTrafficPolicyRequest) (DisableGlobalTrafficPolicyResponse, error)
+	Close()
 }
 
 type client struct {
 	jwtToken string
+	endpoint cli.Endpoint
 	client   *graphql.Client
 }
 
 func NewClient(endpoint cli.Endpoint, path string) Client {
 	return &client{
-		client: graphql.NewClient(endpoint.URLForPath(path), graphql.WithHTTPClient(endpoint.HTTPClient())),
+		client:   graphql.NewClient(endpoint.URLForPath(path), graphql.WithHTTPClient(endpoint.HTTPClient())),
+		endpoint: endpoint,
 	}
 }
 
@@ -54,4 +57,8 @@ func (c *client) NewRequest(q string) *graphql.Request {
 	r.Header.Set("Cache-Control", "no-cache")
 
 	return r
+}
+
+func (c *client) Close() {
+	c.endpoint.Close()
 }

@@ -98,6 +98,7 @@ func NewGraphCmd(cli cli.CLI, fileName string) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer endpoint.Close()
 
 			url := endpoint.URLForPath("/prometheus")
 

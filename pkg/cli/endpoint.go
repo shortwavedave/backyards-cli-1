@@ -27,6 +27,7 @@ type Endpoint interface {
 	URLForPath(path string) string
 	CA() []byte
 	HTTPClient() *http.Client
+	Close()
 }
 
 type externalEndpoint struct {
@@ -44,6 +45,9 @@ func (e *externalEndpoint) CA() []byte {
 
 func (e *externalEndpoint) HTTPClient() *http.Client {
 	return withCa(e.ca)
+}
+
+func (e *externalEndpoint) Close() {
 }
 
 type portForwardEndpoint struct {
@@ -80,4 +84,8 @@ func withCa(ca []byte) *http.Client {
 		}
 	}
 	return http.DefaultClient
+}
+
+func (e *portForwardEndpoint) Close() {
+	e.pf.Stop()
 }

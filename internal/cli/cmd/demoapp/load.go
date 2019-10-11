@@ -90,6 +90,7 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 			log.Error(err)
 			return
 		}
+		defer client.Close()
 		response, err = client.GenerateLoad(graphql.GenerateLoadRequest{
 			Namespace: options.namespace,
 			Service:   "frontpage",

@@ -104,6 +104,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
+	defer client.Close()
 
 	req := graphql.ApplyHTTPRouteRequest{
 		Name:      service.Name,

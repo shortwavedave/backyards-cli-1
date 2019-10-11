@@ -88,6 +88,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
+	defer client.Close()
 
 	req := graphql.DisableHTTPRouteRequest{
 		Name:      service.Name,

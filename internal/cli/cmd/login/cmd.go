@@ -40,10 +40,23 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 }
 
 func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
-	authClient, err := getAuthClient(cli)
+	config, err := cli.GetK8sConfig()
 	if err != nil {
 		return err
 	}
+
+	endpoint, err := cli.InitializedEndpoint()
+	if err != nil {
+		return err
+	}
+	defer endpoint.Close()
+
+	url := endpoint.URLForPath("/api/login")
+	if endpoint.CA() != nil {
+		config.TLSClientConfig.CAData = endpoint.CA()
+	}
+
+	authClient := auth.NewClient(config, url)
 	authInfo, err := authClient.Login()
 	if err != nil {
 		if err != servererror.ErrAuthDisabled {
@@ -61,23 +74,4 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		logrus.Debug("Backyards authentication is disabled")
 	}
 	return nil
-}
-
-func getAuthClient(cli cli.CLI) (auth.Client, error) {
-	config, err := cli.GetK8sConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	endpoint, err := cli.InitializedEndpoint()
-	if err != nil {
-		return nil, err
-	}
-
-	url := endpoint.URLForPath("/api/login")
-	if endpoint.CA() != nil {
-		config.TLSClientConfig.CAData = endpoint.CA()
-	}
-
-	return auth.NewClient(config, url), nil
 }
