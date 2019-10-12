@@ -10,6 +10,7 @@ require (
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
+	github.com/gin-gonic/gin v1.4.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.8
@@ -19,6 +20,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
+	github.com/ugorji/go v1.1.7 // indirect
 	github.com/waynz0r/grafterm v0.2.1-0.20190814214739-b7722452f1e4
 	go.uber.org/multierr v1.1.0
 	gomodules.xyz/jsonpatch/v2 v2.0.1 // indirect

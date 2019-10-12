@@ -17,7 +17,7 @@ package graphql
 import (
 	"github.com/machinebox/graphql"
 
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/backyards-cli/internal/endpoint"
 )
 
 type Client interface {
@@ -32,11 +32,11 @@ type Client interface {
 
 type client struct {
 	jwtToken string
-	endpoint cli.Endpoint
+	endpoint endpoint.Endpoint
 	client   *graphql.Client
 }
 
-func NewClient(endpoint cli.Endpoint, path string) Client {
+func NewClient(endpoint endpoint.Endpoint, path string) Client {
 	return &client{
 		client:   graphql.NewClient(endpoint.URLForPath(path), graphql.WithHTTPClient(endpoint.HTTPClient())),
 		endpoint: endpoint,

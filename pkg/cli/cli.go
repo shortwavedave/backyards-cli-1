@@ -27,22 +27,23 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/client-go/rest"
 
+	"github.com/banzaicloud/backyards-cli/internal/endpoint"
 	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
-
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s/portforward"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
 )
 
 var (
-	defaultPortForward = 50500
-	IGWPort            = 80
-	IGWMatchLabels     = map[string]string{
+	defaultLocalEndpointPort = 50500
+	IGWPort                  = 80
+	IGWMatchLabels           = map[string]string{
 		"app.kubernetes.io/component": "ingressgateway",
 		"app.kubernetes.io/instance":  "backyards",
 	}
 	BackyardsServiceAccountName = "backyards"
+	BackyardsIngressServiceName = "backyards-ingressgateway"
 )
 
 type CLI interface {
@@ -60,8 +61,8 @@ type CLI interface {
 	// - external HTTP(s) endpoint
 	// - local port-forward to an HTTP(s) endpoint
 	// - planned: local HTTP(s) proxy
-	InitializedEndpoint() (Endpoint, error)
-	PersistentEndpoint() (Endpoint, error)
+	InitializedEndpoint() (endpoint.Endpoint, error)
+	PersistentEndpoint() (endpoint.Endpoint, error)
 
 	Stop() error
 }
@@ -168,42 +169,53 @@ func (c *backyardsCLI) LabelManager() k8s.LabelManager {
 	return c.labelManager
 }
 
-func (c *backyardsCLI) InitializedEndpoint() (Endpoint, error) {
+func (c *backyardsCLI) InitializedEndpoint() (endpoint.Endpoint, error) {
 	return c.endpoint(0)
 }
 
-func (c *backyardsCLI) PersistentEndpoint() (Endpoint, error) {
-	return c.endpoint(defaultPortForward)
+func (c *backyardsCLI) PersistentEndpoint() (endpoint.Endpoint, error) {
+	return c.endpoint(defaultLocalEndpointPort)
 }
 
-func (c *backyardsCLI) endpoint(persistentPort int) (Endpoint, error) {
+func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
 	url := viper.GetString("backyards.url")
 	ca, err := getEndpointCA()
 	if err != nil {
 		return nil, err
 	}
 	if url == "" {
-		port := viper.GetInt("backyards.portforward")
-		if port == 0 && persistentPort > 0 {
+		cfg, err := c.GetK8sConfig()
+		if err != nil {
+			return nil, err
+		}
+
+		port := viper.GetInt("backyards.localPort")
+		if port == -1 {
 			port = persistentPort
 		}
-		pf, err := c.GetPortforwardForIGW(port)
-		if err != nil {
-			return nil, err
+
+		if viper.GetBool("backyards.usePortforward") {
+			pf, err := c.GetPortforwardForIGW(port)
+			if err != nil {
+				return nil, err
+			}
+
+			err = pf.Run()
+			if err != nil {
+				return nil, err
+			}
+
+			return endpoint.NewPortforwardEndpoint(pf, ca), nil
 		}
-		err = pf.Run()
-		if err != nil {
-			return nil, err
-		}
-		return &portForwardEndpoint{
-			pf: pf,
-			ca: ca,
-		}, nil
+
+		return endpoint.NewProxyEndpoint(port, cfg, endpoint.K8sService{
+			Name:      BackyardsIngressServiceName,
+			Namespace: viper.GetString("backyards.namespace"),
+			Port:      80,
+		})
 	}
-	return &externalEndpoint{
-		baseURL: url,
-		ca:      ca,
-	}, nil
+
+	return endpoint.NewExternalEndpoint(url, ca), nil
 }
 
 func getEndpointCA() ([]byte, error) {

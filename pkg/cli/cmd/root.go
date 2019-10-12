@@ -48,7 +48,8 @@ var (
 	verbose            bool
 	outputFormat       string
 	baseURL            string
-	portForward        int
+	localPort          = -1
+	usePortforward     bool
 	ca                 string
 
 	namespaceRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
@@ -134,13 +135,14 @@ func init() {
 	flags.Bool("interactive", false, "ask questions interactively even if stdin or stdout is non-tty")
 	_ = viper.BindPFlag("formatting.force-interactive", flags.Lookup("interactive"))
 
-	flags.StringVarP(&baseURL, "base-url", "u", baseURL, "Custom Backyards base URL. Uses automatic port forwarding if empty.")
+	flags.StringVarP(&baseURL, "base-url", "u", baseURL, "Custom Backyards base URL. Uses automatic port forwarding / proxying if empty")
 	_ = viper.BindPFlag("backyards.url", flags.Lookup("base-url"))
-	flags.StringVarP(&ca, "cacert", ca, "", "The CA to use for verifying Backyards' server certificate.")
+	flags.StringVarP(&ca, "cacert", ca, "", "The CA to use for verifying Backyards' server certificate")
 	_ = viper.BindPFlag("backyards.cacert", flags.Lookup("cacert"))
-
-	flags.IntVarP(&portForward, "port-forward", "p", portForward, "Automatically port-forward Backyards on this local port (when set to 0, a random port will be used) otherwise use `--base-url`.")
-	_ = viper.BindPFlag("backyards.portforward", flags.Lookup("port-forward"))
+	flags.IntVarP(&localPort, "local-port", "p", localPort, "Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used)")
+	_ = viper.BindPFlag("backyards.localPort", flags.Lookup("local-port"))
+	flags.BoolVar(&usePortforward, "use-portforward", usePortforward, "Use port forwarding instead of proxying to reach Backyards")
+	_ = viper.BindPFlag("backyards.usePortForward", flags.Lookup("use-portforward"))
 
 	cli := cli.NewCli(os.Stdout, RootCmd)
 
