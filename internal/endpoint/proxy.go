@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/gin-gonic/gin"
 	"k8s.io/client-go/rest"
 )
 
@@ -64,13 +63,12 @@ func NewProxyEndpoint(localPort int, cfg *rest.Config, service K8sService) (Endp
 		baseURL: "http://" + hostPort,
 	}
 
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.New()
-	router.Any("/*path", ep.proxyToCluster(cfg))
+	mux := http.NewServeMux()
+	mux.Handle("/", ep.proxyToCluster(cfg))
 
 	ep.srv = &http.Server{
 		Addr:    hostPort,
-		Handler: router,
+		Handler: mux,
 	}
 
 	go func() {
@@ -96,16 +94,16 @@ func (e *proxyEndpoint) Close() {
 	_ = e.srv.Shutdown(context.Background())
 }
 
-func (e *proxyEndpoint) proxyToCluster(cfg *rest.Config) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		proxyPath := e.service.Path()
-		c.Request.URL.Path = proxyPath + c.Request.URL.Path
-		h, _ := NewK8sAPIProxy(cfg, proxyPath)
-		h(c)
-	}
+func (e *proxyEndpoint) proxyToCluster(cfg *rest.Config) http.Handler {
+	proxyPath := e.service.Path()
+	h, _ := NewK8sAPIProxy(cfg, proxyPath)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = proxyPath + r.URL.Path
+		h.ServeHTTP(w, r)
+	})
 }
 
-func NewK8sAPIProxy(cfg *rest.Config, proxyPath string) (gin.HandlerFunc, error) {
+func NewK8sAPIProxy(cfg *rest.Config, proxyPath string) (http.Handler, error) {
 	host := cfg.Host
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
@@ -126,7 +124,7 @@ func NewK8sAPIProxy(cfg *rest.Config, proxyPath string) (gin.HandlerFunc, error)
 	}
 	proxy.FlushInterval = 200 * time.Millisecond
 
-	return gin.WrapH(http.Handler(proxy)), nil
+	return http.Handler(proxy), nil
 }
 
 // getEphemeralPort selects a port for listening on
