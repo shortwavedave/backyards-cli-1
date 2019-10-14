@@ -85,6 +85,7 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 		"duration": options.Duration,
 	}).Info("Sending load to demo application")
 	go func() {
+		defer wg.Done()
 		client, err := common.GetGraphQLClient(cli)
 		if err != nil {
 			log.Error(err)
@@ -113,8 +114,6 @@ func (c *loadCommand) run(cli cli.CLI, options *LoadOptions) error {
 				"requestCount": count,
 			}).Info("")
 		}
-
-		wg.Done()
 	}()
 
 	if !options.Nowait {

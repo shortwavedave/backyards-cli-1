@@ -99,6 +99,10 @@ func (e *proxyEndpoint) proxyToCluster(cfg *rest.Config) http.Handler {
 	h, _ := NewK8sAPIProxy(cfg, proxyPath)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = proxyPath + r.URL.Path
+		authHeaderValue := r.Header.Get("Authorization")
+		if authHeaderValue != "" {
+			r.Header.Set("X-Authorization", authHeaderValue)
+		}
 		h.ServeHTTP(w, r)
 	})
 }
