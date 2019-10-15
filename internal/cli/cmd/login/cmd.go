@@ -15,6 +15,11 @@
 package login
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+
+	"github.com/MakeNowJust/heredoc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -31,7 +36,26 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 		Aliases: []string{"l"},
 		Short:   "Log in to Backyards",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := Login(cli, nil)
+			var err error
+			if cli.InteractiveTerminal() {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print(heredoc.Doc(`
+					The following token will be valid for a few seconds to log in over the UI.
+
+					Notes:
+					 - use the "dashboard" command to open a browser tab and log in automatically
+					 - rerun this command in case you need a fresh token
+
+					Press enter to continue.
+				`))
+				_, err = reader.ReadString('\n')
+				if err != nil {
+					return err
+				}
+			}
+			err = Login(cli, func(body *auth.ResponseBody) {
+				logrus.Infof("Login token: %s", body.User.WrappedToken)
+			})
 			return err
 		},
 	}
