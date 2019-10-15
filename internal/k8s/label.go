@@ -17,6 +17,7 @@ package k8s
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
@@ -48,10 +49,21 @@ const (
 )
 
 func NewLabelManager(interactive bool, version string) k8s.LabelManager {
+
 	return &labelManager{
 		interactive: interactive,
-		version:     version,
+		version:     sanitizedVersion(version),
 	}
+}
+
+func sanitizedVersion(version string) string {
+	re := regexp.MustCompile(`[^-A-Za-z0-9_.]`)
+	sanitizedVersion := re.ReplaceAllString(version, "_")
+	re = regexp.MustCompile(`^([^A-Za-z0-9])(.*)`)
+	sanitizedVersion = re.ReplaceAllString(sanitizedVersion, "${2}")
+	re = regexp.MustCompile(`(.*)[^A-Za-z0-9]+$`)
+	sanitizedVersion = re.ReplaceAllString(sanitizedVersion, "${1}")
+	return sanitizedVersion
 }
 
 func (lm *labelManager) CheckLabelsBeforeCreate(desired *unstructured.Unstructured) (bool, error) {
