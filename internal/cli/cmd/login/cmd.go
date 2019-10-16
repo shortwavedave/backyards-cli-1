@@ -15,6 +15,11 @@
 package login
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+
+	"github.com/MakeNowJust/heredoc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -31,7 +36,30 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 		Aliases: []string{"l"},
 		Short:   "Log in to Backyards",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := Login(cli, nil)
+			var err error
+			if cli.InteractiveTerminal() {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print(heredoc.Doc(`
+					The following token will be valid for a few seconds to log in over the UI.
+
+					Notes:
+					 - use the "dashboard" command to open a browser tab and log in automatically
+					 - rerun this command in case you need a fresh token
+
+					Press enter to continue.
+				`))
+				_, err = reader.ReadString('\n')
+				if err != nil {
+					return err
+				}
+			}
+			err = Login(cli, func(body *auth.ResponseBody) {
+				if cli.InteractiveTerminal() {
+					logrus.Infof("Login token: %s", body.User.WrappedToken)
+				} else {
+					fmt.Println(body.User.WrappedToken)
+				}
+			})
 			return err
 		},
 	}
@@ -64,13 +92,16 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		}
 	}
 	if authInfo != nil {
-		logrus.Infof("Logged in as %s", authInfo.User.Name)
-		logrus.Debugf("Token: %s", authInfo.User.Token)
-		logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
+		if cli.InteractiveTerminal() {
+			logrus.Infof("Logged in as %s", authInfo.User.Name)
+			logrus.Debugf("Token: %s", authInfo.User.Token)
+			logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
+		}
 		if onAuth != nil {
 			onAuth(authInfo)
 		}
-	} else {
+	}
+	if cli.InteractiveTerminal() {
 		logrus.Debug("Backyards authentication is disabled")
 	}
 	return nil
