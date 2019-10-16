@@ -100,10 +100,9 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		if onAuth != nil {
 			onAuth(authInfo)
 		}
-	} else {
-		if cli.InteractiveTerminal() {
-			logrus.Debug("Backyards authentication is disabled")
-		}
+	}
+	if cli.InteractiveTerminal() {
+		logrus.Debug("Backyards authentication is disabled")
 	}
 	return nil
 }
