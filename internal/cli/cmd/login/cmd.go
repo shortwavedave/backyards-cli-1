@@ -92,14 +92,18 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		}
 	}
 	if authInfo != nil {
-		logrus.Infof("Logged in as %s", authInfo.User.Name)
-		logrus.Debugf("Token: %s", authInfo.User.Token)
-		logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
+		if cli.InteractiveTerminal() {
+			logrus.Infof("Logged in as %s", authInfo.User.Name)
+			logrus.Debugf("Token: %s", authInfo.User.Token)
+			logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
+		}
 		if onAuth != nil {
 			onAuth(authInfo)
 		}
 	} else {
-		logrus.Debug("Backyards authentication is disabled")
+		if cli.InteractiveTerminal() {
+			logrus.Debug("Backyards authentication is disabled")
+		}
 	}
 	return nil
 }
