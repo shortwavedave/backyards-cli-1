@@ -54,7 +54,11 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 				}
 			}
 			err = Login(cli, func(body *auth.ResponseBody) {
-				logrus.Infof("Login token: %s", body.User.WrappedToken)
+				if cli.InteractiveTerminal() {
+					logrus.Infof("Login token: %s", body.User.WrappedToken)
+				} else {
+					fmt.Println(body.User.WrappedToken)
+				}
 			})
 			return err
 		},
