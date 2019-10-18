@@ -212,8 +212,8 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("800m"),
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("2000m"),
+			corev1.ResourceMemory: resource.MustParse("8Gi"),
 		},
 	}
 	values.Prometheus.ExternalURL = "/prometheus"
@@ -244,8 +244,8 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("800m"),
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("2000m"),
+			corev1.ResourceMemory: resource.MustParse("4Gi"),
 		},
 	}
 	values.Tracing.Service.Name = "backyards-zipkin"
