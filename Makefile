@@ -200,6 +200,10 @@ download-charts: ## Download Helm charts
 check-charts-diff: ## Check whether the local charts differs
 	scripts/check-charts-diff.sh
 
+.PHONY: check-docs-diff
+check-docs-diff: ## Check whether the docs differ
+	scripts/check-docs-diff.sh
+
 .PHONY: help
 .DEFAULT_GOAL := help
 help:

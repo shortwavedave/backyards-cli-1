@@ -21,6 +21,11 @@ jobs:
                     command: make check-charts-diff
 
             -
+                run:
+                  name: Check docs differences
+                  command: make check-docs-diff
+
+            -
                 restore_cache:
                     name: Restore build dependencies
                     keys:

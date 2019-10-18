@@ -22,6 +22,6 @@ if [ $retVal -ne 0 ]; then
     exit $retVal
 fi
 
-echo "no difference - ok!"
+echo "no difference for charts - ok!"
 
 rm -rf $CHARTS_DIR
