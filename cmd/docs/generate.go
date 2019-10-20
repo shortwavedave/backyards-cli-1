@@ -25,6 +25,7 @@ import (
 func main() {
 	cmd.Init("", "", "")
 	c := cmd.GetRootCommand()
+	c.DisableAutoGenTag = true
 	err := doc.GenMarkdownTree(c, ".")
 	if err != nil {
 		log.Fatal(err)

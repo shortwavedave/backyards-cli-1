@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/multierr"
@@ -57,7 +58,12 @@ var (
 )
 
 type installCommand struct {
-	cli cli.CLI
+	cli                      cli.CLI
+	shouldInstallIstio       bool
+	shouldInstallCanary      bool
+	shouldInstallCertManager bool
+	shouldInstallDemo        bool
+	shouldRunDemo            bool
 }
 
 type InstallOptions struct {
@@ -69,8 +75,7 @@ type InstallOptions struct {
 	installDemoapp     bool
 	installIstio       bool
 	installCertManager bool
-	disableCertManager bool
-	disableAuditSink   bool
+	enableAuditSink    bool
 	enableAuth         bool
 	installEverything  bool
 	runDemo            bool
@@ -113,22 +118,22 @@ The command can install every component at once with the '--install-everything' 
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			err = c.runSubcommands(cli, options)
+			err = c.shouldInstallComponents(options)
 			if err != nil {
 				return err
 			}
 
-			err = c.run(cli, options)
+			err = c.runSubcommands(options)
 			if err != nil {
 				return err
 			}
 
-			err = c.runDemoInstall(cli, options)
+			err = c.run(options)
 			if err != nil {
 				return err
 			}
 
-			err = c.runDemo(cli, options)
+			err = c.runDemoInstall(options)
 			if err != nil {
 				return err
 			}
@@ -147,8 +152,7 @@ The command can install every component at once with the '--install-everything' 
 	cmd.Flags().BoolVarP(&options.installEverything, "install-everything", "a", options.installEverything, "Install every component at once")
 
 	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Send load to demo application and opens up dashboard")
-	cmd.Flags().BoolVar(&options.disableCertManager, "disable-cert-manager", options.disableCertManager, "Disable dependency on cert-manager and on it's resources")
-	cmd.Flags().BoolVar(&options.disableAuditSink, "disable-auditsink", options.disableAuditSink, "Disable deploying the auditsink service and sending audit logs over http")
+	cmd.Flags().BoolVar(&options.enableAuditSink, "enable-auditsink", options.enableAuditSink, "Enable deploying the auditsink service and sending audit logs over http")
 	cmd.Flags().BoolVar(&options.enableAuth, "enable-auth", options.enableAuth, "Enable authentication with impersonation")
 
 	cmd.Flags().StringVar(&options.apiImage, "api-image", options.apiImage, "Image for the API")
@@ -159,7 +163,7 @@ The command can install every component at once with the '--install-everything' 
 	return cmd
 }
 
-func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
+func (c *installCommand) run(options *InstallOptions) error {
 	err := c.validate(options)
 	if err != nil {
 		errors := multierr.Errors(err)
@@ -172,9 +176,12 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	}
 
 	values, err := getValues(options.releaseName, options.istioNamespace, func(values *Values) {
-		values.CertManager.Enabled = !options.disableCertManager
-		values.AuditSink.Enabled = !options.disableAuditSink
+		values.AuditSink.Enabled = options.enableAuditSink
+		if shouldCertManagerBeEnabled(options) {
+			values.CertManager.Enabled = true
+		}
 		if options.enableAuth {
+			values.CertManager.Enabled = true
 			values.Auth.Method = impersonation
 			values.Impersonation.Enabled = true
 		}
@@ -214,12 +221,12 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	objects.Sort(helm.InstallObjectOrder())
 
 	if !options.dumpResources {
-		client, err := cli.GetK8sClient()
+		client, err := c.cli.GetK8sClient()
 		if err != nil {
 			return err
 		}
 
-		err = k8s.ApplyResources(client, cli.LabelManager(), objects)
+		err = k8s.ApplyResources(client, c.cli.LabelManager(), objects)
 		if err != nil {
 			return err
 		}
@@ -238,7 +245,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cli.Out(), yaml)
+		fmt.Fprintf(c.cli.Out(), yaml)
 	}
 
 	return nil
@@ -329,7 +336,7 @@ func (c *installCommand) validate(options *InstallOptions) error {
 			errors.Errorf("Istio sidecar injector not healthy yet in '%s' namespace", options.istioNamespace))
 	}
 
-	if !options.disableCertManager {
+	if shouldCertManagerBeEnabled(options) {
 		certManagerExists, certManagerHealthy, err := c.certManagerRunning()
 		if err != nil {
 			return errors.WrapIf(err, "failed to check cert-manager state")
@@ -345,10 +352,6 @@ func (c *installCommand) validate(options *InstallOptions) error {
 			combinedErr = errors.Combine(combinedErr,
 				errors.Errorf("cert-manager controller not healthy yet in '%s' namespace", certmanager.CertManagerNamespace))
 		}
-	}
-
-	if options.disableCertManager && !options.disableAuditSink {
-		combinedErr = errors.Combine(combinedErr, errors.Errorf("The HTTP AuditSink feature cannot work without cert-manager"))
 	}
 
 	return combinedErr
@@ -403,66 +406,119 @@ func (c *installCommand) certManagerRunning() (exists bool, healthy bool, err er
 	return
 }
 
-func (c *installCommand) runDemo(cli cli.CLI, options *InstallOptions) error {
-	var err error
+func (c *installCommand) shouldInstallComponents(options *InstallOptions) error {
+	installIstioExplicitly := options.installIstio || options.installEverything
+	installIstioInteractively := false
 
-	if !options.runDemo || (!options.installEverything && !options.installDemoapp) {
-		return nil
+	if !installIstioExplicitly && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Install istio-operator (recommended). Press enter to accept",
+			Default:  true,
+		}, &installIstioInteractively)
+		if err != nil {
+			return err
+		}
 	}
+	c.shouldInstallIstio = installIstioExplicitly || installIstioInteractively
 
-	scmdOptions := demoapp.NewLoadOptions()
-	scmdOptions.Nowait = true
-	scmd := demoapp.NewLoadCommand(cli, scmdOptions)
-	err = scmd.RunE(scmd, nil)
-	if err != nil {
-		return errors.WrapIf(err, "error during sending load to demo application")
-	}
+	installCertManagerExplicitly := options.installCertManager || options.installEverything
+	installCertManagerInteractively := false
 
-	dbOptions := NewDashboardOptions()
-	dbOptions.QueryParams["namespaces"] = demoapp.GetNamespace()
-	dbCmd := NewDashboardCommand(cli, dbOptions)
-	err = dbCmd.RunE(dbCmd, nil)
-	if err != nil {
-		return errors.WrapIf(err, "error during opening dashboard")
+	if !installCertManagerExplicitly && shouldCertManagerBeEnabled(options) && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Install cert-manager (recommended). Press enter to accept",
+			Default:  true,
+		}, &installCertManagerInteractively)
+		if err != nil {
+			return err
+		}
 	}
+	c.shouldInstallCertManager = installCertManagerExplicitly || installCertManagerInteractively
+
+	installCanaryExplicitly := options.installCanary || options.installEverything
+	installCanaryInteractively := false
+
+	if !installCanaryExplicitly && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Install canary-operator (recommended). Press enter to accept",
+			Default:  true,
+		}, &installCanaryInteractively)
+		if err != nil {
+			return err
+		}
+	}
+	c.shouldInstallCanary = installCanaryExplicitly || installCanaryInteractively
+
+	installDemoExplicitly := options.installDemoapp || options.installEverything
+	installDemoInteractively := false
+
+	if (!options.installDemoapp || !installDemoExplicitly) && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Install demo application (optional). Press enter to skip",
+			Default:  false,
+		}, &installDemoInteractively)
+		if err != nil {
+			return err
+		}
+	}
+	c.shouldInstallDemo = installDemoExplicitly || installDemoInteractively
+
+	runDemoExplicitly := options.runDemo || options.installEverything
+	runDemoInteractively := false
+
+	if (!options.runDemo || !runDemoExplicitly) && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Run demo application (optional). Press enter to skip",
+			Default:  false,
+		}, &runDemoInteractively)
+		if err != nil {
+			return err
+		}
+	}
+	c.shouldRunDemo = runDemoExplicitly || runDemoInteractively
 
 	return nil
 }
 
-func (c *installCommand) runSubcommands(cli cli.CLI, options *InstallOptions) error {
+func (c *installCommand) runSubcommands(options *InstallOptions) error {
 	var err error
 	var scmd *cobra.Command
 
-	if options.installIstio || options.installEverything {
+	if c.shouldInstallIstio {
 		scmdOptions := istio.NewInstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
-		scmd = istio.NewInstallCommand(cli, scmdOptions)
+		scmd = istio.NewInstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during Istio mesh install")
 		}
 	}
 
-	if !options.disableCertManager && (options.installCertManager || options.installEverything) {
+	if c.shouldInstallCertManager {
 		scmdOptions := certmanager.NewInstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
-		scmd = certmanager.NewInstallCommand(cli, scmdOptions)
+		scmd = certmanager.NewInstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during cert-manager install")
 		}
 	}
 
-	if options.installCanary || options.installEverything {
+	if c.shouldInstallCanary {
 		scmdOptions := canary.NewInstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
-		scmd = canary.NewInstallCommand(cli, scmdOptions)
+		scmd = canary.NewInstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during Canary feature install")
@@ -472,21 +528,43 @@ func (c *installCommand) runSubcommands(cli cli.CLI, options *InstallOptions) er
 	return nil
 }
 
-func (c *installCommand) runDemoInstall(cli cli.CLI, options *InstallOptions) error {
+func (c *installCommand) runDemoInstall(options *InstallOptions) error {
 	var err error
 	var scmd *cobra.Command
 
-	if options.installDemoapp || options.installEverything {
+	if c.shouldInstallDemo {
 		scmdOptions := demoapp.NewInstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
-		scmd = demoapp.NewInstallCommand(cli, scmdOptions)
+		scmd = demoapp.NewInstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during demo application install")
 		}
 	}
 
+	if c.shouldRunDemo {
+		scmdOptions := demoapp.NewLoadOptions()
+		scmdOptions.Nowait = true
+		scmd := demoapp.NewLoadCommand(c.cli, scmdOptions)
+		err = scmd.RunE(scmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during sending load to demo application")
+		}
+
+		dbOptions := NewDashboardOptions()
+		dbOptions.QueryParams["namespaces"] = demoapp.GetNamespace()
+		dbCmd := NewDashboardCommand(c.cli, dbOptions)
+		err = dbCmd.RunE(dbCmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during opening dashboard")
+		}
+	}
+
 	return nil
+}
+
+func shouldCertManagerBeEnabled(options *InstallOptions) bool {
+	return options.enableAuditSink
 }
