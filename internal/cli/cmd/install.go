@@ -455,7 +455,7 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 	installDemoExplicitly := options.installDemoapp || options.installEverything
 	installDemoInteractively := false
 
-	if (!options.installDemoapp || !installDemoExplicitly) && c.cli.InteractiveTerminal() {
+	if !installDemoExplicitly && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install demo application (optional). Press enter to skip",
@@ -470,7 +470,7 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 	runDemoExplicitly := options.runDemo || options.installEverything
 	runDemoInteractively := false
 
-	if (!options.runDemo || !runDemoExplicitly) && c.cli.InteractiveTerminal() {
+	if !runDemoExplicitly && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Run demo application (optional). Press enter to skip",
