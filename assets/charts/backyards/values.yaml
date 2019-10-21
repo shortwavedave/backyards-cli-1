@@ -48,7 +48,7 @@ affinity: {}
 application:
   image:
     repository: banzaicloud/backyards
-    tag: 0.1.12
+    tag: 0.1.13
     pullPolicy: Always
 
   env: {}
@@ -64,7 +64,7 @@ web:
   enabled: false
   image:
     repository: banzaicloud/backyards-web
-    tag: 0.1.12
+    tag: 0.1.13
     pullPolicy: Always
 
   env: {}
@@ -150,6 +150,7 @@ auditsink:
     pullPolicy: Always
   resources:
   tolerations:
+  mode: http
   http:
     timeout: 1s
     retryWaitMin: 500ms

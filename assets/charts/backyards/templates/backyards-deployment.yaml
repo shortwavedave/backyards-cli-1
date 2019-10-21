@@ -126,7 +126,7 @@ spec:
           {{- end }}
           {{- if .Values.auditsink.enabled }}
             - name: AUDITSINK_MODE
-              value: "http"
+              value: "{{ .Values.auditsink.mode }}"
             - name: AUDITSINK_HTTP_URL
               value: "https://{{ include "auditsink.fullname" . }}"
             - name: AUDITSINK_HTTP_CACERT
@@ -142,8 +142,8 @@ spec:
             - name: AUDITSINK_HTTP_PANIC_ON_FAILURE
               value: "{{ .Values.auditsink.http.panicOnFailure }}"
           {{- end }}
-            - name: AUTH_METHOD
-              value: "{{ .Values.auth.method }}"
+            - name: AUTH_MODE
+              value: "{{ .Values.auth.mode }}"
           {{- if .Values.auth.jwtSigningKeySecret }}
             - name: AUTH_JWT_SIGNING_KEY
               valueFrom:
