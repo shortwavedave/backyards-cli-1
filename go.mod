@@ -10,6 +10,8 @@ require (
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
+	github.com/hashicorp/go-hclog v0.9.2
+	github.com/hashicorp/go-retryablehttp v0.6.2
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.8

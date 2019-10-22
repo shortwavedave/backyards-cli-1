@@ -19,8 +19,11 @@ import (
 	"io/ioutil"
 	"os"
 	"sync"
+	"time"
 
 	"emperror.dev/errors"
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/mattn/go-isatty"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -177,6 +180,20 @@ func (c *backyardsCLI) PersistentEndpoint() (endpoint.Endpoint, error) {
 	return c.endpoint(defaultLocalEndpointPort)
 }
 
+func withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint, error) {
+	client := retryablehttp.NewClient()
+	client.RetryWaitMin = time.Millisecond * 50
+	client.RetryWaitMax = time.Millisecond * 100
+	client.RetryMax = 5
+	client.Logger = hclog.NewNullLogger()
+	client.HTTPClient = ep.HTTPClient()
+	_, err := client.Get(ep.URLForPath("/"))
+	if err != nil {
+		return nil, errors.WrapIf(err, "failed to health check the created endpoint")
+	}
+	return ep, nil
+}
+
 func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
 	url := viper.GetString("backyards.url")
 	ca, err := getEndpointCA()
@@ -204,18 +221,21 @@ func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
 			if err != nil {
 				return nil, err
 			}
-
-			return endpoint.NewPortforwardEndpoint(pf, ca), nil
+			return withHealthCheck(endpoint.NewPortforwardEndpoint(pf, ca))
 		}
 
-		return endpoint.NewProxyEndpoint(port, cfg, endpoint.K8sService{
+		ep, err := endpoint.NewProxyEndpoint(port, cfg, endpoint.K8sService{
 			Name:      BackyardsIngressServiceName,
 			Namespace: viper.GetString("backyards.namespace"),
 			Port:      80,
 		})
+		if err != nil {
+			return nil, err
+		}
+		return withHealthCheck(ep)
 	}
 
-	return endpoint.NewExternalEndpoint(url, ca), nil
+	return withHealthCheck(endpoint.NewExternalEndpoint(url, ca))
 }
 
 func getEndpointCA() ([]byte, error) {
