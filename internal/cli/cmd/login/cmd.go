@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 
 	"github.com/banzaicloud/backyards-cli/pkg/auth"
@@ -32,9 +33,10 @@ import (
 
 func NewLoginCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "login",
-		Aliases: []string{"l"},
-		Short:   "Log in to Backyards",
+		Use:         "login",
+		Aliases:     []string{"l"},
+		Short:       "Log in to Backyards",
+		Annotations: map[string]string{util.OperationCommand: ""},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if cli.InteractiveTerminal() {

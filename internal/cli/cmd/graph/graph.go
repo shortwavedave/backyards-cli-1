@@ -35,6 +35,7 @@ import (
 
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/graphtemplates"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -59,9 +60,10 @@ func NewGraphCmd(cli cli.CLI, fileName string) *cobra.Command {
 	options := newGraphOptions()
 
 	cmd := &cobra.Command{
-		Use:   "graph [[--service=]namespace/servicename]",
-		Short: "Show graph",
-		Args:  cobra.MaximumNArgs(1),
+		Use:         "graph [[--service=]namespace/servicename]",
+		Short:       "Show graph",
+		Args:        cobra.MaximumNArgs(1),
+		Annotations: map[string]string{util.OperationCommand: ""},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true

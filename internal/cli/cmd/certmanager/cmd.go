@@ -17,6 +17,7 @@ package certmanager
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -27,8 +28,9 @@ const (
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cert-manager",
-		Short: "Install and manage cert-manager",
+		Use:         "cert-manager",
+		Short:       "Install and manage cert-manager",
+		Annotations: map[string]string{util.ComponentCommand: ""},
 	}
 
 	cmd.AddCommand(

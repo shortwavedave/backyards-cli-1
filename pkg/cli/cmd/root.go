@@ -99,6 +99,7 @@ func Init(version string, commitHash string, buildDate string) {
 		commitHash,
 		buildDate,
 	))
+	RootCmd.SetUsageFunc(usageFunc)
 }
 
 // GetRootCommand returns the cli root command

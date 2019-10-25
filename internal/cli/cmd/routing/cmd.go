@@ -19,14 +19,16 @@ import (
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/cb"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/ts"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "routing",
-		Aliases: []string{"r"},
-		Short:   "Manage service routing configurations",
+		Use:         "routing",
+		Aliases:     []string{"r"},
+		Annotations: map[string]string{util.OperationCommand: ""},
+		Short:       "Manage service routing configurations",
 	}
 
 	cmd.AddCommand(

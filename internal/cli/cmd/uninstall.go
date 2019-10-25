@@ -27,6 +27,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
@@ -51,9 +52,10 @@ func NewUninstallCommand(cli cli.CLI) *cobra.Command {
 	options := &UninstallOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "uninstall [flags]",
-		Args:  cobra.NoArgs,
-		Short: "Uninstall Backyards",
+		Use:         "uninstall [flags]",
+		Args:        cobra.NoArgs,
+		Short:       "Uninstall Backyards",
+		Annotations: map[string]string{util.InstallCommand: ""},
 		Long: `Uninstall Backyards
 
 The command automatically removes the resources.

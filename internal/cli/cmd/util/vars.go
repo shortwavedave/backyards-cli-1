@@ -19,3 +19,10 @@ var (
 		"istio": "sidecar-injector",
 	}
 )
+
+const (
+	HelperCommand    = "helper"
+	ComponentCommand = "component"
+	InstallCommand   = "install"
+	OperationCommand = "operation"
+)

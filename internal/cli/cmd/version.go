@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/internal/platform/buildinfo"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
@@ -50,6 +51,7 @@ func NewVersionCommand(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "version",
 		Short:         "Print the client and api version information",
+		Annotations:   map[string]string{util.HelperCommand: ""},
 		Args:          cobra.NoArgs,
 		SilenceErrors: true,
 		Run: func(cmd *cobra.Command, args []string) {

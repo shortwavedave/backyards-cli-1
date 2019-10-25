@@ -24,6 +24,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/auth"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
@@ -48,9 +49,10 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 	c := dashboardCommand{}
 
 	cmd := &cobra.Command{
-		Use:   "dashboard [flags]",
-		Short: "Open the Backyards dashboard in a web browser",
-		Args:  cobra.NoArgs,
+		Use:         "dashboard [flags]",
+		Short:       "Open the Backyards dashboard in a web browser",
+		Args:        cobra.NoArgs,
+		Annotations: map[string]string{util.OperationCommand: ""},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := login.Login(cli, func(authInfo *auth.ResponseBody) {
 				options.WrappedToken = authInfo.User.WrappedToken

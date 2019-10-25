@@ -16,13 +16,15 @@ package canary
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "canary",
-		Short: "Install and manage Canary feature",
+		Use:         "canary",
+		Short:       "Install and manage Canary feature",
+		Annotations: map[string]string{util.ComponentCommand: ""},
 	}
 
 	cmd.AddCommand(

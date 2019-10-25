@@ -50,32 +50,44 @@ The following components can be installed/uninstalled individually as well with 
 Install and manage Backyards
 
 Usage:
-  backyards [command]
+  backyards [flags]
 
-Available Commands:
+
+Commands:
+  install      Install Backyards
+  uninstall    Uninstall Backyards
+
+  dashboard    Open the Backyards dashboard in a web browser
+  graph        Show graph
+  login        Log in to Backyards (aliases: l)
+  routing      Manage service routing configurations (aliases: r)
+
+  version      Print the client and api version information
+  help         Help about any command
+
+
+Components commands:
   canary       Install and manage Canary feature
   cert-manager Install and manage cert-manager
-  dashboard    Open the Backyards dashboard in a web browser
   demoapp      Install and manage demo application
-  graph        Show graph
-  help         Help about any command
-  install      Install Backyards
   istio        Install and manage Istio
-  routing      Manage service routing configurations
-  uninstall    Uninstall Backyards
-  version      Print the client and api version information
 
 Flags:
+  -u, --base-url string     Custom Backyards base URL. Uses automatic port forwarding / proxying if empty
+      --cacert string       The CA to use for verifying Backyards' server certificate
       --context string      name of the kubeconfig context to use
   -h, --help                help for backyards
       --interactive         ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string   path to the kubeconfig file to use for CLI requests
+  -p, --local-port int      Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
   -n, --namespace string    namespace in which Backyards is installed [$BACKYARDS_NAMESPACE] (default "backyards-system")
       --non-interactive     never ask questions interactively
   -o, --output string       output format (table|yaml|json) (default "table")
+      --use-portforward     Use port forwarding instead of proxying to reach Backyards
   -v, --verbose             turn on debug logging
       --version             version for backyards
 
+Beautify CLI by grouping commands together
 Use "backyards [command] --help" for more information about a command.
 ```
 
