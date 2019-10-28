@@ -36,7 +36,7 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 		Use:         "login",
 		Aliases:     []string{"l"},
 		Short:       "Log in to Backyards",
-		Annotations: map[string]string{util.OperationCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if cli.InteractiveTerminal() {

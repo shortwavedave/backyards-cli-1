@@ -52,7 +52,7 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 		Use:         "dashboard [flags]",
 		Short:       "Open the Backyards dashboard in a web browser",
 		Args:        cobra.NoArgs,
-		Annotations: map[string]string{util.OperationCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := login.Login(cli, func(authInfo *auth.ResponseBody) {
 				options.WrappedToken = authInfo.User.WrappedToken

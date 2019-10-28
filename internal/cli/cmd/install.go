@@ -101,7 +101,7 @@ func NewInstallCommand(cli cli.CLI) *cobra.Command {
 		Use:         "install [flags]",
 		Args:        cobra.NoArgs,
 		Short:       "Install Backyards",
-		Annotations: map[string]string{util.InstallCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.InstallCommand},
 		Long: `Installs Backyards.
 
 The command automatically applies the resources.

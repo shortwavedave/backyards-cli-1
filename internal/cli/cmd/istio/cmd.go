@@ -32,7 +32,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "istio",
 		Short:       "Install and manage Istio",
-		Annotations: map[string]string{util.ComponentCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.ComponentCommand},
 	}
 
 	cmd.AddCommand(

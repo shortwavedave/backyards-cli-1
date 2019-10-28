@@ -28,7 +28,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "demoapp",
 		Short:       "Install and manage demo application",
-		Annotations: map[string]string{util.ComponentCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.ComponentCommand},
 	}
 
 	cmd.AddCommand(

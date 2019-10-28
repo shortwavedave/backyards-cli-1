@@ -121,7 +121,7 @@ func getSubCommands(cmd *cobra.Command, cGroup string) []*cobra.Command {
 	var subCommands []*cobra.Command
 	for _, subCmd := range cmd.Commands() {
 		subCmd := subCmd
-		if _, ok := subCmd.Annotations[cGroup]; ok {
+		if g, ok := subCmd.Annotations[util.CommandGroupAnnotationKey]; ok && g == cGroup {
 			subCommands = append(subCommands, subCmd)
 		}
 	}

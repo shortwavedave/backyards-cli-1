@@ -27,7 +27,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "routing",
 		Aliases:     []string{"r"},
-		Annotations: map[string]string{util.OperationCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		Short:       "Manage service routing configurations",
 	}
 

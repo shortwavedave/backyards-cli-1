@@ -30,7 +30,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "cert-manager",
 		Short:       "Install and manage cert-manager",
-		Annotations: map[string]string{util.ComponentCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.ComponentCommand},
 	}
 
 	cmd.AddCommand(

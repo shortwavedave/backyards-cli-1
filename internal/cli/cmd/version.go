@@ -51,7 +51,7 @@ func NewVersionCommand(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "version",
 		Short:         "Print the client and api version information",
-		Annotations:   map[string]string{util.HelperCommand: ""},
+		Annotations:   map[string]string{util.CommandGroupAnnotationKey: util.HelperCommand},
 		Args:          cobra.NoArgs,
 		SilenceErrors: true,
 		Run: func(cmd *cobra.Command, args []string) {

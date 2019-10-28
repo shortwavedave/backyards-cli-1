@@ -87,7 +87,6 @@ Flags:
   -v, --verbose             turn on debug logging
       --version             version for backyards
 
-Beautify CLI by grouping commands together
 Use "backyards [command] --help" for more information about a command.
 ```
 

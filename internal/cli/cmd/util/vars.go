@@ -21,8 +21,9 @@ var (
 )
 
 const (
-	HelperCommand    = "helper"
-	ComponentCommand = "component"
-	InstallCommand   = "install"
-	OperationCommand = "operation"
+	CommandGroupAnnotationKey = "commandGroup"
+	HelperCommand             = "helper"
+	ComponentCommand          = "component"
+	InstallCommand            = "install"
+	OperationCommand          = "operation"
 )

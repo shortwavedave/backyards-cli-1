@@ -63,7 +63,7 @@ func NewGraphCmd(cli cli.CLI, fileName string) *cobra.Command {
 		Use:         "graph [[--service=]namespace/servicename]",
 		Short:       "Show graph",
 		Args:        cobra.MaximumNArgs(1),
-		Annotations: map[string]string{util.OperationCommand: ""},
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
