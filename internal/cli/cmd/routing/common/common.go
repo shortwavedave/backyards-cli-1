@@ -24,12 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis/istio/v1alpha3"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
-
-	"github.com/banzaicloud/backyards-cli/pkg/auth"
-
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
-	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 )
 
 const (
@@ -102,30 +97,4 @@ func GetVirtualserviceByName(cli cli.CLI, serviceName types.NamespacedName) (*v1
 	}
 
 	return &vservice, nil
-}
-
-func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
-	token := cli.GetToken()
-	if token == "" {
-		err := login.Login(cli, func(body *auth.Credentials) {
-			token = body.User.Token
-			cli.GetPersistentConfig().SetToken(token)
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	endpoint, err := cli.InitializedEndpoint()
-	if err != nil {
-		return nil, err
-	}
-
-	client := graphql.NewClient(endpoint, "/api/graphql")
-
-	if token != "" {
-		client.SetJWTToken(token)
-	}
-
-	return client, nil
 }

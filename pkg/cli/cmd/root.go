@@ -31,6 +31,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/config"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
+	sidecar_proxy "github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/canary"
@@ -128,6 +129,7 @@ func init() {
 	RootCmd.AddCommand(graph.NewGraphCmd(cliRef, "base.json"))
 	RootCmd.AddCommand(login.NewLoginCmd(cliRef))
 	RootCmd.AddCommand(config.NewConfigCmd(cliRef))
+	RootCmd.AddCommand(sidecar_proxy.NewRootCmd(cliRef))
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		err := cliRef.Initialize()

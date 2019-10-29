@@ -20,8 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
-
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 )

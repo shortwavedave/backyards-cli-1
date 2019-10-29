@@ -21,6 +21,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
@@ -100,7 +101,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	client, err := common.GetGraphQLClient(cli)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}

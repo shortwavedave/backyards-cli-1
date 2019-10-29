@@ -22,6 +22,9 @@ import (
 
 type Client interface {
 	SetJWTToken(string)
+	GetNamespaces() (NamespacesResponse, error)
+	EnableAutoSidecarInjection(req EnableAutoSidecarInjectionRequest) (EnableAutoSidecarInjectionResponse, error)
+	DisableAutoSidecarInjection(req DisableAutoSidecarInjectionRequest) (DisableAutoSidecarInjectionResponse, error)
 	GenerateLoad(req GenerateLoadRequest) (GenerateLoadResponse, error)
 	ApplyHTTPRoute(req ApplyHTTPRouteRequest) (ApplyHTTPRouteResponse, error)
 	DisableHTTPRoute(req DisableHTTPRouteRequest) (DisableHTTPRouteResponse, error)

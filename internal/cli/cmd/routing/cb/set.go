@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis/istio/v1alpha3"
 
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	clierrors "github.com/banzaicloud/backyards-cli/internal/errors"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
@@ -174,7 +175,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	client, err := common.GetGraphQLClient(cli)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
