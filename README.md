@@ -61,7 +61,9 @@ Commands:
   graph        Show graph
   login        Log in to Backyards (aliases: l)
   routing      Manage service routing configurations (aliases: r)
+  sidecar-proxy Manage sidecar-proxy related configurations (aliases: sp)
 
+  config        View and manage persistent configuration
   version      Print the client and api version information
   help         Help about any command
 
