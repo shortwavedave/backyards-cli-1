@@ -105,12 +105,15 @@ func GetVirtualserviceByName(cli cli.CLI, serviceName types.NamespacedName) (*v1
 }
 
 func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
-	var token string
-	err := login.Login(cli, func(body *auth.ResponseBody) {
-		token = body.User.Token
-	})
-	if err != nil {
-		return nil, err
+	token := cli.GetToken()
+	if token == "" {
+		err := login.Login(cli, func(body *auth.Credentials) {
+			token = body.User.Token
+			cli.GetPersistentConfig().SetToken(token)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	endpoint, err := cli.InitializedEndpoint()
@@ -119,7 +122,10 @@ func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
 	}
 
 	client := graphql.NewClient(endpoint, "/api/graphql")
-	client.SetJWTToken(token)
+
+	if token != "" {
+		client.SetJWTToken(token)
+	}
 
 	return client, nil
 }

@@ -12,22 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package config
 
 import (
-	"log"
+	"github.com/spf13/cobra"
 
-	"github.com/spf13/cobra/doc"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 
-	"github.com/banzaicloud/backyards-cli/pkg/cli/cmd"
+	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
-func main() {
-	cmd.Init("", "", "", "")
-	c := cmd.GetRootCommand()
-	c.DisableAutoGenTag = true
-	err := doc.GenMarkdownTree(c, ".")
-	if err != nil {
-		log.Fatal(err)
+func NewConfigCmd(cli cli.CLI) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:         "config",
+		Short:       "View and manage persistent configuration",
+		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.HelperCommand},
 	}
+
+	cmd.AddCommand(
+		NewViewCmd(cli),
+		NewEditCmd(cli),
+		NewDeleteCmd(cli),
+	)
+
+	return cmd
 }

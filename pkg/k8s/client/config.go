@@ -16,12 +16,8 @@ package client
 import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
-
-// GetConfig creates a *rest.Config for talking to a Kubernetes API server.
-func GetConfig() (*rest.Config, error) {
-	return GetConfigWithContext("", "")
-}
 
 // GetConfig returns kubernetes config based on the current environment.
 // If fpath is provided, loads configuration from that file. Otherwise,
@@ -36,4 +32,16 @@ func GetConfigWithContext(kubeconfigPath, kubeContext string) (*rest.Config, err
 	return clientcmd.
 		NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).
 		ClientConfig()
+}
+
+// GetRawConfig creates a raw clientcmd api config
+func GetRawConfig(kubeconfigPath, kubeContext string) (api.Config, error) {
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if kubeconfigPath != "" {
+		rules.ExplicitPath = kubeconfigPath
+	}
+	overrides := &clientcmd.ConfigOverrides{CurrentContext: kubeContext}
+	clientConfig := clientcmd.
+		NewNonInteractiveDeferredLoadingClientConfig(rules, overrides)
+	return clientConfig.RawConfig()
 }

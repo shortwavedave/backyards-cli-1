@@ -31,7 +31,7 @@ import (
 const defaultLoginTimeout = time.Second * 2
 
 type Client interface {
-	Login() (*ResponseBody, error)
+	Login() (*Credentials, error)
 }
 
 type client struct {
@@ -57,7 +57,7 @@ type RequestBody struct {
 	} `json:"cert,omitempty"`
 }
 
-type ResponseBody struct {
+type Credentials struct {
 	User struct {
 		Name   string   `json:"name"`
 		Groups []string `json:"groups"`
@@ -78,7 +78,7 @@ func NewClient(config *rest.Config, url string) Client {
 	}
 }
 
-func (c *client) Login() (*ResponseBody, error) {
+func (c *client) Login() (*Credentials, error) {
 	response, err := c.sendRequest(c.url)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (c *client) Login() (*ResponseBody, error) {
 		return nil, errors.Errorf("server error: %s `%s`", response.Status, responseBody)
 	}
 
-	parsedResponse := &ResponseBody{}
+	parsedResponse := &Credentials{}
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return parsedResponse, errors.Wrap(err, "failed to read response body")

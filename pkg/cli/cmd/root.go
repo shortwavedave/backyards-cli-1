@@ -21,9 +21,14 @@ import (
 
 	"emperror.dev/errors"
 	logrushandler "emperror.dev/handler/logrus"
+	"github.com/AlecAivazis/survey/v2"
+	ga "github.com/jpillora/go-ogle-analytics"
+	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/config"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
 
@@ -37,22 +42,12 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
-const (
-	defaultNamespace = "backyards-system"
-)
-
 var (
-	backyardsNamespace string
-	kubeconfigPath     string
-	kubeContext        string
-	verbose            bool
-	outputFormat       string
-	baseURL            string
-	localPort          = -1
-	usePortforward     bool
-	ca                 string
-
-	namespaceRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+	kubeconfigPath string
+	kubeContext    string
+	verbose        bool
+	outputFormat   string
+	trackingID     string
 )
 
 // RootCmd represents the root Cobra command
@@ -61,37 +56,13 @@ var RootCmd = &cobra.Command{
 	Short:         "Install and manage Backyards",
 	SilenceErrors: true,
 	SilenceUsage:  false,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		cmd.SilenceUsage = true
-		if verbose {
-			log.SetLevel(log.DebugLevel)
-		} else {
-			log.SetLevel(log.InfoLevel)
-		}
-
-		if viper.GetInt("port-forward") < 0 {
-			return errors.NewWithDetails(
-				"port must be greater than or equal to zero",
-				"port", viper.GetInt("port-forward"),
-			)
-		}
-
-		namespaceFromEnv := os.Getenv("BACKYARDS_NAMESPACE")
-		if backyardsNamespace == defaultNamespace && namespaceFromEnv != "" {
-			backyardsNamespace = namespaceFromEnv
-		}
-
-		if !namespaceRegex.MatchString(backyardsNamespace) {
-			return errors.NewWithDetails("invalid namespace", "namespace", backyardsNamespace)
-		}
-
-		return nil
-	},
 }
 
 // Init is a temporary function to set initial values in the root cmd
-func Init(version string, commitHash string, buildDate string) {
+func Init(version string, commitHash string, buildDate string, tid string) {
 	RootCmd.Version = version
+
+	trackingID = tid
 
 	RootCmd.SetVersionTemplate(fmt.Sprintf(
 		"Backyards CLI version %s (%s) built on %s\n",
@@ -119,47 +90,125 @@ func Execute() {
 
 func init() {
 	flags := RootCmd.PersistentFlags()
-	flags.StringVarP(&backyardsNamespace, "namespace", "n", defaultNamespace, "namespace in which Backyards is installed [$BACKYARDS_NAMESPACE]")
-	_ = viper.BindPFlag("backyards.namespace", flags.Lookup("namespace"))
+
 	flags.StringVarP(&kubeconfigPath, "kubeconfig", "c", "", "path to the kubeconfig file to use for CLI requests")
 	_ = viper.BindPFlag("kubeconfig", flags.Lookup("kubeconfig"))
 	flags.StringVar(&kubeContext, "context", "", "name of the kubeconfig context to use")
 	_ = viper.BindPFlag("kubecontext", flags.Lookup("context"))
 	flags.BoolVarP(&verbose, "verbose", "v", false, "turn on debug logging")
+	_ = viper.BindPFlag("verbose", flags.Lookup("verbose"))
 
 	flags.StringVarP(&outputFormat, "output", "o", "table", "output format (table|yaml|json)")
 	_ = viper.BindPFlag("output.format", flags.Lookup("output"))
 
+	flags.Bool("formatting.force-color", false, "force color even when non in a terminal")
 	_ = viper.BindPFlag("formatting.force-color", flags.Lookup("color"))
 	flags.Bool("non-interactive", false, "never ask questions interactively")
 	_ = viper.BindPFlag("formatting.non-interactive", flags.Lookup("non-interactive"))
 	flags.Bool("interactive", false, "ask questions interactively even if stdin or stdout is non-tty")
 	_ = viper.BindPFlag("formatting.force-interactive", flags.Lookup("interactive"))
 
-	flags.StringVarP(&baseURL, "base-url", "u", baseURL, "Custom Backyards base URL. Uses automatic port forwarding / proxying if empty")
-	_ = viper.BindPFlag("backyards.url", flags.Lookup("base-url"))
-	flags.StringVarP(&ca, "cacert", ca, "", "The CA to use for verifying Backyards' server certificate")
-	_ = viper.BindPFlag("backyards.cacert", flags.Lookup("cacert"))
-	flags.IntVarP(&localPort, "local-port", "p", localPort, "Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used)")
-	_ = viper.BindPFlag("backyards.localPort", flags.Lookup("local-port"))
-	flags.BoolVar(&usePortforward, "use-portforward", usePortforward, "Use port forwarding instead of proxying to reach Backyards")
-	_ = viper.BindPFlag("backyards.usePortForward", flags.Lookup("use-portforward"))
+	flags.String("persistent-config-file", "", "Backyards persistent config file to use instead of the default at ~/.banzai/backyards/")
+	_ = viper.BindPFlag(cli.PersistentConfigKey, flags.Lookup("persistent-config-file"))
 
-	cli := cli.NewCli(os.Stdout, RootCmd)
+	settings := cli.PersistentConfigurationSettings
+	settings.Configure(flags)
 
-	RootCmd.AddCommand(cmd.NewVersionCommand(cli))
-	RootCmd.AddCommand(cmd.NewInstallCommand(cli))
-	RootCmd.AddCommand(cmd.NewUninstallCommand(cli))
-	RootCmd.AddCommand(cmd.NewDashboardCommand(cli, cmd.NewDashboardOptions()))
-	RootCmd.AddCommand(istio.NewRootCmd(cli))
-	RootCmd.AddCommand(canary.NewRootCmd(cli))
-	RootCmd.AddCommand(demoapp.NewRootCmd(cli))
-	RootCmd.AddCommand(routing.NewRootCmd(cli))
-	RootCmd.AddCommand(certmanager.NewRootCmd(cli))
-	RootCmd.AddCommand(graph.NewGraphCmd(cli, "base.json"))
-	RootCmd.AddCommand(login.NewLoginCmd(cli))
+	cliRef := cli.NewCli(os.Stdout, RootCmd, settings)
+
+	RootCmd.AddCommand(cmd.NewVersionCommand(cliRef))
+	RootCmd.AddCommand(cmd.NewInstallCommand(cliRef))
+	RootCmd.AddCommand(cmd.NewUninstallCommand(cliRef))
+	RootCmd.AddCommand(cmd.NewDashboardCommand(cliRef, cmd.NewDashboardOptions()))
+	RootCmd.AddCommand(istio.NewRootCmd(cliRef))
+	RootCmd.AddCommand(canary.NewRootCmd(cliRef))
+	RootCmd.AddCommand(demoapp.NewRootCmd(cliRef))
+	RootCmd.AddCommand(routing.NewRootCmd(cliRef))
+	RootCmd.AddCommand(certmanager.NewRootCmd(cliRef))
+	RootCmd.AddCommand(graph.NewGraphCmd(cliRef, "base.json"))
+	RootCmd.AddCommand(login.NewLoginCmd(cliRef))
+	RootCmd.AddCommand(config.NewConfigCmd(cliRef))
+
+	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		err := cliRef.Initialize()
+		if err != nil {
+			return err
+		}
+
+		cmd.SilenceUsage = true
+		if verbose {
+			log.SetLevel(log.DebugLevel)
+		} else {
+			log.SetLevel(log.InfoLevel)
+		}
+
+		namespaceRegex := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+		namespace := cliRef.GetPersistentConfig().Namespace()
+		if !namespaceRegex.MatchString(namespace) {
+			return errors.NewWithDetails("invalid namespace", "namespace", namespace)
+		}
+
+		err = askLicense(cliRef)
+		if err != nil {
+			return err
+		}
+		config := cliRef.GetPersistentConfig()
+		collectMetrics(cmd, config)
+		return nil
+	}
 
 	RootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
-		return cli.Stop()
+		config := cliRef.GetPersistentConfig()
+		return config.PersistConfig()
 	}
+}
+
+func collectMetrics(cmd *cobra.Command, config cli.PersistentConfig) {
+	if config.TrackingClientID() == "" {
+		config.SetTrackingClientID(uuid.New())
+	}
+	if trackingID != "" {
+		log.Debugf("sending metrics to %s", trackingID)
+		client, err := ga.NewClient(trackingID)
+		if err != nil {
+			log.Errorf("Failed to send metrics")
+			log.Debugf("Failed to configure analytics client: %+v", err)
+			return
+		}
+		client.UserAgentOverride("backyards-cli")
+		event := ga.NewEvent("clicmd", cmd.CommandPath())
+		event.Label(RootCmd.Version)
+		client.AnonymizeIP(true)
+		client.ClientID(config.TrackingClientID())
+		err = client.Send(event)
+		if err != nil {
+			log.Errorf("Failed to send metrics")
+			log.Debugf("Failed to send event: %+v", err)
+			return
+		}
+	}
+}
+
+func askLicense(cliRef cli.CLI) error {
+	if !cliRef.InteractiveTerminal() && !cliRef.GetPersistentConfig().LicenseAccepted() {
+		return errors.New("you have to accept the license to use this product")
+	}
+
+	if cliRef.InteractiveTerminal() && !cliRef.GetPersistentConfig().LicenseAccepted() {
+		accepted := false
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Are you cool with the license terms?",
+			Default:  true,
+		}, &accepted)
+		if err != nil {
+			return err
+		}
+		if !accepted {
+			return errors.New("you have to accept the license to use this product")
+		}
+		cliRef.GetPersistentConfig().SetLicenseAccepted(accepted)
+	}
+
+	return cliRef.GetPersistentConfig().PersistConfig()
 }

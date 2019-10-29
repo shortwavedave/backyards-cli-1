@@ -109,7 +109,7 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 		return err
 	}
 
-	objects, err := getBackyardsObjects(values)
+	objects, err := getBackyardsObjects(values, cli)
 	if err != nil {
 		return err
 	}

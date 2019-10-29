@@ -25,7 +25,6 @@ import (
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"go.uber.org/multierr"
 	"istio.io/operator/pkg/object"
 	v1 "k8s.io/api/core/v1"
@@ -214,7 +213,7 @@ func (c *installCommand) run(options *InstallOptions) error {
 		return err
 	}
 
-	objects, err := getBackyardsObjects(values)
+	objects, err := getBackyardsObjects(values, c.cli)
 	if err != nil {
 		return err
 	}
@@ -274,7 +273,7 @@ func getValues(releaseName, istioNamespace string, valueOverrideFunc func(values
 	return values, nil
 }
 
-func getBackyardsObjects(values Values) (object.K8sObjects, error) {
+func getBackyardsObjects(values Values, cli cli.CLI) (object.K8sObjects, error) {
 	rawValues, err := yaml.Marshal(values)
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not marshal yaml values")
@@ -284,7 +283,7 @@ func getBackyardsObjects(values Values) (object.K8sObjects, error) {
 		Name:      "backyards",
 		IsInstall: true,
 		IsUpgrade: false,
-		Namespace: viper.GetString("backyards.namespace"),
+		Namespace: cli.GetPersistentConfig().Namespace(),
 	}, "backyards")
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not render helm manifest objects")
@@ -303,7 +302,7 @@ func (c *installCommand) setTracingAddress(values Values) error {
 	payload := []patchStringValue{{
 		Op:    "replace",
 		Path:  "/spec/tracing/zipkin/address",
-		Value: fmt.Sprintf("%s.%s:%d", values.Tracing.Service.Name, viper.GetString("backyards.namespace"), values.Tracing.Service.ExternalPort),
+		Value: fmt.Sprintf("%s.%s:%d", values.Tracing.Service.Name, c.cli.GetPersistentConfig().Namespace(), values.Tracing.Service.ExternalPort),
 	}}
 	payloadBytes, _ := json.Marshal(payload)
 

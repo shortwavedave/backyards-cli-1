@@ -12,17 +12,25 @@ require (
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-retryablehttp v0.6.2
+	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.8
+	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mitchellh/hashstructure v1.0.0
 	github.com/moogar0880/problems v0.1.1
+	github.com/pborman/uuid v1.2.0
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
+	github.com/square/go-jose/v3 v3.0.0-20191013055707-2c8b6426f72c
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	github.com/waynz0r/grafterm v0.2.1-0.20190814214739-b7722452f1e4
 	go.uber.org/multierr v1.1.0
+	golang.org/x/tools v0.0.0-20190606124116-d0a3d012864b
 	gomodules.xyz/jsonpatch/v2 v2.0.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	istio.io/operator v0.0.0-20190805193245-ce3cfb6e2672

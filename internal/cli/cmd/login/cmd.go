@@ -31,6 +31,8 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
+var inMemoryAuthInfo *auth.Credentials
+
 func NewLoginCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "login",
@@ -55,9 +57,10 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 					return err
 				}
 			}
-			err = Login(cli, func(body *auth.ResponseBody) {
+			err = Login(cli, func(body *auth.Credentials) {
 				if cli.InteractiveTerminal() {
 					logrus.Infof("Login token: %s", body.User.WrappedToken)
+					cli.GetPersistentConfig().SetToken(body.User.Token)
 				} else {
 					fmt.Println(body.User.WrappedToken)
 				}
@@ -69,7 +72,13 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 	return cmd
 }
 
-func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
+func Login(cli cli.CLI, onAuth func(*auth.Credentials)) error {
+	if inMemoryAuthInfo != nil {
+		if onAuth != nil {
+			onAuth(inMemoryAuthInfo)
+		}
+		return nil
+	}
 	config, err := cli.GetK8sConfig()
 	if err != nil {
 		return err
@@ -94,6 +103,7 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		}
 	}
 	if authInfo != nil {
+		inMemoryAuthInfo = authInfo
 		if cli.InteractiveTerminal() {
 			logrus.Infof("Logged in as %s", authInfo.User.Name)
 			logrus.Debugf("Token: %s", authInfo.User.Token)
@@ -102,8 +112,7 @@ func Login(cli cli.CLI, onAuth func(*auth.ResponseBody)) error {
 		if onAuth != nil {
 			onAuth(authInfo)
 		}
-	}
-	if cli.InteractiveTerminal() {
+	} else if cli.InteractiveTerminal() {
 		logrus.Debug("Backyards authentication is disabled")
 	}
 	return nil

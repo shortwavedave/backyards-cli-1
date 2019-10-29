@@ -54,7 +54,7 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 		Args:        cobra.NoArgs,
 		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := login.Login(cli, func(authInfo *auth.ResponseBody) {
+			err := login.Login(cli, func(authInfo *auth.Credentials) {
 				options.WrappedToken = authInfo.User.WrappedToken
 			})
 			if err != nil {

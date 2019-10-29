@@ -18,9 +18,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
+	"github.com/banzaicloud/backyards-cli/pkg/auth"
+
 	"github.com/banzaicloud/backyards-cli/internal/platform/buildinfo"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
@@ -88,14 +92,38 @@ func (c *versionCommand) run(cli cli.CLI, options *versionOptions) {
 func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
+		logrus.Error(err)
 		return defaultVersionString
 	}
 	defer endpoint.Close()
 
+	token := cli.GetToken()
+	if token == "" {
+		err = login.Login(cli, func(authInfo *auth.Credentials) {
+			token = authInfo.User.Token
+			cli.GetPersistentConfig().SetToken(authInfo.User.Token)
+		})
+		if err != nil {
+			logrus.Error(err)
+			return defaultVersionString
+		}
+	}
+
 	url := endpoint.URLForPath(versionEndpoint)
-	// nolint G107
-	resp, err := http.Get(url)
+
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
+		logrus.Error(err)
+		return defaultVersionString
+	}
+	if token != "" {
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+
+	// nolint G107
+	resp, err := endpoint.HTTPClient().Do(request)
+	if err != nil {
+		logrus.Error(err)
 		return defaultVersionString
 	}
 	defer resp.Body.Close()
@@ -104,8 +132,17 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&bi)
 	if err != nil {
+		logrus.Error(err)
 		return defaultVersionString
 	}
 
-	return bi.Version
+	if resp.StatusCode != 200 {
+		logrus.Errorf("Request failed: %s", resp.Status)
+		return defaultVersionString
+	}
+
+	if bi.Version != "" {
+		return bi.Version
+	}
+	return defaultVersionString
 }

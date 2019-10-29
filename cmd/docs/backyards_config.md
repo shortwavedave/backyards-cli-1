@@ -1,21 +1,15 @@
-## backyards demoapp load
+## backyards config
 
-Send load to demo application
+View and manage persistent configuration
 
 ### Synopsis
 
-Send load to demo application
-
-```
-backyards demoapp load [flags]
-```
+View and manage persistent configuration
 
 ### Options
 
 ```
-      --duration int   Duration in seconds (default 30)
-  -h, --help           help for load
-      --rps int        Number of requests per second (default 10)
+  -h, --help   help for config
 ```
 
 ### Options inherited from parent commands
@@ -24,7 +18,6 @@ backyards demoapp load [flags]
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
       --context string                  name of the kubeconfig context to use
-      --demo-namespace string           Namespace for demo application (default "backyards-demo")
       --formatting.force-color          force color even when non in a terminal
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
@@ -40,5 +33,8 @@ backyards demoapp load [flags]
 
 ### SEE ALSO
 
-* [backyards demoapp](backyards_demoapp.md)	 - Install and manage demo application
+* [backyards](backyards.md)	 - Install and manage Backyards
+* [backyards config delete](backyards_config_delete.md)	 - Delete persistent configuration
+* [backyards config edit](backyards_config_edit.md)	 - Edit persistent configuration
+* [backyards config view](backyards_config_view.md)	 - View persistent configuration
 

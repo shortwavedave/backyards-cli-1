@@ -26,9 +26,10 @@ var (
 	version    string
 	commitHash string
 	buildDate  string
+	trackingID string
 )
 
 func main() {
-	cmd.Init(version, commitHash, buildDate)
+	cmd.Init(version, commitHash, buildDate, trackingID)
 	cmd.Execute()
 }

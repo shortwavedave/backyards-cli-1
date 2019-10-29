@@ -15,13 +15,20 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/square/go-jose/v3/jwt"
+	"k8s.io/client-go/util/homedir"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/mattn/go-isatty"
@@ -58,31 +65,41 @@ type CLI interface {
 	GetRootCommand() *cobra.Command
 	GetK8sClient() (k8sclient.Client, error)
 	GetK8sConfig() (*rest.Config, error)
+	GetPersistentConfig() PersistentConfig
+	GetToken() string
+
 	LabelManager() k8s.LabelManager
 
 	// An endpoint can be currently:
 	// - external HTTP(s) endpoint
-	// - local port-forward to an HTTP(s) endpoint
-	// - planned: local HTTP(s) proxy
+	// - local port-forward to an HTTP(s) endpoint (deprecated)
+	// - local HTTP(s) proxy
 	InitializedEndpoint() (endpoint.Endpoint, error)
 	PersistentEndpoint() (endpoint.Endpoint, error)
 
-	Stop() error
+	Initialize() error
 }
 
 type backyardsCLI struct {
-	out          io.Writer
-	rootCmd      *cobra.Command
-	labelManager k8s.LabelManager
-	lmOnce       sync.Once
+	out              io.Writer
+	rootCmd          *cobra.Command
+	labelManager     k8s.LabelManager
+	lmOnce           sync.Once
+	persistentConfig PersistentConfig
+	settings         Settings
 }
 
-func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
+func NewCli(out io.Writer, rootCmd *cobra.Command, settings Settings) CLI {
 	return &backyardsCLI{
-		out:     out,
-		lmOnce:  sync.Once{},
-		rootCmd: rootCmd,
+		out:      out,
+		lmOnce:   sync.Once{},
+		rootCmd:  rootCmd,
+		settings: settings,
 	}
+}
+
+func (c *backyardsCLI) Initialize() error {
+	return c.loadPersistentConfig()
 }
 
 func (c *backyardsCLI) GetRootCommand() *cobra.Command {
@@ -117,11 +134,11 @@ func (c *backyardsCLI) Out() io.Writer {
 	return c.out
 }
 
-func (c *backyardsCLI) GetPortforwardForIGW(localPort int) (*portforward.Portforward, error) {
-	return c.GetPortforwardForPod(IGWMatchLabels, viper.GetString("backyards.namespace"), localPort, IGWPort)
+func (c *backyardsCLI) getPortforwardForIGW(localPort int) (*portforward.Portforward, error) {
+	return c.getPortforwardForPod(IGWMatchLabels, c.persistentConfig.Namespace(), localPort, IGWPort)
 }
 
-func (c *backyardsCLI) GetPortforwardForPod(podLabels map[string]string, namespace string, localPort, remotePort int) (*portforward.Portforward, error) {
+func (c *backyardsCLI) getPortforwardForPod(podLabels map[string]string, namespace string, localPort, remotePort int) (*portforward.Portforward, error) {
 	config, err := c.GetK8sConfig()
 	if err != nil {
 		return nil, err
@@ -142,10 +159,61 @@ func (c *backyardsCLI) GetPortforwardForPod(podLabels map[string]string, namespa
 	return pf, nil
 }
 
-func (c *backyardsCLI) GetK8sClient() (k8sclient.Client, error) {
-	config, err := k8sclient.GetConfigWithContext(viper.GetString("kubeconfig"), viper.GetString("kubecontext"))
+func (c *backyardsCLI) GetPersistentConfig() PersistentConfig {
+	return c.persistentConfig
+}
+
+func (c *backyardsCLI) loadPersistentConfig() error {
+	if c.persistentConfig != nil {
+		return nil
+	}
+
+	var err error
+	if viper.GetString(PersistentConfigKey) != "" {
+		c.persistentConfig, err = newViperPersistentConfig(viper.GetString(PersistentConfigKey), c.settings, c.rootCmd.Flags())
+		return err
+	}
+
+	config, err := k8sclient.GetRawConfig(viper.GetString("kubeconfig"), viper.GetString("kubecontext"))
 	if err != nil {
-		return nil, errors.WrapIf(err, "could not get k8s config")
+		return errors.WrapIf(err, "failed to get raw kubernetes config")
+	}
+
+	if len(config.Clusters) == 0 {
+		return errors.New("kubeconfig is invalid, no clusters defined")
+	}
+
+	currentContext, ok := config.Contexts[config.CurrentContext]
+	if !ok {
+		return errors.Errorf("kubeconfig is invalid, current context data not available %s", config.CurrentContext)
+	}
+
+	currentCluster, ok := config.Clusters[currentContext.Cluster]
+	if !ok {
+		return errors.Errorf("kubeconfig is invalid, cluster data for current context not available %s", currentContext.Cluster)
+	}
+
+	parse, err := url.Parse(currentCluster.Server)
+	if err != nil {
+		return errors.WrapIf(err, "failed to parse server url")
+	}
+
+	host := parse.Host
+	host = strings.Replace(host, ":", "_", -1)
+	host = strings.Replace(host, ".", "_", -1)
+
+	configFileName := fmt.Sprintf("%s@%s", config.CurrentContext, host)
+
+	configFileFullPath := filepath.Join(homedir.HomeDir(), ".banzai/backyards", configFileName+".yaml")
+
+	c.persistentConfig, err = newViperPersistentConfig(configFileFullPath, c.settings, c.rootCmd.Flags())
+	return err
+}
+
+func (c *backyardsCLI) GetK8sClient() (k8sclient.Client, error) {
+	config, err := c.GetK8sConfig()
+	if err != nil {
+		return nil, err
 	}
 
 	client, err := k8sclient.NewClient(config, k8sclient.Options{})
@@ -180,14 +248,23 @@ func (c *backyardsCLI) PersistentEndpoint() (endpoint.Endpoint, error) {
 	return c.endpoint(defaultLocalEndpointPort)
 }
 
-func withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint, error) {
+func (c *backyardsCLI) withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint, error) {
 	client := retryablehttp.NewClient()
 	client.RetryWaitMin = time.Millisecond * 50
 	client.RetryWaitMax = time.Millisecond * 100
 	client.RetryMax = 5
 	client.Logger = hclog.NewNullLogger()
+	level := hclog.Info
+	if viper.GetBool("output.verbose") {
+		level = hclog.Debug
+	}
+	client.Logger = hclog.New(&hclog.LoggerOptions{
+		Name:   "health check",
+		Level:  level,
+		Output: c.rootCmd.ErrOrStderr(),
+	})
 	client.HTTPClient = ep.HTTPClient()
-	_, err := client.Get(ep.URLForPath("/"))
+	_, err := client.Get(ep.URLForPath(""))
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to health check the created endpoint")
 	}
@@ -195,8 +272,8 @@ func withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint, error) {
 }
 
 func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
-	url := viper.GetString("backyards.url")
-	ca, err := getEndpointCA()
+	url := c.persistentConfig.BaseURL()
+	ca, err := c.getEndpointCA()
 	if err != nil {
 		return nil, err
 	}
@@ -206,13 +283,13 @@ func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
 			return nil, err
 		}
 
-		port := viper.GetInt("backyards.localPort")
+		port := c.persistentConfig.LocalPort()
 		if port == -1 {
 			port = persistentPort
 		}
 
-		if viper.GetBool("backyards.usePortforward") {
-			pf, err := c.GetPortforwardForIGW(port)
+		if c.persistentConfig.UsePortForward() {
+			pf, err := c.getPortforwardForIGW(port)
 			if err != nil {
 				return nil, err
 			}
@@ -221,30 +298,47 @@ func (c *backyardsCLI) endpoint(persistentPort int) (endpoint.Endpoint, error) {
 			if err != nil {
 				return nil, err
 			}
-			return withHealthCheck(endpoint.NewPortforwardEndpoint(pf, ca))
+			return c.withHealthCheck(endpoint.NewPortforwardEndpoint(pf, ca))
 		}
 
 		ep, err := endpoint.NewProxyEndpoint(port, cfg, endpoint.K8sService{
 			Name:      BackyardsIngressServiceName,
-			Namespace: viper.GetString("backyards.namespace"),
+			Namespace: c.persistentConfig.Namespace(),
 			Port:      80,
 		})
 		if err != nil {
 			return nil, err
 		}
-		return withHealthCheck(ep)
+		return c.withHealthCheck(ep)
 	}
 
-	return withHealthCheck(endpoint.NewExternalEndpoint(url, ca))
+	return c.withHealthCheck(endpoint.NewExternalEndpoint(url, ca))
 }
 
-func getEndpointCA() ([]byte, error) {
-	if viper.GetString("backyards.cacert") != "" {
-		return ioutil.ReadFile(viper.GetString("backyards.cacert"))
+func (c *backyardsCLI) getEndpointCA() ([]byte, error) {
+	if c.persistentConfig.CACert() != "" {
+		return ioutil.ReadFile(c.persistentConfig.CACert())
 	}
 	return nil, nil
 }
 
-func (c *backyardsCLI) Stop() error {
-	return nil
+func (c *backyardsCLI) GetToken() string {
+	token := c.persistentConfig.Token()
+	if token != "" {
+		claims := &jwt.Claims{}
+		webToken, err := jwt.ParseSigned(token)
+		if err != nil {
+			logrus.Error("Failed to parse signed token", err)
+			return ""
+		}
+		if err := webToken.UnsafeClaimsWithoutVerification(claims); err != nil {
+			logrus.Error("Failed to extract claims from token", err)
+			return ""
+		}
+		if err := claims.ValidateWithLeeway(jwt.Expected{}.WithTime(time.Now()), 0); err != nil {
+			logrus.Debug("Token expired")
+			return ""
+		}
+	}
+	return token
 }
