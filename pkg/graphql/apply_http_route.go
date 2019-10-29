@@ -18,28 +18,28 @@ import (
 	"context"
 
 	"github.com/MakeNowJust/heredoc"
+
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
-type HTTPRouteDestination struct {
-	Destination Destination `json:"destination"`
-	Weight      int         `json:"weight"`
-}
-
-type Destination struct {
-	Host   string        `json:"host"`
-	Subset string        `json:"subset,omitempty"`
-	Port   *PortSelector `json:"port,omitempty"`
-}
-
-type PortSelector struct {
-	Number uint32 `json:"number,omitempty"`
-	Name   string `json:"name,omitempty"`
-}
-
 type ApplyHTTPRouteRequest struct {
-	Name      string                 `json:"name"`
-	Namespace string                 `json:"namespace"`
-	Route     []HTTPRouteDestination `json:"route,omitempty"`
+	Selector HTTPRouteSelector `json:"selector"`
+	Rule     HTTPRules         `json:"rule"`
+}
+
+type HTTPRules struct {
+	Matches        []*v1alpha3.HTTPMatchRequest     `json:"match,omitempty"`
+	Route          []*v1alpha3.HTTPRouteDestination `json:"route,omitempty"`
+	Redirect       *v1alpha3.HTTPRedirect           `json:"redirect,omitempty"`
+	FaultInjection *v1alpha3.HTTPFaultInjection     `json:"fault,omitempty"`
+	Timeout        *string                          `json:"timeout,omitempty"`
+	Retries        *v1alpha3.HTTPRetry              `json:"retries,omitempty"`
+}
+
+type HTTPRouteSelector struct {
+	Name      string                       `json:"name"`
+	Namespace string                       `json:"namespace"`
+	Matches   []*v1alpha3.HTTPMatchRequest `json:"match,omitempty"`
 }
 
 type ApplyHTTPRouteResponse bool

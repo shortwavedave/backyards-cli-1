@@ -151,7 +151,7 @@ func (c *setCommand) askQuestions(cli cli.CLI, options *setOptions) error {
 		return nil
 	}
 
-	qs, err := questionnaire.GetQuestionsFromStruct(options.CircuitBreakerSettings)
+	qs, err := questionnaire.GetQuestionsFromStruct(options.CircuitBreakerSettings, nil)
 	if err != nil {
 		return err
 	}

@@ -21,9 +21,8 @@ import (
 )
 
 type DisableHTTPRouteRequest struct {
-	Name      string   `json:"name"`
-	Namespace string   `json:"namespace"`
-	Rules     []string `json:"rules"`
+	Selector HTTPRouteSelector `json:"selector"`
+	Rules    []string          `json:"rules"`
 }
 
 type DisableHTTPRouteResponse bool
