@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"strings"
 	"text/template"
 
-	"github.com/ttacon/chalk"
+	"github.com/olekukonko/tablewriter"
 )
 
 type Column struct {
@@ -33,6 +34,9 @@ type Table struct {
 	Columns   []Column
 	Rows      []interface{}
 	Separator string
+
+	t   *tablewriter.Table
+	buf *bytes.Buffer
 }
 
 const ellipsis = "…"
@@ -86,6 +90,20 @@ func CustomColumn(name, tpl string) (*Column, error) {
 }
 
 func NewTable(data interface{}, fields []string, headers []string) *Table {
+
+	buf := new(bytes.Buffer)
+	table := tablewriter.NewWriter(buf)
+	table.SetHeader(headers)
+
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetBorder(false)
+	table.SetAutoFormatHeaders(false)
+	table.SetColWidth(60)
+
 	columns := make([]Column, 0, len(fields))
 	for i, field := range fields {
 		columns = append(columns, *NamedColumn(headers[i], field))
@@ -93,7 +111,7 @@ func NewTable(data interface{}, fields []string, headers []string) *Table {
 
 	slice := asSlice(data)
 
-	return &Table{Columns: columns, Rows: slice, Separator: "  "}
+	return &Table{Columns: columns, Rows: slice, Separator: "  ", t: table, buf: buf}
 }
 
 func asSlice(slice interface{}) []interface{} {
@@ -133,31 +151,20 @@ func (t *Table) Format(color bool) string {
 		formattedFields[i] = formattedRow
 	}
 
-	// header
-	out := ""
-	for i, column := range t.Columns {
-		if i > 0 {
-			out += t.Separator
+	for _, fields := range formattedFields {
+		t.t.Append(fields)
+	}
+	t.t.Render()
+
+	p := make([]string, 0)
+	for _, v := range strings.Split(t.buf.String(), "\n") {
+		if len(v) > 1 && v[0:2] == "  " {
+			v = v[2:]
 		}
-
-		out += fmt.Sprintf("%- *s", colWidths[i], column.Name)
-	}
-	if color {
-		out = chalk.Bold.TextStyle(out)
-	}
-
-	// rows
-	for _, row := range formattedFields {
-		out += "\n"
-
-		for i, field := range row {
-			if i > 0 {
-				out += t.Separator
-			}
-
-			out += fmt.Sprintf("%- *s", colWidths[i], field)
+		if v != "" {
+			p = append(p, v)
 		}
 	}
 
-	return out
+	return strings.Join(p, "\n")
 }

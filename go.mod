@@ -8,6 +8,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.0.2
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
+	github.com/banzaicloud/istio-client-go v0.0.0-20191018213959-385918b782b2
 	github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
 	github.com/hashicorp/go-hclog v0.9.2
@@ -20,6 +21,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/moogar0880/problems v0.1.1
 	github.com/pborman/uuid v1.2.0
+	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cast v1.3.0
