@@ -103,6 +103,7 @@ func init() {
 	_ = viper.BindPFlag("output.format", flags.Lookup("output"))
 
 	flags.Bool("formatting.force-color", false, "force color even when non in a terminal")
+	flags.Bool("color", true, "use colors on non-tty outputs")
 	_ = viper.BindPFlag("formatting.force-color", flags.Lookup("color"))
 	flags.Bool("non-interactive", false, "never ask questions interactively")
 	_ = viper.BindPFlag("formatting.non-interactive", flags.Lookup("non-interactive"))
