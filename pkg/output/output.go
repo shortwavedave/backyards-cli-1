@@ -65,7 +65,18 @@ func Output(ctx *Context, data interface{}) error {
 		return errors.Wrap(err, "cannot write output")
 
 	case OutputFormatYAML:
-		bytes, err := yaml.Marshal(data)
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			return errors.Wrap(err, "cannot marshal output")
+		}
+
+		var y interface{}
+		err = json.Unmarshal(bytes, &y)
+		if err != nil {
+			return errors.Wrap(err, "cannot marshal output")
+		}
+
+		bytes, err = yaml.Marshal(y)
 		if err != nil {
 			return errors.Wrap(err, "cannot marshal output")
 		}
