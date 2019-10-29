@@ -17,37 +17,68 @@ package questionnaire
 import (
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
 )
 
-func GetQuestionsFromStruct(obj interface{}) ([]*survey.Question, error) {
+type ValidateFuncs map[string]survey.Validator
+
+func GetQuestionsFromStruct(obj interface{}, additionalValidators ValidateFuncs) ([]*survey.Question, error) {
 	qs := make([]*survey.Question, 0)
 
 	t := reflect.TypeOf(obj)
 	v := reflect.ValueOf(obj)
 	for k := 0; k < t.NumField(); k++ {
-
 		f := t.Field(k)
 		elem := v.Field(k)
 		desc := f.Tag.Get("survey.question")
 		if desc != "" {
 			var def string
 			switch elem.Kind() {
+			case reflect.Float32:
+				def = strconv.Itoa(int(elem.Interface().(float32)))
+			case reflect.Int:
+				def = strconv.Itoa(int(elem.Interface().(int)))
 			case reflect.Int32:
 				def = strconv.Itoa(int(elem.Interface().(int32)))
+			case reflect.Int64:
+				def = strconv.Itoa(int(elem.Interface().(int64)))
 			case reflect.String:
 				def = elem.Interface().(string)
 			default:
 				return nil, errors.Errorf("unsupported field type: %s", elem.Type())
 			}
 
+			validators := defaultValidators()
+			for k, v := range additionalValidators {
+				validators[k] = v
+			}
+
+			validations := strings.Split(f.Tag.Get("survey.validate"), ",")
+			for k, v := range validations {
+				validations[k] = strings.TrimSpace(v)
+			}
+
 			qs = append(qs, &survey.Question{
-				Name:     f.Name,
-				Prompt:   &survey.Input{Message: desc, Default: def},
-				Validate: validateFunc(f.Tag.Get("survey.validate")),
+				Name:   f.Name,
+				Prompt: &survey.Input{Message: desc, Default: def},
+				Validate: func(ans interface{}) error {
+					for _, validator := range validations {
+						var validateFunc survey.Validator
+						var ok bool
+						if validateFunc, ok = validators[validator]; ok {
+							err := validateFunc(ans)
+							if err != nil {
+								return err
+							}
+						}
+					}
+
+					return nil
+				},
 			})
 		}
 	}
@@ -55,10 +86,9 @@ func GetQuestionsFromStruct(obj interface{}) ([]*survey.Question, error) {
 	return qs, nil
 }
 
-func validateFunc(t string) survey.Validator {
-	switch t {
-	case "int":
-		return func(ans interface{}) error {
+func defaultValidators() map[string]survey.Validator {
+	return map[string]survey.Validator{
+		"int": func(ans interface{}) error {
 			if s, ok := ans.(string); ok {
 				i, err := strconv.Atoi(s)
 				if err != nil {
@@ -71,18 +101,13 @@ func validateFunc(t string) survey.Validator {
 				return errors.New("invalid input type")
 			}
 			return nil
-		}
-	case "durationstring":
-		return func(ans interface{}) error {
+		},
+		"durationstring": func(ans interface{}) error {
 			if s, ok := ans.(string); ok {
 				_, err := time.ParseDuration(s)
 				return err
 			}
 			return errors.New("invalid input type")
-		}
-	default:
-		return func(ans interface{}) error {
-			return nil
-		}
+		},
 	}
 }
