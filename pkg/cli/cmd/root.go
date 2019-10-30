@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"regexp"
@@ -22,6 +23,7 @@ import (
 	"emperror.dev/errors"
 	logrushandler "emperror.dev/handler/logrus"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/MakeNowJust/heredoc"
 	ga "github.com/jpillora/go-ogle-analytics"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
@@ -49,6 +51,16 @@ var (
 	verbose        bool
 	outputFormat   string
 	trackingID     string
+)
+
+const (
+	GAUserAgent       = "backyards-cli"
+	GACategoryCommand = "clicmd"
+	GACategoryLicense = "clilicense"
+	GAActionReject    = "reject"
+
+	AcceptLicense = "accept-license"
+	LicenseLink   = "https://banzaicloud.com/docs/backyards/license"
 )
 
 // RootCmd represents the root Cobra command
@@ -113,10 +125,12 @@ func init() {
 	flags.String("persistent-config-file", "", "Backyards persistent config file to use instead of the default at ~/.banzai/backyards/")
 	_ = viper.BindPFlag(cli.PersistentConfigKey, flags.Lookup("persistent-config-file"))
 
-	settings := cli.PersistentConfigurationSettings
-	settings.Configure(flags)
+	flags.Bool("accept-license", false, fmt.Sprintf("Accept the license: %s", LicenseLink))
 
-	cliRef := cli.NewCli(os.Stdout, RootCmd, settings)
+	cli.PersistentSettings.Configure(flags)
+	cli.PersistentGlobalSettings.Configure(flags)
+
+	cliRef := cli.NewCli(os.Stdout, RootCmd)
 
 	RootCmd.AddCommand(cmd.NewVersionCommand(cliRef))
 	RootCmd.AddCommand(cmd.NewInstallCommand(cliRef))
@@ -155,8 +169,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		config := cliRef.GetPersistentConfig()
-		collectMetrics(cmd, config)
+		sendEvent(cliRef, ga.NewEvent(GACategoryCommand, cmd.CommandPath()))
 		return nil
 	}
 
@@ -166,7 +179,80 @@ func init() {
 	}
 }
 
-func collectMetrics(cmd *cobra.Command, config cli.PersistentConfig) {
+func askLicense(cliRef cli.CLI) error {
+	if ok, _ := cliRef.GetRootCommand().Flags().GetBool(AcceptLicense); ok {
+		return nil
+	}
+
+	licenseAccepted := cliRef.GetPersistentGlobalConfig().LicenseAcceptedForVersion(licenseVersion)
+
+	if !cliRef.InteractiveTerminal() && !licenseAccepted {
+		return errors.New("you have to accept the license to use this product")
+	}
+
+	if cliRef.InteractiveTerminal() && !licenseAccepted {
+		fullLicenseHaveBeenRead := false
+		for {
+			const (
+				AnswerYes     = "Yes"
+				AnswerNo      = "No"
+				AnswerLicense = "Read the license"
+			)
+
+			response := ""
+			err := survey.AskOne(&survey.Select{
+				Renderer: survey.Renderer{},
+				Message: heredoc.Doc(`
+					License terms in short:
+					- allows Banzaicloud.com to collect anonymous usage statistics
+					- allows Banzaicloud.com to ask for non anonymous feedback
+					- not allowed for production use (reach out for an enterprise license)
+
+					Please read the full license and confirm that you accept the terms!
+				`),
+				Options: []string{AnswerNo, AnswerYes, AnswerLicense},
+				Default: AnswerNo,
+			}, &response, survey.WithValidator(survey.Required))
+			if err != nil {
+				return err
+			}
+			switch response {
+			case AnswerNo:
+				log.Error("You have to accept the license to use this product, we are sorry to see you go")
+				sendEvent(cliRef, ga.NewEvent(GACategoryLicense, GAActionReject))
+				return nil
+			case AnswerYes:
+				if fullLicenseHaveBeenRead {
+					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(licenseVersion)
+					return cliRef.GetPersistentGlobalConfig().PersistConfig()
+				}
+				moveOn := false
+				err := survey.AskOne(&survey.Confirm{
+					Renderer: survey.Renderer{},
+					Message:  "You haven't read the complete license! Continue?",
+					Default:  true,
+				}, &moveOn)
+				if err != nil {
+					return err
+				}
+				if moveOn {
+					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(licenseVersion)
+					return cliRef.GetPersistentGlobalConfig().PersistConfig()
+				}
+			case AnswerLicense:
+				if err := readLicense(); err != nil {
+					return err
+				}
+				fullLicenseHaveBeenRead = true
+			}
+		}
+	}
+
+	return nil
+}
+
+func sendEvent(cli cli.CLI, event *ga.Event) {
+	config := cli.GetPersistentConfig()
 	if config.TrackingClientID() == "" {
 		config.SetTrackingClientID(uuid.New())
 	}
@@ -178,8 +264,7 @@ func collectMetrics(cmd *cobra.Command, config cli.PersistentConfig) {
 			log.Debugf("Failed to configure analytics client: %+v", err)
 			return
 		}
-		client.UserAgentOverride("backyards-cli")
-		event := ga.NewEvent("clicmd", cmd.CommandPath())
+		client.UserAgentOverride(GAUserAgent)
 		event.Label(RootCmd.Version)
 		client.AnonymizeIP(true)
 		client.ClientID(config.TrackingClientID())
@@ -192,26 +277,12 @@ func collectMetrics(cmd *cobra.Command, config cli.PersistentConfig) {
 	}
 }
 
-func askLicense(cliRef cli.CLI) error {
-	if !cliRef.InteractiveTerminal() && !cliRef.GetPersistentConfig().LicenseAccepted() {
-		return errors.New("you have to accept the license to use this product")
+func readLicense() error {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("%s\n\nPress enter to continue", license)
+	_, err := reader.ReadString('\n')
+	if err != nil {
+		return err
 	}
-
-	if cliRef.InteractiveTerminal() && !cliRef.GetPersistentConfig().LicenseAccepted() {
-		accepted := false
-		err := survey.AskOne(&survey.Confirm{
-			Renderer: survey.Renderer{},
-			Message:  "Are you cool with the license terms?",
-			Default:  true,
-		}, &accepted)
-		if err != nil {
-			return err
-		}
-		if !accepted {
-			return errors.New("you have to accept the license to use this product")
-		}
-		cliRef.GetPersistentConfig().SetLicenseAccepted(accepted)
-	}
-
-	return cliRef.GetPersistentConfig().PersistConfig()
+	return nil
 }

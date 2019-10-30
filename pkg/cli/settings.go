@@ -45,7 +45,13 @@ type Setting struct {
 
 type Settings map[string]Setting
 
-var PersistentConfigurationSettings = Settings{
+var PersistentGlobalSettings = Settings{
+	AcceptedLicenseVersions: {
+		Kind: reflect.Slice,
+	},
+}
+
+var PersistentSettings = Settings{
 	Namespace: {
 		Flag:        "namespace",
 		Default:     "backyards-system",

@@ -65,7 +65,9 @@ type CLI interface {
 	GetRootCommand() *cobra.Command
 	GetK8sClient() (k8sclient.Client, error)
 	GetK8sConfig() (*rest.Config, error)
+
 	GetPersistentConfig() PersistentConfig
+	GetPersistentGlobalConfig() PersistentGlobalConfig
 	GetToken() string
 
 	LabelManager() k8s.LabelManager
@@ -81,25 +83,32 @@ type CLI interface {
 }
 
 type backyardsCLI struct {
-	out              io.Writer
-	rootCmd          *cobra.Command
-	labelManager     k8s.LabelManager
-	lmOnce           sync.Once
-	persistentConfig PersistentConfig
-	settings         Settings
+	out                    io.Writer
+	rootCmd                *cobra.Command
+	labelManager           k8s.LabelManager
+	lmOnce                 sync.Once
+	persistentConfig       PersistentConfig
+	persistentGlobalConfig PersistentGlobalConfig
 }
 
-func NewCli(out io.Writer, rootCmd *cobra.Command, settings Settings) CLI {
+func NewCli(out io.Writer, rootCmd *cobra.Command) CLI {
 	return &backyardsCLI{
-		out:      out,
-		lmOnce:   sync.Once{},
-		rootCmd:  rootCmd,
-		settings: settings,
+		out:     out,
+		lmOnce:  sync.Once{},
+		rootCmd: rootCmd,
 	}
 }
 
 func (c *backyardsCLI) Initialize() error {
-	return c.loadPersistentConfig()
+	err := c.loadPersistentConfig()
+	if err != nil {
+		return err
+	}
+	err = c.loadPersistentGlobalConfig()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *backyardsCLI) GetRootCommand() *cobra.Command {
@@ -163,39 +172,59 @@ func (c *backyardsCLI) GetPersistentConfig() PersistentConfig {
 	return c.persistentConfig
 }
 
-func (c *backyardsCLI) loadPersistentConfig() error {
-	if c.persistentConfig != nil {
-		return nil
+func (c *backyardsCLI) loadPersistentGlobalConfig() error {
+	v, err := createViper(filepath.Join(homedir.HomeDir(), ".banzai/backyards/config.yaml"))
+	if err != nil {
+		return err
 	}
 
-	var err error
-	if viper.GetString(PersistentConfigKey) != "" {
-		c.persistentConfig, err = newViperPersistentConfig(viper.GetString(PersistentConfigKey), c.settings, c.rootCmd.Flags())
+	PersistentGlobalSettings.Bind(v, c.rootCmd.Flags())
+	c.persistentGlobalConfig = newViperPersistentGlobalConfig(v)
+	return err
+}
+
+func (c *backyardsCLI) loadPersistentConfig() error {
+	configFile, err := c.persistentConfigFile()
+	if err != nil {
 		return err
+	}
+
+	v, err := createViper(configFile)
+	if err != nil {
+		return err
+	}
+	PersistentSettings.Bind(v, c.rootCmd.Flags())
+	c.persistentConfig = newViperPersistentConfig(v)
+	return nil
+}
+
+func (c *backyardsCLI) persistentConfigFile() (string, error) {
+	if viper.GetString(PersistentConfigKey) != "" {
+		return viper.GetString(PersistentConfigKey), nil
 	}
 
 	config, err := k8sclient.GetRawConfig(viper.GetString("kubeconfig"), viper.GetString("kubecontext"))
 	if err != nil {
-		return errors.WrapIf(err, "failed to get raw kubernetes config")
+		return "", errors.WrapIf(err, "failed to get raw kubernetes config")
 	}
 
 	if len(config.Clusters) == 0 {
-		return errors.New("kubeconfig is invalid, no clusters defined")
+		return "", errors.New("kubeconfig is invalid, no clusters defined")
 	}
 
 	currentContext, ok := config.Contexts[config.CurrentContext]
 	if !ok {
-		return errors.Errorf("kubeconfig is invalid, current context data not available %s", config.CurrentContext)
+		return "", errors.Errorf("kubeconfig is invalid, current context data not available %s", config.CurrentContext)
 	}
 
 	currentCluster, ok := config.Clusters[currentContext.Cluster]
 	if !ok {
-		return errors.Errorf("kubeconfig is invalid, cluster data for current context not available %s", currentContext.Cluster)
+		return "", errors.Errorf("kubeconfig is invalid, cluster data for current context not available %s", currentContext.Cluster)
 	}
 
 	parse, err := url.Parse(currentCluster.Server)
 	if err != nil {
-		return errors.WrapIf(err, "failed to parse server url")
+		return "", errors.WrapIf(err, "failed to parse server url")
 	}
 
 	host := parse.Host
@@ -204,10 +233,7 @@ func (c *backyardsCLI) loadPersistentConfig() error {
 
 	configFileName := fmt.Sprintf("%s@%s", config.CurrentContext, host)
 
-	configFileFullPath := filepath.Join(homedir.HomeDir(), ".banzai/backyards", configFileName+".yaml")
-
-	c.persistentConfig, err = newViperPersistentConfig(configFileFullPath, c.settings, c.rootCmd.Flags())
-	return err
+	return filepath.Join(homedir.HomeDir(), ".banzai/backyards", configFileName+".yaml"), nil
 }
 
 func (c *backyardsCLI) GetK8sClient() (k8sclient.Client, error) {
@@ -341,4 +367,43 @@ func (c *backyardsCLI) GetToken() string {
 		}
 	}
 	return token
+}
+
+func (c *backyardsCLI) GetPersistentGlobalConfig() PersistentGlobalConfig {
+	return c.persistentGlobalConfig
+}
+
+func createViper(file string) (*viper.Viper, error) {
+	v := viper.New()
+	v.SetConfigFile(file)
+	err := v.ReadInConfig()
+	if err != nil {
+		var osPathError *os.PathError
+		if errors.As(err, &osPathError) {
+			logrus.Debugf("No configuration file has been loaded")
+		} else {
+			return nil, errors.WrapIff(err, "Failed to read config file %s", file)
+		}
+	} else {
+		logrus.Debugf("Using config: %s", file)
+	}
+	return v, nil
+}
+
+func persistViper(v *viper.Viper) error {
+	if _, err := os.Stat(filepath.Dir(v.ConfigFileUsed())); os.IsNotExist(err) {
+		logrus.Debug("Creating config dir")
+		configPath := filepath.Dir(v.ConfigFileUsed())
+		err := os.MkdirAll(configPath, 0700)
+		if err != nil {
+			return errors.WrapIf(err, "failed to create config dir")
+		}
+	}
+	logrus.Debugf("Saving current config settings to %s", v.ConfigFileUsed())
+	logrus.Debugf("%#v", v.AllSettings())
+	err := v.WriteConfig()
+	if err != nil {
+		return errors.WrapIf(err, "Failed to save config file")
+	}
+	return nil
 }

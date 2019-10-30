@@ -15,13 +15,6 @@
 package cli
 
 import (
-	"errors"
-	"os"
-	"path/filepath"
-
-	emperror "emperror.dev/errors"
-	"github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -36,11 +29,9 @@ type PersistentConfig interface {
 	LocalPort() int
 	UsePortForward() bool
 	TrackingClientID() string
-	LicenseAccepted() bool
 	Token() string
 
 	SetTrackingClientID(string)
-	SetLicenseAccepted(bool)
 	SetToken(string)
 
 	PersistConfig() error
@@ -49,21 +40,15 @@ type PersistentConfig interface {
 }
 
 type viperPersistentConfig struct {
-	localConfigFile string
-	viper           *viper.Viper
-	settings        Settings
-	flags           *flag.FlagSet
-	changed         map[string]interface{}
+	viper   *viper.Viper
+	changed map[string]interface{}
 }
 
-func newViperPersistentConfig(persistentConfig string, settings Settings, flags *flag.FlagSet) (PersistentConfig, error) {
-	config := &viperPersistentConfig{
-		localConfigFile: persistentConfig,
-		changed:         make(map[string]interface{}),
-		settings:        settings,
-		flags:           flags,
+func newViperPersistentConfig(persistentConfig *viper.Viper) PersistentConfig {
+	return &viperPersistentConfig{
+		viper:   persistentConfig,
+		changed: make(map[string]interface{}),
 	}
-	return config, config.loadConfig()
 }
 
 func (b *viperPersistentConfig) Namespace() string {
@@ -90,20 +75,12 @@ func (b *viperPersistentConfig) TrackingClientID() string {
 	return b.viper.GetString(TrackingClientID)
 }
 
-func (b *viperPersistentConfig) LicenseAccepted() bool {
-	return b.viper.GetBool(LicenseAccepted)
-}
-
 func (b *viperPersistentConfig) Token() string {
 	return b.viper.GetString(Token)
 }
 
 func (b *viperPersistentConfig) SetTrackingClientID(clientID string) {
 	b.set(TrackingClientID, clientID)
-}
-
-func (b *viperPersistentConfig) SetLicenseAccepted(enabled bool) {
-	b.set(LicenseAccepted, enabled)
 }
 
 func (b *viperPersistentConfig) SetToken(token string) {
@@ -116,38 +93,9 @@ func (b *viperPersistentConfig) set(key string, value interface{}) {
 	b.viper.Set(key, value)
 }
 
-func (b *viperPersistentConfig) loadConfig() error {
-	b.viper = viper.New()
-	b.viper.SetConfigFile(b.localConfigFile)
-	err := b.viper.ReadInConfig()
-	if err != nil {
-		var osPathError *os.PathError
-		if errors.As(err, &osPathError) {
-			logrus.Debugf("No configuration file has been loaded")
-		} else {
-			return emperror.WrapIff(err, "Failed to read config file %s", b.localConfigFile)
-		}
-	} else {
-		logrus.Debugf("Using config: %s", b.localConfigFile)
-	}
-	b.settings.Bind(b.viper, b.flags)
-	return nil
-}
-
 func (b *viperPersistentConfig) PersistConfig() error {
 	if len(b.changed) > 0 {
-		if _, err := os.Stat(filepath.Dir(b.viper.ConfigFileUsed())); os.IsNotExist(err) {
-			logrus.Debug("Creating config dir")
-			configPath := filepath.Dir(b.viper.ConfigFileUsed())
-			err := os.MkdirAll(configPath, 0700)
-			if err != nil {
-				return emperror.WrapIf(err, "failed to create config dir")
-			}
-		}
-		logrus.Debugf("Saving current config settings to %s", b.viper.ConfigFileUsed())
-		logrus.Debugf("%#v", b.viper.AllSettings())
-		err := b.viper.WriteConfig()
-		if err != nil {
+		if err := persistViper(b.viper); err != nil {
 			return err
 		}
 		// restore initial state so that PersistConfig would be idempotent
