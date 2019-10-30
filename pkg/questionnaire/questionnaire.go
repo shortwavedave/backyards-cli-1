@@ -41,7 +41,7 @@ func GetQuestionsFromStruct(obj interface{}, additionalValidators ValidateFuncs)
 			case reflect.Float32:
 				def = strconv.Itoa(int(elem.Interface().(float32)))
 			case reflect.Int:
-				def = strconv.Itoa(int(elem.Interface().(int)))
+				def = strconv.Itoa(elem.Interface().(int))
 			case reflect.Int32:
 				def = strconv.Itoa(int(elem.Interface().(int32)))
 			case reflect.Int64:

@@ -6,6 +6,7 @@ linters:
         - lll
         - gochecknoinits
         - funlen
+        - dupl
 
 linters-settings:
     funlen:

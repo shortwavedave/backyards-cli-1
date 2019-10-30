@@ -12,32 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package routing
+package route
 
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/cb"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/fi"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/ts"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:         "routing",
-		Aliases:     []string{"r"},
-		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
-		Short:       "Manage service routing configurations",
+		Use:     "route",
+		Aliases: []string{"r", "ro"},
+		Short:   "Manage route configurations",
 	}
 
 	cmd.AddCommand(
-		ts.NewRootCmd(cli),
-		cb.NewRootCmd(cli),
-		fi.NewRootCmd(cli),
-		route.NewRootCmd(cli),
+		newGetCommand(cli),
+		newSetCommand(cli),
+		newDeleteCommand(cli),
 	)
 
 	return cmd
