@@ -104,19 +104,14 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	r, err := client.GetService(service.Namespace, service.Name)
-	if err != nil {
-		return errors.WrapIf(err, "could not get service")
-	}
-
-	if len(r.VirtualServices) == 0 {
+	if len(service.VirtualServices) == 0 {
 		log.Infof("No matching route found for %s", options.serviceName)
 		return nil
 	}
 
 	var matchedRoute *v1alpha3.HTTPRoute
 
-	for _, route := range r.VirtualServices[0].Spec.HTTP {
+	for _, route := range service.VirtualServices[0].Spec.HTTP {
 		route := route
 		if len(options.parsedMatches) == 0 && len(route.Match) == 0 {
 			matchedRoute = &route

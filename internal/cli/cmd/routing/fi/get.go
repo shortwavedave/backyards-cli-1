@@ -105,21 +105,16 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	r, err := client.GetService(service.Namespace, service.Name)
-	if err != nil {
-		return errors.WrapIf(err, "could not get service")
-	}
-
-	if len(r.VirtualServices) == 0 {
+	if len(service.VirtualServices) == 0 {
 		log.Infof("No fault injection settings found for %s", options.serviceName)
 		return nil
 	}
 
 	if options.showAll {
-		return Output(cli, options.serviceName, r.VirtualServices[0].Spec.HTTP...)
+		return Output(cli, options.serviceName, service.VirtualServices[0].Spec.HTTP...)
 	}
 
-	matchedRoute := common.HTTPRoutes(r.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
+	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
 
 	if matchedRoute == nil {
 		return errors.New("route not found")
