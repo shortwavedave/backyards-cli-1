@@ -21,6 +21,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
+
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
@@ -108,16 +110,21 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	defer client.Close()
 
 	req := graphql.ApplyHTTPRouteRequest{
-		Name:      service.Name,
-		Namespace: service.Namespace,
-		Route:     make([]graphql.HTTPRouteDestination, 0),
+		Selector: graphql.HTTPRouteSelector{
+			Name:      service.Name,
+			Namespace: service.Namespace,
+		},
+		Rule: graphql.HTTPRules{
+			Route: make([]*v1alpha3.HTTPRouteDestination, 0),
+		},
 	}
 
 	for subset, weight := range options.parsedSubsets {
-		req.Route = append(req.Route, graphql.HTTPRouteDestination{
-			Destination: graphql.Destination{
+		subset := subset
+		req.Rule.Route = append(req.Rule.Route, &v1alpha3.HTTPRouteDestination{
+			Destination: &v1alpha3.Destination{
 				Host:   service.Name,
-				Subset: subset,
+				Subset: &subset,
 			},
 			Weight: weight,
 		})

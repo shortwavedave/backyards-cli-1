@@ -92,8 +92,10 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	defer client.Close()
 
 	req := graphql.DisableHTTPRouteRequest{
-		Name:      service.Name,
-		Namespace: service.Namespace,
+		Selector: graphql.HTTPRouteSelector{
+			Name:      service.Name,
+			Namespace: service.Namespace,
+		},
 		Rules: []string{
 			"Route",
 		},
