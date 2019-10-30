@@ -22,6 +22,7 @@ import (
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
@@ -93,7 +94,7 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	var err error
 
-	client, err := common.GetGraphQLClient(cli)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
