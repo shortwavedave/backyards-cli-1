@@ -191,12 +191,12 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 
 	if len(service.VirtualServices) == 0 {
-		return errors.New("http route not found, must create it first")
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
 	if matchedRoute == nil {
-		return errors.New("http route not found")
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	fi := &v1alpha3.HTTPFaultInjection{

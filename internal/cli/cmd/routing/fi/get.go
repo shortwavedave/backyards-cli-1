@@ -115,9 +115,8 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	}
 
 	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
-
 	if matchedRoute == nil {
-		return errors.New("route not found")
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	return Output(cli, options.serviceName, *matchedRoute)

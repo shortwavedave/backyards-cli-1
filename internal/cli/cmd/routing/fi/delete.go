@@ -15,8 +15,6 @@
 package fi
 
 import (
-	"reflect"
-
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
 	log "github.com/sirupsen/logrus"
@@ -105,27 +103,12 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	}
 
 	if len(service.VirtualServices) == 0 {
-		log.Infof("No matching route found for %s", options.serviceName)
-		return nil
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
-	var matchedRoute *v1alpha3.HTTPRoute
-
-	for _, route := range service.VirtualServices[0].Spec.HTTP {
-		route := route
-		if len(options.parsedMatches) == 0 && len(route.Match) == 0 {
-			matchedRoute = &route
-			break
-		}
-		if reflect.DeepEqual(options.parsedMatches, route.Match) {
-			matchedRoute = &route
-			break
-		}
-	}
-
+	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
 	if matchedRoute == nil {
-		log.Infof("No matching route found for %s", options.serviceName)
-		return nil
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	if matchedRoute.Fault == nil {

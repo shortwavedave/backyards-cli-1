@@ -102,21 +102,13 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	r, err := client.GetService(service.Namespace, service.Name)
-	if err != nil {
-		return err
+	if len(service.VirtualServices) == 0 {
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
-	if len(r.VirtualServices) == 0 {
-		log.Infof("No matching route found for %s", options.serviceName)
-		return nil
-	}
-
-	matchedRoute := common.HTTPRoutes(r.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
-
+	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
 	if matchedRoute == nil {
-		log.Infof("No matching route found for %s", options.serviceName)
-		return nil
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	if matchedRoute.Route == nil && matchedRoute.Redirect == nil {
@@ -124,18 +116,20 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return nil
 	}
 
-	err = Output(cli, options.serviceName, *matchedRoute)
-	if err != nil {
-		return err
-	}
+	if cli.Interactive() {
+		err = Output(cli, options.serviceName, *matchedRoute)
+		if err != nil {
+			return err
+		}
 
-	confirmed := false
-	err = survey.AskOne(&survey.Confirm{Message: "Do you want to DELETE the fault injection?"}, &confirmed)
-	if err != nil {
-		return errors.WrapIf(err, "could not ask for confirmation")
-	}
-	if !confirmed {
-		return errors.New("deletion cancelled")
+		confirmed := false
+		err = survey.AskOne(&survey.Confirm{Message: "Do you want to DELETE the fault injection?"}, &confirmed)
+		if err != nil {
+			return errors.WrapIf(err, "could not ask for confirmation")
+		}
+		if !confirmed {
+			return errors.New("deletion cancelled")
+		}
 	}
 
 	req := graphql.DisableHTTPRouteRequest{
@@ -156,7 +150,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return errors.New("unknown error: cannot delete fault injection configuration")
 	}
 
-	log.Infof("fault injection set to %s successfully deleted", options.serviceName)
+	log.Infof("http route with match %s set to %s successfully deleted", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)), options.serviceName)
 
 	return nil
 }
