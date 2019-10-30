@@ -6,6 +6,7 @@ orbs:
 
 jobs:
     build:
+        resource_class: medium+
         docker:
             -
                 image: circleci/golang:1.13

@@ -30,12 +30,11 @@ type NamespacesResponse struct {
 
 func (c *client) GetNamespaces() (NamespacesResponse, error) {
 	request := heredoc.Doc(`
-query namespaces {
-  namespaces{
-    name
-  }
-}
-`)
+		query namespaces {
+			namespaces{
+				name
+			}
+		}`)
 	r := c.NewRequest(request)
 	var respData NamespacesResponse
 	if err := c.client.Run(context.Background(), r, &respData); err != nil {

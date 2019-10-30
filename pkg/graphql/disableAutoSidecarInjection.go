@@ -32,12 +32,11 @@ type DisableAutoSidecarInjectionResponse struct {
 
 func (c *client) DisableAutoSidecarInjection(req DisableAutoSidecarInjectionRequest) (DisableAutoSidecarInjectionResponse, error) {
 	request := heredoc.Doc(`
-	  mutation disableAutoSidecarInjection($namespace: String!) {
-		disableAutoSidecarInjection(namespace: $namespace){
-    name
-  }
-}
-`)
+		mutation disableAutoSidecarInjection($namespace: String!) {
+			disableAutoSidecarInjection(namespace: $namespace){
+				name
+			}
+		}`)
 
 	r := c.NewRequest(request)
 	r.Var("namespace", req.Name)
