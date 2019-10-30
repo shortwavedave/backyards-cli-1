@@ -19,6 +19,7 @@ backyards config delete [flags]
 ### Options inherited from parent commands
 
 ```
+      --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/license
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
       --color                           use colors on non-tty outputs (default true)
