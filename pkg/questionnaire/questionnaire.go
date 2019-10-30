@@ -22,6 +22,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/spf13/cast"
 )
 
 type ValidateFuncs map[string]survey.Validator
@@ -36,21 +37,7 @@ func GetQuestionsFromStruct(obj interface{}, additionalValidators ValidateFuncs)
 		elem := v.Field(k)
 		desc := f.Tag.Get("survey.question")
 		if desc != "" {
-			var def string
-			switch elem.Kind() {
-			case reflect.Float32:
-				def = strconv.Itoa(int(elem.Interface().(float32)))
-			case reflect.Int:
-				def = strconv.Itoa(elem.Interface().(int))
-			case reflect.Int32:
-				def = strconv.Itoa(int(elem.Interface().(int32)))
-			case reflect.Int64:
-				def = strconv.Itoa(int(elem.Interface().(int64)))
-			case reflect.String:
-				def = elem.Interface().(string)
-			default:
-				return nil, errors.Errorf("unsupported field type: %s", elem.Type())
-			}
+			def := cast.ToString(elem.Interface())
 
 			validators := defaultValidators()
 			for k, v := range additionalValidators {
