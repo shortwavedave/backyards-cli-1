@@ -75,7 +75,7 @@ type InstallOptions struct {
 	installIstio       bool
 	installCertManager bool
 	enableAuditSink    bool
-	enableAuth         bool
+	anonymousAuth      bool
 	installEverything  bool
 	runDemo            bool
 
@@ -153,7 +153,7 @@ The command can install every component at once with the '--install-everything' 
 
 	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Send load to demo application and opens up dashboard")
 	cmd.Flags().BoolVar(&options.enableAuditSink, "enable-auditsink", options.enableAuditSink, "Enable deploying the auditsink service and sending audit logs over http")
-	cmd.Flags().BoolVar(&options.enableAuth, "enable-auth", options.enableAuth, "Enable authentication with impersonation")
+	cmd.Flags().BoolVar(&options.anonymousAuth, "anonymous-auth", options.anonymousAuth, "Switch to anonymous mode")
 
 	cmd.Flags().StringVar(&options.apiImage, "api-image", options.apiImage, "Image for the API")
 	cmd.Flags().StringVar(&options.webImage, "web-image", options.webImage, "Image for the frontend")
@@ -180,9 +180,11 @@ func (c *installCommand) run(options *InstallOptions) error {
 		if shouldCertManagerBeEnabled(options) {
 			values.CertManager.Enabled = true
 		}
-		if options.enableAuth {
-			values.CertManager.Enabled = true
-			values.Auth.Method = impersonation
+		if options.anonymousAuth {
+			values.Auth.Mode = anonymous
+			values.Impersonation.Enabled = false
+		} else {
+			values.Auth.Mode = impersonation
 			values.Impersonation.Enabled = true
 		}
 		if options.apiImage != "" {

@@ -23,6 +23,8 @@ import (
 	"istio.io/operator/pkg/object"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
+
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
@@ -67,7 +69,9 @@ The command can uninstall every component at once with the '--uninstall-everythi
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return c.run(cli, options)
+			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+				return c.run(cli, options)
+			})
 		},
 	}
 

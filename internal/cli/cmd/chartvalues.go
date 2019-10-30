@@ -21,11 +21,11 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 )
 
-type AuthMethod string
+type AuthMode string
 
 const (
-	anonymous     AuthMethod = "anonymous"
-	impersonation AuthMethod = "impersonation"
+	anonymous     AuthMode = "anonymous"
+	impersonation AuthMode = "impersonation"
 )
 
 type Values struct {
@@ -163,7 +163,7 @@ type Values struct {
 	} `json:"certmanager"`
 
 	Auth struct {
-		Method AuthMethod `json:"method"`
+		Mode AuthMode `json:"mode"`
 	} `json:"auth"`
 
 	Impersonation struct {
@@ -250,6 +250,6 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 	}
 	values.Tracing.Service.Name = "backyards-zipkin"
 
-	values.Auth.Method = anonymous
+	values.Auth.Mode = anonymous
 	values.Impersonation.Enabled = false
 }

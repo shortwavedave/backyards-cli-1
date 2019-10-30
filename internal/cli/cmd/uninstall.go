@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -69,24 +68,13 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			confirmed := false
-
-			err := survey.AskOne(&survey.Confirm{
-				Renderer: survey.Renderer{},
-				Message:  "This command will destroy resources and cannot be undone. Are you sure to proceed?",
-				Default:  false,
-			}, &confirmed)
-			if err != nil {
-				return err
-			}
-			if confirmed {
+			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				err := c.run(cli, options)
 				if err != nil {
 					return err
 				}
 				return c.runSubcommands(cli, options)
-			}
-			return nil
+			})
 		},
 	}
 

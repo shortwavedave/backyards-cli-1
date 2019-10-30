@@ -28,10 +28,10 @@ backyards install [flags]
 ### Options
 
 ```
+      --anonymous-auth           Switch to anonymous mode
       --api-image string         Image for the API
   -d, --dump-resources           Dump resources to stdout instead of applying them
       --enable-auditsink         Enable deploying the auditsink service and sending audit logs over http
-      --enable-auth              Enable authentication with impersonation
   -h, --help                     help for install
       --install-canary           Install Canary feature as well
       --install-cert-manager     Install cert-manager as well

@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
+
 	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
@@ -71,7 +73,9 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return c.run(cli, options)
+			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+				return c.run(cli, options)
+			})
 		},
 	}
 
