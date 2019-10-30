@@ -36,7 +36,7 @@ func TestTable(t *testing.T) {
 				{"foofoo", "barbar", 33},
 			},
 			fields:   []string{"Bar", "Baz", "Foo"},
-			expected: "Bar     Baz  Foo   \nbar     3    foo   \nbarbar  33   foofoo",
+			expected: "Bar     Baz  Foo     \nbar     3    foo     \nbarbar  33   foofoo  ",
 		},
 		"pointer": {
 			data: []*row{
@@ -44,7 +44,7 @@ func TestTable(t *testing.T) {
 				{"foofoo", "barbar", 33},
 			},
 			fields:   []string{"Bar", "Baz", "Foo"},
-			expected: "Bar     Baz  Foo   \nbar     3    foo   \nbarbar  33   foofoo",
+			expected: "Bar     Baz  Foo     \nbar     3    foo     \nbarbar  33   foofoo  ",
 		},
 	}
 
@@ -55,7 +55,7 @@ func TestTable(t *testing.T) {
 			table := NewTable(test.data, test.fields, test.fields)
 
 			if got := table.Format(false); got != test.expected {
-				t.Errorf("unexpected table result\ngot : %s\nwant: %q", got, test.expected)
+				t.Errorf("unexpected table result\ngot : %#v\nwant: %q", got, test.expected)
 			}
 		})
 	}
