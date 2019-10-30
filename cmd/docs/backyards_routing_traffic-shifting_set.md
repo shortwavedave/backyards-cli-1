@@ -7,13 +7,14 @@ Set traffic shifting rules for a service
 Set traffic shifting rules for a service
 
 ```
-backyards routing traffic-shifting set [[--service=]namespace/servicename] [[--version=]subset=weight] ... [flags]
+backyards routing traffic-shifting set [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [[--version=]subset=weight] ... [flags]
 ```
 
 ### Options
 
 ```
   -h, --help                 help for set
+  -m, --match stringArray    HTTP request match
       --service string       Service name
       --subset stringArray   Subsets with weights (sum of the weight must add up to 100)
 ```

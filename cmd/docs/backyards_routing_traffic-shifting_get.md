@@ -7,14 +7,15 @@ Get traffic shifting rules for a service
 Get traffic shifting rules for a service
 
 ```
-backyards routing traffic-shifting get [[--service=]namespace/servicename] [flags]
+backyards routing traffic-shifting get [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help             help for get
-      --service string   Service name
+  -h, --help                help for get
+  -m, --match stringArray   HTTP request match
+      --service string      Service name
 ```
 
 ### Options inherited from parent commands
