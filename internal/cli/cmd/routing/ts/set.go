@@ -33,10 +33,12 @@ type setCommand struct{}
 
 type setOptions struct {
 	serviceID string
+	matches   []string
 	subsets   []string
 
 	serviceName   types.NamespacedName
 	parsedSubsets parsedSubsets
+	parsedMatches []*v1alpha3.HTTPMatchRequest
 }
 
 func newSetOptions() *setOptions {
@@ -48,7 +50,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	options := newSetOptions()
 
 	cmd := &cobra.Command{
-		Use:           "set [[--service=]namespace/servicename] [[--version=]subset=weight] ...",
+		Use:           "set [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [[--version=]subset=weight] ...",
 		Short:         "Set traffic shifting rules for a service",
 		Args:          cobra.ArbitraryArgs,
 		SilenceErrors: true,
@@ -67,6 +69,10 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("service must be specified")
 			}
 
+			if len(options.matches) == 0 {
+				return errors.New("at least one route match must be specified")
+			}
+
 			if len(options.subsets) < 1 {
 				return errors.New("at least 1 subset must be specified")
 			}
@@ -74,6 +80,11 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 			options.serviceName, err = common.ParseServiceID(options.serviceID)
 			if err != nil {
 				return err
+			}
+
+			options.parsedMatches, err = common.ParseHTTPRequestMatches(options.matches)
+			if err != nil {
+				return errors.WrapIf(err, "could not parse matches")
 			}
 
 			options.parsedSubsets, err = parseSubsets(options.subsets)
@@ -88,6 +99,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVar(&options.serviceID, "service", "", "Service name")
 	flags.StringArrayVar(&options.subsets, "subset", []string{}, "Subsets with weights (sum of the weight must add up to 100)")
+	flags.StringArrayVarP(&options.matches, "match", "m", options.matches, "HTTP request match")
 
 	return cmd
 }
@@ -113,9 +125,11 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 		Selector: graphql.HTTPRouteSelector{
 			Name:      service.Name,
 			Namespace: service.Namespace,
+			Matches:   options.parsedMatches,
 		},
 		Rule: graphql.HTTPRules{
-			Route: make([]*v1alpha3.HTTPRouteDestination, 0),
+			Matches: options.parsedMatches,
+			Route:   make([]*v1alpha3.HTTPRouteDestination, 0),
 		},
 	}
 
@@ -139,7 +153,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 		return errors.New("unknown error: cannot set traffic shifting")
 	}
 
-	log.Infof("traffic shifting for %s set to %s successfully", options.serviceName, options.parsedSubsets)
+	log.Infof("traffic shifting for %s with match %s set to %s successfully", options.serviceName, common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)), options.parsedSubsets)
 
 	return nil
 }

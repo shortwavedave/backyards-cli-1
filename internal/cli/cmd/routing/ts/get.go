@@ -18,10 +18,13 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
+
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -29,12 +32,18 @@ type getCommand struct{}
 
 type getOptions struct {
 	serviceID string
+	showAll   bool
+
+	matches       []string
+	parsedMatches []*v1alpha3.HTTPMatchRequest
 
 	serviceName types.NamespacedName
 }
 
 func newGetOptions() *getOptions {
-	return &getOptions{}
+	return &getOptions{
+		showAll: true,
+	}
 }
 
 func newGetCommand(cli cli.CLI) *cobra.Command {
@@ -42,7 +51,7 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 	options := newGetOptions()
 
 	cmd := &cobra.Command{
-		Use:           "get [[--service=]namespace/servicename]",
+		Use:           "get [[--service=]namespace/servicename] [[--match=]field:kind=value] ...",
 		Short:         "Get traffic shifting rules for a service",
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
@@ -62,12 +71,22 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 				return err
 			}
 
+			options.parsedMatches, err = common.ParseHTTPRequestMatches(options.matches)
+			if err != nil {
+				return errors.WrapIf(err, "could not parse matches")
+			}
+
+			if len(options.matches) > 0 {
+				options.showAll = false
+			}
+
 			return c.run(cli, options)
 		},
 	}
 
 	flags := cmd.Flags()
 	flags.StringVar(&options.serviceID, "service", "", "Service name")
+	flags.StringArrayVarP(&options.matches, "match", "m", options.matches, "HTTP request match")
 
 	return cmd
 }
@@ -75,35 +94,30 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	var err error
 
-	_, err = common.GetServiceByName(cli, options.serviceName)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return err
-		}
+		return errors.WrapIf(err, "could not get initialized graphql client")
+	}
+	defer client.Close()
+
+	service, err := client.GetService(options.serviceName.Namespace, options.serviceName.Name)
+	if err != nil {
 		return errors.WrapIf(err, "could not get service")
 	}
 
-	vservice, err := common.GetVirtualserviceByName(cli, options.serviceName)
-	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			log.Infof("no traffic shifting rules set for %s", options.serviceName)
-			return nil
-		}
-		return errors.WrapIf(err, "could not get service")
+	if len(service.VirtualServices) == 0 {
+		log.Infof("No routing configuration found for %s", options.serviceName)
+		return nil
 	}
 
-	subsets := make(parsedSubsets)
-	for _, route := range vservice.Spec.HTTP {
-		if len(route.Match) > 0 {
-			continue
-		}
-
-		for _, r := range route.Route {
-			subsets[r.Destination.Subset] = r.Weight
-		}
+	if options.showAll {
+		return route.Output(cli, options.serviceName, service.VirtualServices[0].Spec.HTTP...)
 	}
 
-	log.Infof("traffic shifting for %s is currently set to %s", options.serviceName, subsets)
+	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
+	if matchedRoute == nil {
+		log.Infof("No route found for %s", options.serviceName)
+	}
 
-	return nil
+	return route.Output(cli, options.serviceName, *matchedRoute)
 }
