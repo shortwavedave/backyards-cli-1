@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"time"
 
 	"emperror.dev/errors"
 	logrushandler "emperror.dev/handler/logrus"
@@ -169,11 +170,11 @@ func init() {
 		if err != nil {
 			return err
 		}
-		sendEvent(cliRef, ga.NewEvent(GACategoryCommand, cmd.CommandPath()))
 		return nil
 	}
 
 	RootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		sendGAEvent(cliRef, ga.NewEvent(GACategoryCommand, cmd.CommandPath()))
 		config := cliRef.GetPersistentConfig()
 		return config.PersistConfig()
 	}
@@ -219,7 +220,7 @@ func askLicense(cliRef cli.CLI) error {
 			switch response {
 			case AnswerNo:
 				log.Error("You have to accept the license to use this product, we are sorry to see you go")
-				sendEvent(cliRef, ga.NewEvent(GACategoryLicense, GAActionReject))
+				sendGAEvent(cliRef, ga.NewEvent(GACategoryLicense, GAActionReject))
 				return nil
 			case AnswerYes:
 				if fullLicenseHaveBeenRead {
@@ -251,7 +252,7 @@ func askLicense(cliRef cli.CLI) error {
 	return nil
 }
 
-func sendEvent(cli cli.CLI, event *ga.Event) {
+func sendGAEvent(cli cli.CLI, event *ga.Event) {
 	config := cli.GetPersistentConfig()
 	if config.TrackingClientID() == "" {
 		config.SetTrackingClientID(uuid.New())
@@ -260,17 +261,16 @@ func sendEvent(cli cli.CLI, event *ga.Event) {
 		log.Debugf("sending metrics to %s", trackingID)
 		client, err := ga.NewClient(trackingID)
 		if err != nil {
-			log.Errorf("Failed to send metrics")
 			log.Debugf("Failed to configure analytics client: %+v", err)
 			return
 		}
+		client.HttpClient.Timeout = time.Millisecond * 500
 		client.UserAgentOverride(GAUserAgent)
 		event.Label(RootCmd.Version)
 		client.AnonymizeIP(true)
 		client.ClientID(config.TrackingClientID())
 		err = client.Send(event)
 		if err != nil {
-			log.Errorf("Failed to send metrics")
 			log.Debugf("Failed to send event: %+v", err)
 			return
 		}
