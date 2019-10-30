@@ -1,20 +1,25 @@
-## backyards routing circuit-breaker delete
+## backyards routing fault-injection set
 
-Delete circuit breaker rules of a service
+Set fault injection for http route of a service
 
 ### Synopsis
 
-Delete circuit breaker rules of a service
+Set fault injection for http route of a service
 
 ```
-backyards routing circuit-breaker delete [[--service=]namespace/servicename] [flags]
+backyards routing fault-injection set [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help             help for delete
-      --service string   Service name
+      --abort-percentage float32     Percentage of requests on which the abort will be injected
+      --abort-status-code int        HTTP status code to use to abort the HTTP request
+      --delay-fixed-delay duration   Add a fixed delay before forwarding the request. Format: 1h/1m/1s/1ms. MUST be >=1ms.
+      --delay-percentage float32     Percentage of requests on which the delay will be injected
+  -h, --help                         help for set
+  -m, --match stringArray            HTTP request match
+      --service string               Service name
 ```
 
 ### Options inherited from parent commands
@@ -39,5 +44,5 @@ backyards routing circuit-breaker delete [[--service=]namespace/servicename] [fl
 
 ### SEE ALSO
 
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
+* [backyards routing fault-injection](backyards_routing_fault-injection.md)	 - Manage fault injection configurations
 

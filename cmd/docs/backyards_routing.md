@@ -17,6 +17,7 @@ Manage service routing configurations
 ```
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
+      --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --formatting.force-color          force color even when non in a terminal
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
@@ -35,5 +36,7 @@ Manage service routing configurations
 
 * [backyards](backyards.md)	 - Install and manage Backyards
 * [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
+* [backyards routing fault-injection](backyards_routing_fault-injection.md)	 - Manage fault injection configurations
+* [backyards routing route](backyards_routing_route.md)	 - Manage route configurations
 * [backyards routing traffic-shifting](backyards_routing_traffic-shifting.md)	 - Manage traffic-shifting configurations
 

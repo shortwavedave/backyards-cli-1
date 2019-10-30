@@ -1,20 +1,15 @@
-## backyards routing circuit-breaker delete
+## backyards routing route
 
-Delete circuit breaker rules of a service
+Manage route configurations
 
 ### Synopsis
 
-Delete circuit breaker rules of a service
-
-```
-backyards routing circuit-breaker delete [[--service=]namespace/servicename] [flags]
-```
+Manage route configurations
 
 ### Options
 
 ```
-  -h, --help             help for delete
-      --service string   Service name
+  -h, --help   help for route
 ```
 
 ### Options inherited from parent commands
@@ -39,5 +34,8 @@ backyards routing circuit-breaker delete [[--service=]namespace/servicename] [fl
 
 ### SEE ALSO
 
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
+* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
+* [backyards routing route delete](backyards_routing_route_delete.md)	 - Delete http route of a service
+* [backyards routing route get](backyards_routing_route_get.md)	 - Get route configuration for a service
+* [backyards routing route set](backyards_routing_route_set.md)	 - Set http route for a service
 

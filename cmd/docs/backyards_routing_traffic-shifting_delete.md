@@ -22,6 +22,7 @@ backyards routing traffic-shifting delete [[--service=]namespace/servicename] [f
 ```
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
+      --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --formatting.force-color          force color even when non in a terminal
       --interactive                     ask questions interactively even if stdin or stdout is non-tty

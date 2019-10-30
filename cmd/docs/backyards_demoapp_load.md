@@ -23,6 +23,7 @@ backyards demoapp load [flags]
 ```
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
+      --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --demo-namespace string           Namespace for demo application (default "backyards-demo")
       --formatting.force-color          force color even when non in a terminal

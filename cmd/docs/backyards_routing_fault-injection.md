@@ -1,20 +1,15 @@
-## backyards routing circuit-breaker delete
+## backyards routing fault-injection
 
-Delete circuit breaker rules of a service
+Manage fault injection configurations
 
 ### Synopsis
 
-Delete circuit breaker rules of a service
-
-```
-backyards routing circuit-breaker delete [[--service=]namespace/servicename] [flags]
-```
+Manage fault injection configurations
 
 ### Options
 
 ```
-  -h, --help             help for delete
-      --service string   Service name
+  -h, --help   help for fault-injection
 ```
 
 ### Options inherited from parent commands
@@ -39,5 +34,8 @@ backyards routing circuit-breaker delete [[--service=]namespace/servicename] [fl
 
 ### SEE ALSO
 
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
+* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
+* [backyards routing fault-injection delete](backyards_routing_fault-injection_delete.md)	 - Delete fault injection configuration of a service
+* [backyards routing fault-injection get](backyards_routing_fault-injection_get.md)	 - Get fault injection rules for a service
+* [backyards routing fault-injection set](backyards_routing_fault-injection_set.md)	 - Set fault injection for http route of a service
 

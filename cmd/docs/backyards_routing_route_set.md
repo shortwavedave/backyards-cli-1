@@ -1,20 +1,29 @@
-## backyards routing circuit-breaker delete
+## backyards routing route set
 
-Delete circuit breaker rules of a service
+Set http route for a service
 
 ### Synopsis
 
-Delete circuit breaker rules of a service
+Set http route for a service
 
 ```
-backyards routing circuit-breaker delete [[--service=]namespace/servicename] [flags]
+backyards routing route set [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help             help for delete
-      --service string   Service name
+  -h, --help                             help for set
+  -m, --match stringArray                HTTP request match
+      --redirect-authority string        overwrite the Authority/Host portion of the URL with this value
+      --redirect-uri string              overwrite the Path portion of the URL with this value
+      --retry-attempts int               Number of retries for a given request (default -1)
+      --retry-on string                  Specifies the conditions under which retry takes place
+      --retry-per-try-timeout duration   Timeout per retry attempt for a given request. format: 1h/1m/1s/1ms, must be >=1ms (default 2s)
+  -d, --route-destination stringArray    HTTP route destination
+  -w, --route-weights string             The proportions of traffic to be forwarded to the route destinations. (0-100) (default "100")
+      --service string                   Service name
+  -t, --timeout duration                 Timeout for HTTP requests (default -1ns)
 ```
 
 ### Options inherited from parent commands
@@ -39,5 +48,5 @@ backyards routing circuit-breaker delete [[--service=]namespace/servicename] [fl
 
 ### SEE ALSO
 
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
+* [backyards routing route](backyards_routing_route.md)	 - Manage route configurations
 
