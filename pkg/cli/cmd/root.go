@@ -17,6 +17,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"time"
@@ -31,18 +32,18 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/config"
-
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy"
+	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/licenses"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/canary"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/config"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/graph"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -146,7 +147,7 @@ func init() {
 	RootCmd.AddCommand(login.NewLoginCmd(cliRef))
 	RootCmd.AddCommand(config.NewConfigCmd(cliRef))
 	RootCmd.AddCommand(sidecarproxy.NewRootCmd(cliRef))
-
+	RootCmd.AddCommand(cmd.NewLicenseCommand(cliRef))
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		err := cliRef.Initialize()
 		if err != nil {
@@ -185,7 +186,7 @@ func askLicense(cliRef cli.CLI) error {
 		return nil
 	}
 
-	licenseAccepted := cliRef.GetPersistentGlobalConfig().LicenseAcceptedForVersion(licenseVersion)
+	licenseAccepted := cliRef.GetPersistentGlobalConfig().LicenseAcceptedForVersion(cmd.LicenseVersion)
 
 	if !cliRef.InteractiveTerminal() && !licenseAccepted {
 		return errors.New("you have to accept the license to use this product")
@@ -204,10 +205,13 @@ func askLicense(cliRef cli.CLI) error {
 			err := survey.AskOne(&survey.Select{
 				Renderer: survey.Renderer{},
 				Message: heredoc.Doc(`
-					License terms in short:
-					- allows Banzaicloud.com to collect anonymous usage statistics
-					- allows Banzaicloud.com to ask for non anonymous feedback
-					- not allowed for production use (reach out for an enterprise license)
+					You have successfully downloaded and installed Backyards. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License
+
+					TL;DR:
+					- you receive a limited license to test and evaluate the product
+					- you allow Banzai Cloud to collect anonymous usage statistics
+					- if you would like to use the Banzai Cloud product in production,
+					  you will need to upgrade your license. Contact: sales@banzaicloud.com.
 
 					Please read the full license and confirm that you accept the terms!
 				`),
@@ -219,12 +223,11 @@ func askLicense(cliRef cli.CLI) error {
 			}
 			switch response {
 			case AnswerNo:
-				log.Error("You have to accept the license to use this product, we are sorry to see you go")
 				sendGAEvent(cliRef, ga.NewEvent(GACategoryLicense, GAActionReject))
-				return nil
+				return errors.New("you have to accept the license to use this product, we are sorry to see you go")
 			case AnswerYes:
 				if fullLicenseHaveBeenRead {
-					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(licenseVersion)
+					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(cmd.LicenseVersion)
 					return cliRef.GetPersistentGlobalConfig().PersistConfig()
 				}
 				moveOn := false
@@ -237,7 +240,7 @@ func askLicense(cliRef cli.CLI) error {
 					return err
 				}
 				if moveOn {
-					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(licenseVersion)
+					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(cmd.LicenseVersion)
 					return cliRef.GetPersistentGlobalConfig().PersistConfig()
 				}
 			case AnswerLicense:
@@ -278,9 +281,19 @@ func sendGAEvent(cli cli.CLI, event *ga.Event) {
 }
 
 func readLicense() error {
+	f, err := licenses.Licenses.Open(fmt.Sprintf("LICENSE-v%s.txt", cmd.LicenseVersion))
+	if err != nil {
+		return err
+	}
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s\n\nPress enter to continue", license)
-	_, err := reader.ReadString('\n')
+	fmt.Printf("%s\n\nPress enter to continue", string(b))
+	_, err = reader.ReadString('\n')
 	if err != nil {
 		return err
 	}

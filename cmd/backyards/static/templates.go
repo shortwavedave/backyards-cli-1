@@ -45,6 +45,9 @@ var CertManagerCainjectorChartSource http.FileSystem = http.Dir(path.Join(getRep
 var CertManagerCRDSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/cert-manager"))
 var GraphTemplates http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/graphtemplates"))
 
+// Licenses contains license related assets
+var Licenses http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/license"))
+
 // getRepoRoot returns the full path to the root of the repo
 func getRepoRoot() string {
 	_, filename, _, _ := runtime.Caller(0)

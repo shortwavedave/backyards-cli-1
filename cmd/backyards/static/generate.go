@@ -103,4 +103,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = vfsgen.Generate(static.Licenses, vfsgen.Options{
+		Filename:     "static/licenses/licenses.gogen.go",
+		PackageName:  "licenses",
+		VariableName: "Licenses",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
