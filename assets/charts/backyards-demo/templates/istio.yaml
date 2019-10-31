@@ -33,14 +33,20 @@ spec:
     - destination:
         host: movies
         subset: v1
+        port:
+          number: 8080
       weight: 33
     - destination:
         host: movies
         subset: v2
+        port:
+          number: 8080
       weight: 33
     - destination:
         host: movies
         subset: v3
+        port:
+          number: 8080
       weight: 34
 ---
 {{ end }}
