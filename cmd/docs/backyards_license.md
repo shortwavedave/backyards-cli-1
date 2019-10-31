@@ -1,12 +1,22 @@
-## backyards
+## backyards license
 
-Install and manage Backyards
+Shows Backyards license
 
 ### Synopsis
 
-Install and manage Backyards
+Shows Backyards license
+
+```
+backyards license [flags]
+```
 
 ### Options
+
+```
+  -h, --help   help for license
+```
+
+### Options inherited from parent commands
 
 ```
       --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/license
@@ -15,7 +25,6 @@ Install and manage Backyards
       --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --formatting.force-color          force color even when non in a terminal
-  -h, --help                            help for backyards
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
   -p, --local-port int                  Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
@@ -30,18 +39,5 @@ Install and manage Backyards
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage Canary feature
-* [backyards cert-manager](backyards_cert-manager.md)	 - Install and manage cert-manager
-* [backyards config](backyards_config.md)	 - View and manage persistent configuration
-* [backyards dashboard](backyards_dashboard.md)	 - Open the Backyards dashboard in a web browser
-* [backyards demoapp](backyards_demoapp.md)	 - Install and manage demo application
-* [backyards graph](backyards_graph.md)	 - Show graph
-* [backyards install](backyards_install.md)	 - Install Backyards
-* [backyards istio](backyards_istio.md)	 - Install and manage Istio
-* [backyards license](backyards_license.md)	 - Shows Backyards license
-* [backyards login](backyards_login.md)	 - Log in to Backyards
-* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
-* [backyards sidecar-proxy](backyards_sidecar-proxy.md)	 - Manage sidecar-proxy related configurations
-* [backyards uninstall](backyards_uninstall.md)	 - Uninstall Backyards
-* [backyards version](backyards_version.md)	 - Print the client and api version information
+* [backyards](backyards.md)	 - Install and manage Backyards
 
