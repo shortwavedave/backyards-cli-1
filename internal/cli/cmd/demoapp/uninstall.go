@@ -60,7 +60,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 		Example: `  # Default uninstall.
   backyards canary uninstall
 
-  # Uninstall Canary feature from a non-default namespace.
+  # Uninstall canary feature from a non-default namespace.
   backyards canary uninstall install -n custom-istio-ns`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceErrors = true
@@ -70,7 +70,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 				options.namespace = backyardsDemoNamespace
 			}
 
-			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			return util.Confirm("Uninstall demo application. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

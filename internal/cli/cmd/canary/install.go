@@ -71,8 +71,8 @@ func NewInstallCommand(cli cli.CLI, options *InstallOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install [flags]",
 		Args:  cobra.NoArgs,
-		Short: "Install Canary feature",
-		Long: `Installs Canary feature.
+		Short: "Install canary feature",
+		Long: `Installs canary feature.
 
 The command automatically applies the resources.
 It can only dump the applicable resources with the '--dump-resources' option.

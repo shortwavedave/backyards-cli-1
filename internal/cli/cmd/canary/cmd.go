@@ -23,7 +23,7 @@ import (
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "canary",
-		Short:       "Install and manage Canary feature",
+		Short:       "Install and manage canary feature",
 		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.ComponentCommand},
 	}
 
