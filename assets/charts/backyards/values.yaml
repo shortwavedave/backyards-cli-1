@@ -48,7 +48,7 @@ affinity: {}
 application:
   image:
     repository: banzaicloud/backyards
-    tag: 0.1.13
+    tag: 1.0.0-rc.1
     pullPolicy: Always
 
   env: {}
@@ -64,7 +64,7 @@ web:
   enabled: false
   image:
     repository: banzaicloud/backyards-web
-    tag: 0.1.13
+    tag: 1.0.0-rc.1
     pullPolicy: Always
 
   env: {}
@@ -168,7 +168,7 @@ certmanager:
 
 auth:
   # One of anonymous or impersonation.
-  method: anonymous
+  mode: anonymous
   # The jwt signing key will be generated from the service account token,
   # but can be overridden to use the following secret.
   #jwtSigningKeySecret:
