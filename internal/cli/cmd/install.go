@@ -79,8 +79,9 @@ type InstallOptions struct {
 	installEverything  bool
 	runDemo            bool
 
-	apiImage string
-	webImage string
+	apiImage       string
+	webImage       string
+	trackingIDFunc func() string
 }
 
 // patchStringValue specifies a patch operation for a string value
@@ -90,11 +91,16 @@ type patchStringValue struct {
 	Value string `json:"value"`
 }
 
-func NewInstallCommand(cli cli.CLI) *cobra.Command {
+func NewInstallOptions(trackingIDFunc func() string) *InstallOptions {
+	return &InstallOptions{
+		trackingIDFunc: trackingIDFunc,
+	}
+}
+
+func NewInstallCommand(cli cli.CLI, options *InstallOptions) *cobra.Command {
 	c := &installCommand{
 		cli: cli,
 	}
-	options := &InstallOptions{}
 
 	cmd := &cobra.Command{
 		Use:         "install [flags]",
@@ -204,6 +210,9 @@ func (c *installCommand) run(options *InstallOptions) error {
 			} else {
 				values.Web.Image.Tag = "latest"
 			}
+		}
+		if options.trackingIDFunc != nil {
+			values.Web.Env["GOOGLE_ANALYTICS_ID"] = options.trackingIDFunc()
 		}
 	})
 	if err != nil {

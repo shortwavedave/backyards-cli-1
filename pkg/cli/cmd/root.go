@@ -52,7 +52,7 @@ var (
 	kubeContext    string
 	verbose        bool
 	outputFormat   string
-	trackingID     string
+	trackingID     *string
 )
 
 const (
@@ -77,7 +77,7 @@ var RootCmd = &cobra.Command{
 func Init(version string, commitHash string, buildDate string, tid string) {
 	RootCmd.Version = version
 
-	trackingID = tid
+	trackingID = &tid
 
 	RootCmd.SetVersionTemplate(fmt.Sprintf(
 		"Backyards CLI version %s (%s) built on %s\n",
@@ -135,7 +135,9 @@ func init() {
 	cliRef := cli.NewCli(os.Stdout, RootCmd)
 
 	RootCmd.AddCommand(cmd.NewVersionCommand(cliRef))
-	RootCmd.AddCommand(cmd.NewInstallCommand(cliRef))
+	RootCmd.AddCommand(cmd.NewInstallCommand(cliRef, cmd.NewInstallOptions(func() string {
+		return *trackingID
+	})))
 	RootCmd.AddCommand(cmd.NewUninstallCommand(cliRef))
 	RootCmd.AddCommand(cmd.NewDashboardCommand(cliRef, cmd.NewDashboardOptions()))
 	RootCmd.AddCommand(istio.NewRootCmd(cliRef))
@@ -260,9 +262,9 @@ func sendGAEvent(cli cli.CLI, event *ga.Event) {
 	if config.TrackingClientID() == "" {
 		config.SetTrackingClientID(uuid.New())
 	}
-	if trackingID != "" {
-		log.Debugf("sending metrics to %s", trackingID)
-		client, err := ga.NewClient(trackingID)
+	if *trackingID != "" {
+		log.Debugf("sending metrics to %s", *trackingID)
+		client, err := ga.NewClient(*trackingID)
 		if err != nil {
 			log.Debugf("Failed to configure analytics client: %+v", err)
 			return
