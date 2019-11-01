@@ -106,7 +106,7 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	}
 
 	if len(service.VirtualServices) == 0 {
-		log.Infof("No fault injection settings found for %s", options.serviceName)
+		log.Infof("no http route found for %s", options.serviceName)
 		return nil
 	}
 
