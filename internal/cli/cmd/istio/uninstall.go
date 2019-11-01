@@ -23,8 +23,6 @@ import (
 	"istio.io/operator/pkg/object"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
-
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
@@ -37,7 +35,8 @@ type uninstallCommand struct {
 type UninstallOptions struct {
 	releaseName string
 
-	DumpResources bool
+	DumpResources       bool
+	UninstallEverything bool
 }
 
 func NewUninstallOptions() *UninstallOptions {
@@ -66,7 +65,11 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return util.Confirm("Uninstall Istio. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			if options.UninstallEverything {
+				return c.run(cli, options)
+			}
+
+			return cli.Confirm("Uninstall Istio. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

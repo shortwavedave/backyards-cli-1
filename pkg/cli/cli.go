@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/square/go-jose/v3/jwt"
 	"k8s.io/client-go/util/homedir"
 
@@ -80,6 +81,8 @@ type CLI interface {
 	PersistentEndpoint() (endpoint.Endpoint, error)
 
 	Initialize() error
+
+	Confirm(string, func() error) error
 }
 
 type backyardsCLI struct {
@@ -371,6 +374,26 @@ func (c *backyardsCLI) GetToken() string {
 
 func (c *backyardsCLI) GetPersistentGlobalConfig() PersistentGlobalConfig {
 	return c.persistentGlobalConfig
+}
+
+func (c *backyardsCLI) Confirm(message string, action func() error) error {
+	confirmed := true
+
+	if c.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  message,
+			Default:  false,
+		}, &confirmed)
+		if err != nil {
+			return err
+		}
+	}
+
+	if confirmed {
+		return action()
+	}
+	return nil
 }
 
 func createViper(file string) (*viper.Viper, error) {

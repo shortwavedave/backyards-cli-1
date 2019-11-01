@@ -28,8 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
-
 	internalk8s "github.com/banzaicloud/backyards-cli/internal/k8s"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
@@ -42,9 +40,10 @@ type uninstallCommand struct {
 }
 
 type UninstallOptions struct {
-	DumpResources bool
-	Skip          bool
-	Force         bool
+	DumpResources       bool
+	Skip                bool
+	Force               bool
+	UninstallEverything bool
 }
 
 func NewUninstallOptions() *UninstallOptions {
@@ -72,8 +71,10 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
-
-			return util.Confirm("Uninstall cert-manager. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			if options.UninstallEverything {
+				return c.run(cli, options)
+			}
+			return cli.Confirm("Uninstall cert-manager. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

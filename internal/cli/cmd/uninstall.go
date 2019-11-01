@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -68,7 +70,33 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return util.Confirm("Uninstall Backyards. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			const (
+				AnswerAll           = "Remove all resources, including Istio"
+				AnswerBackyardsOnly = "Remove Backyards only"
+			)
+
+			return cli.Confirm("Uninstall Backyards. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+
+				if cli.InteractiveTerminal() &&
+					!(options.uninstallEverything ||
+						options.uninstallCertManager ||
+						options.uninstallCanary ||
+						options.uninstallDemoapp ||
+						options.uninstallIstio) {
+					var response string
+					fmt.Fprintln(cli.Out(), heredoc.Doc(`
+						Do you want to remove all resources deployed by the CLI, or just the Backyards component?
+					`))
+					err := survey.AskOne(&survey.Select{
+						Renderer: survey.Renderer{},
+						Default:  AnswerAll,
+						Options:  []string{AnswerAll, AnswerBackyardsOnly},
+					}, &response)
+					if err != nil {
+						return err
+					}
+					options.uninstallEverything = response == AnswerAll
+				}
 				err := c.run(cli, options)
 				if err != nil {
 					return err
@@ -140,6 +168,9 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
+		if options.uninstallEverything {
+			scmdOptions.UninstallEverything = true
+		}
 		scmd = demoapp.NewUninstallCommand(cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
@@ -151,6 +182,9 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		scmdOptions := canary.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
+		}
+		if options.uninstallEverything {
+			scmdOptions.UninstallEverything = true
 		}
 		scmd = canary.NewUninstallCommand(cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
@@ -164,6 +198,9 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
 		}
+		if options.uninstallEverything {
+			scmdOptions.UninstallEverything = true
+		}
 		scmd = certmanager.NewUninstallCommand(cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
@@ -175,6 +212,9 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		scmdOptions := istio.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
+		}
+		if options.uninstallEverything {
+			scmdOptions.UninstallEverything = true
 		}
 		scmd = istio.NewUninstallCommand(cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)

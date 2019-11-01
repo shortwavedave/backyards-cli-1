@@ -203,22 +203,23 @@ func askLicense(cliRef cli.CLI) error {
 				AnswerLicense = "Read the license"
 			)
 
+			fmt.Fprint(cliRef.Out(), heredoc.Doc(`
+				You have successfully downloaded and installed Backyards. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License
+
+				TL;DR:
+				- you receive a limited license to test and evaluate the product
+				- you allow Banzai Cloud to collect anonymous usage statistics
+				- if you would like to use the Banzai Cloud product in production,
+				  you will need to upgrade your license. Contact: sales@banzaicloud.com.
+
+				Please read the full license and confirm that you accept the terms!
+			`))
+
 			response := ""
 			err := survey.AskOne(&survey.Select{
 				Renderer: survey.Renderer{},
-				Message: heredoc.Doc(`
-					You have successfully downloaded and installed Backyards. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License
-
-					TL;DR:
-					- you receive a limited license to test and evaluate the product
-					- you allow Banzai Cloud to collect anonymous usage statistics
-					- if you would like to use the Banzai Cloud product in production,
-					  you will need to upgrade your license. Contact: sales@banzaicloud.com.
-
-					Please read the full license and confirm that you accept the terms!
-				`),
-				Options: []string{AnswerNo, AnswerYes, AnswerLicense},
-				Default: AnswerNo,
+				Options:  []string{AnswerNo, AnswerYes, AnswerLicense},
+				Default:  AnswerNo,
 			}, &response, survey.WithValidator(survey.Required))
 			if err != nil {
 				return err
