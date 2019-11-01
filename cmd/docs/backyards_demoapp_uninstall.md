@@ -19,7 +19,7 @@ backyards demoapp uninstall [flags]
   # Default uninstall.
   backyards canary uninstall
 
-  # Uninstall Canary feature from a non-default namespace.
+  # Uninstall canary feature from a non-default namespace.
   backyards canary uninstall install -n custom-istio-ns
 ```
 

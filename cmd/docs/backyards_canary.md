@@ -1,10 +1,10 @@
 ## backyards canary
 
-Install and manage Canary feature
+Install and manage canary feature
 
 ### Synopsis
 
-Install and manage Canary feature
+Install and manage canary feature
 
 ### Options
 
@@ -36,6 +36,6 @@ Install and manage Canary feature
 ### SEE ALSO
 
 * [backyards](backyards.md)	 - Install and manage Backyards
-* [backyards canary install](backyards_canary_install.md)	 - Install Canary feature
-* [backyards canary uninstall](backyards_canary_uninstall.md)	 - Output or delete Kubernetes resources to uninstall Canary feature
+* [backyards canary install](backyards_canary_install.md)	 - Install canary feature
+* [backyards canary uninstall](backyards_canary_uninstall.md)	 - Output or delete Kubernetes resources to uninstall canary feature
 

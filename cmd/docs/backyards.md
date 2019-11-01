@@ -30,7 +30,7 @@ Install and manage Backyards
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage Canary feature
+* [backyards canary](backyards_canary.md)	 - Install and manage canary feature
 * [backyards cert-manager](backyards_cert-manager.md)	 - Install and manage cert-manager
 * [backyards config](backyards_config.md)	 - View and manage persistent configuration
 * [backyards dashboard](backyards_dashboard.md)	 - Open the Backyards dashboard in a web browser

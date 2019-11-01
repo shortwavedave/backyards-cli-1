@@ -1,10 +1,10 @@
 ## backyards canary install
 
-Install Canary feature
+Install canary feature
 
 ### Synopsis
 
-Installs Canary feature.
+Installs canary feature.
 
 The command automatically applies the resources.
 It can only dump the applicable resources with the '--dump-resources' option.
@@ -58,5 +58,5 @@ backyards canary install [flags]
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage Canary feature
+* [backyards canary](backyards_canary.md)	 - Install and manage canary feature
 
