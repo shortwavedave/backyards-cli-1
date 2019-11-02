@@ -73,7 +73,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			return util.Confirm("Uninstall cert-manager. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

@@ -123,7 +123,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		}
 
 		confirmed := false
-		err = survey.AskOne(&survey.Confirm{Message: "Do you want to DELETE the fault injection?"}, &confirmed)
+		err = survey.AskOne(&survey.Confirm{Message: "Do you want to DELETE the http route?"}, &confirmed)
 		if err != nil {
 			return errors.WrapIf(err, "could not ask for confirmation")
 		}
@@ -147,7 +147,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	}
 
 	if !r2 {
-		return errors.New("unknown error: cannot delete fault injection configuration")
+		return errors.New("unknown error: cannot delete http route")
 	}
 
 	log.Infof("http route with match %s set to %s successfully deleted", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)), options.serviceName)

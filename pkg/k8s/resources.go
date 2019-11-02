@@ -145,7 +145,7 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 			}
 			err = client.Delete(context.Background(), obj.UnstructuredObject())
 			if k8serrors.IsNotFound(err) || k8smeta.IsNoMatchError(err) {
-				log.Error(errors.WrapIf(err, "could not delete"))
+				log.Debug(errors.WrapIf(err, "could not delete"))
 				continue
 			}
 			if err != nil {
@@ -172,8 +172,8 @@ func DeleteResources(client k8sclient.Client, labelManager LabelManager, objects
 
 		} else {
 			err = errors.WrapIf(err, "could not delete")
-			if k8serrors.IsNotFound(err) {
-				log.Warning(err)
+			if k8serrors.IsNotFound(errors.Cause(err)) || k8smeta.IsNoMatchError(errors.Cause(err)) {
+				log.Debug(err)
 			} else {
 				log.Error(err)
 			}

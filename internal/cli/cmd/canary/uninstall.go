@@ -53,8 +53,8 @@ func NewUninstallCommand(cli cli.CLI, options *UninstallOptions) *cobra.Command 
 	cmd := &cobra.Command{
 		Use:   "uninstall [flags]",
 		Args:  cobra.NoArgs,
-		Short: "Output or delete Kubernetes resources to uninstall Canary feature",
-		Long: `Output or delete Kubernetes resources to uninstall Canary feature.
+		Short: "Output or delete Kubernetes resources to uninstall canary feature",
+		Long: `Output or delete Kubernetes resources to uninstall canary feature.
 
 The command automatically removes the resources.
 It can only dump the removable resources with the '--dump-resources' option.
@@ -69,7 +69,7 @@ The command can uninstall every component at once with the '--uninstall-everythi
 			cmd.SilenceErrors = true
 			cmd.SilenceUsage = true
 
-			return util.Confirm("This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			return util.Confirm("Uninstall canary feature. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

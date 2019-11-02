@@ -1,10 +1,10 @@
 ## backyards canary uninstall
 
-Output or delete Kubernetes resources to uninstall Canary feature
+Output or delete Kubernetes resources to uninstall canary feature
 
 ### Synopsis
 
-Output or delete Kubernetes resources to uninstall Canary feature.
+Output or delete Kubernetes resources to uninstall canary feature.
 
 The command automatically removes the resources.
 It can only dump the removable resources with the '--dump-resources' option.
@@ -57,5 +57,5 @@ backyards canary uninstall [flags]
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage Canary feature
+* [backyards canary](backyards_canary.md)	 - Install and manage canary feature
 
