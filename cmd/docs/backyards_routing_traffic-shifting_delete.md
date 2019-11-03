@@ -13,8 +13,9 @@ backyards routing traffic-shifting delete [[--service=]namespace/servicename] [f
 ### Options
 
 ```
-  -h, --help             help for delete
-      --service string   Service name
+  -h, --help                help for delete
+  -m, --match stringArray   HTTP request match
+      --service string      Service name
 ```
 
 ### Options inherited from parent commands

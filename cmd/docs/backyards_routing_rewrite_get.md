@@ -1,15 +1,22 @@
-## backyards routing
+## backyards routing rewrite get
 
-Manage service routing configurations
+Get route configuration for a service
 
 ### Synopsis
 
-Manage service routing configurations
+Get route configuration for a service
+
+```
+backyards routing rewrite get [[--service=]namespace/servicename] [[--match=]field:kind=value] ... [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for routing
+  -h, --help                help for get
+  -m, --match stringArray   HTTP request match
+      --service string      Service name
+  -a, --show-all            Display settings for every route (default true)
 ```
 
 ### Options inherited from parent commands
@@ -35,11 +42,5 @@ Manage service routing configurations
 
 ### SEE ALSO
 
-* [backyards](backyards.md)	 - Install and manage Backyards
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
-* [backyards routing fault-injection](backyards_routing_fault-injection.md)	 - Manage fault injection configurations
-* [backyards routing mirror](backyards_routing_mirror.md)	 - Manage http route mirror configurations
 * [backyards routing rewrite](backyards_routing_rewrite.md)	 - Manage http route rewrite configurations
-* [backyards routing route](backyards_routing_route.md)	 - Manage route configurations
-* [backyards routing traffic-shifting](backyards_routing_traffic-shifting.md)	 - Manage traffic-shifting configurations
 
