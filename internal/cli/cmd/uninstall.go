@@ -100,6 +100,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 				if err != nil {
 					return err
 				}
+				cli.GetPersistentConfig().SetToken("")
 				return c.runSubcommands(cli, options)
 			})
 		},
