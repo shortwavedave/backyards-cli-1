@@ -55,7 +55,7 @@ func Output(cli cli.CLI, serviceName types.NamespacedName, routes ...v1alpha3.HT
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
-		fmt.Printf("Fault injection settings for %s\n\n", serviceName)
+		fmt.Fprintf(cli.Out(), "Fault injection settings for %s\n\n", serviceName)
 	}
 
 	err = show(cli, outs)

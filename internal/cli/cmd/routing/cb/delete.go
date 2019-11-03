@@ -101,7 +101,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 			return err
 		}
 
-		fmt.Printf("Settings for %s\n\n", options.serviceName)
+		fmt.Fprintf(cli.Out(), "Settings for %s\n\n", options.serviceName)
 
 		err = Output(cli, data)
 		if err != nil {

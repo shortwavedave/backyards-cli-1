@@ -44,7 +44,7 @@ func NewLicenseCommand(cli cli.CLI) *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("%s", string(b))
+			fmt.Fprintf(cli.Out(), "%s", string(b))
 
 			return nil
 		},

@@ -73,7 +73,7 @@ func Output(cli cli.CLI, serviceName types.NamespacedName, routes ...v1alpha3.HT
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
-		fmt.Printf("Settings for %s\n\n", serviceName)
+		fmt.Fprintf(cli.Out(), "Settings for %s\n\n", serviceName)
 	}
 
 	err = show(cli, outs)

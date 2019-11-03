@@ -154,7 +154,7 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
-		fmt.Printf("Settings for %s\n\n", options.serviceName)
+		fmt.Fprintf(cli.Out(), "Settings for %s\n\n", options.serviceName)
 	}
 
 	err = Output(cli, data)
