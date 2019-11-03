@@ -29,7 +29,7 @@ backyards routing route set [[--service=]namespace/servicename] [[--match=]field
 ### Options inherited from parent commands
 
 ```
-      --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/license
+      --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/evaluation-license
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
       --color                           use colors on non-tty outputs (default true)
