@@ -101,6 +101,7 @@ func (e *proxyEndpoint) proxyToCluster(cfg *rest.Config) http.Handler {
 		r.URL.Path = proxyPath + r.URL.Path
 		authHeaderValue := r.Header.Get("Authorization")
 		if authHeaderValue != "" {
+			r.Header.Del("Authorization")
 			r.Header.Set("X-Authorization", authHeaderValue)
 		}
 		h.ServeHTTP(w, r)
