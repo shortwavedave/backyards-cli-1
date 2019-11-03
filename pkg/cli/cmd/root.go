@@ -227,7 +227,7 @@ func askLicense(cliRef cli.CLI) error {
 			switch response {
 			case AnswerNo:
 				sendGAEvent(cliRef, ga.NewEvent(GACategoryLicense, GAActionReject))
-				return errors.New("you have to accept the license to use this product, we are sorry to see you go")
+				return errors.New("you have to accept the license to use this product")
 			case AnswerYes:
 				if fullLicenseHaveBeenRead {
 					cliRef.GetPersistentGlobalConfig().SetLicenseAcceptedForVersion(cmd.LicenseVersion)
@@ -264,7 +264,7 @@ func sendGAEvent(cli cli.CLI, event *ga.Event) {
 		config.SetTrackingClientID(uuid.New())
 	}
 	if *trackingID != "" {
-		log.Debugf("sending metrics to %s", *trackingID)
+		log.Debugf("Sending metrics to %s", *trackingID)
 		client, err := ga.NewClient(*trackingID)
 		if err != nil {
 			log.Debugf("Failed to configure analytics client: %+v", err)

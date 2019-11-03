@@ -82,7 +82,7 @@ type CLI interface {
 
 	Initialize() error
 
-	Confirm(string, func() error) error
+	IfConfirmed(string, func() error) error
 }
 
 type backyardsCLI struct {
@@ -106,6 +106,27 @@ func (c *backyardsCLI) Initialize() error {
 	err := c.loadPersistentConfig()
 	if err != nil {
 		return err
+	}
+	persistentConfigExists, err := fileExists(c.persistentConfig.GetConfigFileUsed())
+	if err != nil {
+		return err
+	}
+	if !persistentConfigExists {
+		if viper.GetString("kubeconfig") == "" && viper.GetString("kubecontext") == "" {
+			config, err := getValidatedRawConfig()
+			if err != nil {
+				return errors.WrapIf(err, "failed to get raw kubernetes config")
+			}
+			message := fmt.Sprintf("Are you sure to use the current context? %s (API Server: %s)",
+				config.CurrentContext, config.Clusters[config.Contexts[config.CurrentContext].Cluster].Server)
+			confirmed, err := c.confirm(message, true)
+			if err != nil {
+				return err
+			}
+			if !confirmed {
+				return errors.New("refusing to use current context")
+			}
+		}
 	}
 	err = c.loadPersistentGlobalConfig()
 	if err != nil {
@@ -206,26 +227,12 @@ func (c *backyardsCLI) persistentConfigFile() (string, error) {
 		return viper.GetString(PersistentConfigKey), nil
 	}
 
-	config, err := k8sclient.GetRawConfig(viper.GetString("kubeconfig"), viper.GetString("kubecontext"))
+	config, err := getValidatedRawConfig()
 	if err != nil {
-		return "", errors.WrapIf(err, "failed to get raw kubernetes config")
+		return "", err
 	}
 
-	if len(config.Clusters) == 0 {
-		return "", errors.New("kubeconfig is invalid, no clusters defined")
-	}
-
-	currentContext, ok := config.Contexts[config.CurrentContext]
-	if !ok {
-		return "", errors.Errorf("kubeconfig is invalid, current context data not available %s", config.CurrentContext)
-	}
-
-	currentCluster, ok := config.Clusters[currentContext.Cluster]
-	if !ok {
-		return "", errors.Errorf("kubeconfig is invalid, cluster data for current context not available %s", currentContext.Cluster)
-	}
-
-	parse, err := url.Parse(currentCluster.Server)
+	parse, err := url.Parse(config.Clusters[config.Contexts[config.CurrentContext].Cluster].Server)
 	if err != nil {
 		return "", errors.WrapIf(err, "failed to parse server url")
 	}
@@ -376,57 +383,28 @@ func (c *backyardsCLI) GetPersistentGlobalConfig() PersistentGlobalConfig {
 	return c.persistentGlobalConfig
 }
 
-func (c *backyardsCLI) Confirm(message string, action func() error) error {
-	confirmed := true
-
-	if c.InteractiveTerminal() {
-		err := survey.AskOne(&survey.Confirm{
-			Renderer: survey.Renderer{},
-			Message:  message,
-			Default:  false,
-		}, &confirmed)
-		if err != nil {
-			return err
-		}
+func (c *backyardsCLI) IfConfirmed(message string, action func() error) error {
+	confirmed, err := c.confirm(message, false)
+	if err != nil {
+		return err
 	}
-
 	if confirmed {
 		return action()
 	}
 	return nil
 }
 
-func createViper(file string) (*viper.Viper, error) {
-	v := viper.New()
-	v.SetConfigFile(file)
-	err := v.ReadInConfig()
-	if err != nil {
-		var osPathError *os.PathError
-		if errors.As(err, &osPathError) {
-			logrus.Debugf("No configuration file has been loaded")
-		} else {
-			return nil, errors.WrapIff(err, "Failed to read config file %s", file)
-		}
-	} else {
-		logrus.Debugf("Using config: %s", file)
-	}
-	return v, nil
-}
-
-func persistViper(v *viper.Viper) error {
-	if _, err := os.Stat(filepath.Dir(v.ConfigFileUsed())); os.IsNotExist(err) {
-		logrus.Debug("Creating config dir")
-		configPath := filepath.Dir(v.ConfigFileUsed())
-		err := os.MkdirAll(configPath, 0700)
+func (c *backyardsCLI) confirm(message string, defaultSelect bool) (bool, error) {
+	confirmed := false
+	if c.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  message,
+			Default:  defaultSelect,
+		}, &confirmed)
 		if err != nil {
-			return errors.WrapIf(err, "failed to create config dir")
+			return false, errors.Wrapf(err, "failed to get confirmation")
 		}
 	}
-	logrus.Debugf("Saving current config settings to %s", v.ConfigFileUsed())
-	logrus.Debugf("%#v", v.AllSettings())
-	err := v.WriteConfig()
-	if err != nil {
-		return errors.WrapIf(err, "Failed to save config file")
-	}
-	return nil
+	return confirmed, nil
 }

@@ -72,7 +72,7 @@ The command can uninstall every component at once with the '--uninstall-everythi
 				return c.run(cli, options)
 			}
 
-			return cli.Confirm("Uninstall canary feature. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			return cli.IfConfirmed("Uninstall canary feature. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},

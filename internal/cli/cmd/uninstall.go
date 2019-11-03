@@ -75,8 +75,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 				AnswerBackyardsOnly = "Remove Backyards only"
 			)
 
-			return cli.Confirm("Uninstall Backyards. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
-
+			return cli.IfConfirmed("Uninstall Backyards. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				if cli.InteractiveTerminal() &&
 					!(options.uninstallEverything ||
 						options.uninstallCertManager ||

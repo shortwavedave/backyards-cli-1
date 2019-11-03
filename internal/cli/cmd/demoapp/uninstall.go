@@ -73,7 +73,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 				return c.run(cli, options)
 			}
 
-			return cli.Confirm("Uninstall demo application. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
+			return cli.IfConfirmed("Uninstall demo application. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
 				return c.run(cli, options)
 			})
 		},
