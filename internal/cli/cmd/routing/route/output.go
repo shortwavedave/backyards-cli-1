@@ -33,6 +33,8 @@ type Out struct {
 	Redirect common.HTTPRedirect          `json:"redirect,omitempty"`
 	Timeout  common.Timeout               `json:"timeout,omitempty"`
 	Retries  common.HTTPRetry             `json:"retries,omitempty"`
+	Rewrite  common.HTTPRewrite           `json:"rewrite,omitempty"`
+	Mirror   common.Destination           `json:"mirror,omitempty"`
 }
 
 func Output(cli cli.CLI, serviceName types.NamespacedName, routes ...v1alpha3.HTTPRoute) error {
@@ -60,6 +62,12 @@ func Output(cli cli.CLI, serviceName types.NamespacedName, routes ...v1alpha3.HT
 		if route.Retries != nil {
 			o.Retries = common.HTTPRetry(*route.Retries)
 		}
+		if route.Rewrite != nil {
+			o.Rewrite = common.HTTPRewrite(*route.Rewrite)
+		}
+		if route.Mirror != nil {
+			o.Mirror = common.Destination(*route.Mirror)
+		}
 
 		outs = append(outs, o)
 	}
@@ -85,8 +93,8 @@ func show(cli output.FormatContext, data interface{}) error {
 		Out:     cli.Out(),
 		Color:   cli.Color(),
 		Format:  cli.OutputFormat(),
-		Fields:  []string{"Matches", "Routes", "Redirect", "Timeout", "Retries"},
-		Headers: []string{"Matches", "Routes", "Redirect", "Timeout", "Retry"},
+		Fields:  []string{"Matches", "Routes", "Redirect", "Timeout", "Retries", "Rewrite", "Mirror"},
+		Headers: []string{"Matches", "Routes", "Redirect", "Timeout", "Retry", "Rewrite", "Mirror To"},
 	}
 
 	err := output.Output(ctx, data)

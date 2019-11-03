@@ -38,21 +38,16 @@ func (ds HTTPRouteDestinations) String() string {
 }
 
 func (d HTTPRouteDestination) String() string {
+	var s string
+
 	if d.Destination == nil {
-		return ""
+		return s
 	}
 
-	s := d.Destination.Host
-	if d.Destination.Port != nil && d.Destination.Port.Number > 0 {
-		s = fmt.Sprintf("%s:%d", s, d.Destination.Port.Number)
-	}
-
-	if d.Destination.Subset != nil {
-		s = fmt.Sprintf("%s (%s)", s, *d.Destination.Subset)
-	}
+	s = Destination(*d.Destination).String()
 
 	if d.Weight > 0 {
-		s = fmt.Sprintf("%d%% %s", d.Weight, s)
+		s = fmt.Sprintf("%d%%%c%s", d.Weight, nbsp, s)
 	}
 
 	return s

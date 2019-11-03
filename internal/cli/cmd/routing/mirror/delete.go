@@ -12,46 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package route
+package mirror
 
 import (
 	"emperror.dev/errors"
+	"github.com/AlecAivazis/survey/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
-
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/backyards-cli/pkg/graphql"
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
-type getCommand struct{}
+type deleteCommand struct{}
 
-type GetOptions struct {
+type deleteOptions struct {
 	serviceID string
-	showAll   bool
 
-	matches       []string
+	matches []string
+
 	parsedMatches []*v1alpha3.HTTPMatchRequest
-
-	serviceName types.NamespacedName
+	serviceName   types.NamespacedName
 }
 
-func NewGetOptions() *GetOptions {
-	return &GetOptions{
-		showAll: true,
-	}
+func newDeleteOptions() *deleteOptions {
+	return &deleteOptions{}
 }
 
-func NewGetCommand(cli cli.CLI) *cobra.Command {
-	c := &getCommand{}
-	options := NewGetOptions()
+func newDeleteCommand(cli cli.CLI) *cobra.Command {
+	c := &deleteCommand{}
+	options := newDeleteOptions()
 
 	cmd := &cobra.Command{
-		Use:           "get [[--service=]namespace/servicename] [[--match=]field:kind=value] ...",
-		Short:         "Get route configuration for a service",
+		Use:           "delete [[--service=]namespace/servicename] [-m|--match field:kind=value] ...",
+		Short:         "Delete http route mirror configuration of a service",
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,13 +69,13 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 				return errors.WrapIf(err, "could not parse service ID")
 			}
 
+			if len(options.matches) == 0 {
+				return errors.New("at least one match must be specified")
+			}
+
 			options.parsedMatches, err = common.ParseHTTPRequestMatches(options.matches)
 			if err != nil {
 				return errors.WrapIf(err, "could not parse matches")
-			}
-
-			if len(options.matches) > 0 {
-				options.showAll = false
 			}
 
 			return c.run(cli, options)
@@ -84,14 +83,13 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.BoolVarP(&options.showAll, "show-all", "a", options.showAll, "Display settings for every route")
 	flags.StringVar(&options.serviceID, "service", "", "Service name")
 	flags.StringArrayVarP(&options.matches, "match", "m", options.matches, "HTTP request match")
 
 	return cmd
 }
 
-func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
+func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	var err error
 
 	client, err := cmdCommon.GetGraphQLClient(cli)
@@ -106,12 +104,7 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 	}
 
 	if len(service.VirtualServices) == 0 {
-		log.Infof("no http route found for %s", options.serviceName)
-		return nil
-	}
-
-	if options.showAll {
-		return Output(cli, options.serviceName, service.VirtualServices[0].Spec.HTTP...)
+		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
 	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
@@ -119,5 +112,46 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 		return errors.Errorf("http route not found for %s", common.HTTPMatchRequests(common.ConvertHTTPMatchRequestsPointers(options.parsedMatches)))
 	}
 
-	return Output(cli, options.serviceName, *matchedRoute)
+	if matchedRoute.Mirror == nil {
+		log.Infof("mirror is not set for %s", options.serviceName)
+		return nil
+	}
+
+	if cli.Interactive() {
+		err = route.Output(cli, options.serviceName, *matchedRoute)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		confirmed := false
+		err = survey.AskOne(&survey.Confirm{Message: "Do you want to DELETE the mirror configuration?"}, &confirmed)
+		if err != nil {
+			return errors.WrapIf(err, "could not ask for confirmation")
+		}
+		if !confirmed {
+			return errors.New("deletion cancelled")
+		}
+	}
+
+	req := graphql.DisableHTTPRouteRequest{
+		Selector: graphql.HTTPRouteSelector{
+			Name:      service.Name,
+			Namespace: service.Namespace,
+			Matches:   options.parsedMatches,
+		},
+		Rules: []string{"Mirror"},
+	}
+
+	r2, err := client.DisableHTTPRoute(req)
+	if err != nil {
+		return err
+	}
+
+	if !r2 {
+		return errors.New("unknown error: cannot delete mirror configuration")
+	}
+
+	log.Infof("mirror configuration set to %s successfully deleted", options.serviceName)
+
+	return nil
 }

@@ -28,7 +28,8 @@ type MeshService struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace,omitempty"`
 
-	VirtualServices []v1alpha3.VirtualService `json:"virtualServices"`
+	VirtualServices  []v1alpha3.VirtualService  `json:"virtualServices"`
+	DestinationRules []v1alpha3.DestinationRule `json:"destinationRules"`
 }
 
 func (c *client) GetService(namespace, name string) (*MeshService, error) {
@@ -37,7 +38,31 @@ func (c *client) GetService(namespace, name string) (*MeshService, error) {
 		service(name:$name, namespace: $namespace){
 		  id
 		  name
-	  	  namespace
+		  namespace
+		  destinationRules {
+			spec {
+				trafficPolicy {
+				  outlierDetection {
+					interval
+					baseEjectionTime
+					consecutiveErrors
+					maxEjectionPercent
+				  }
+				connectionPool {
+				  tcp {
+				    maxConnections
+					connectTimeout
+				  }
+				  http {
+				    maxRetries
+				    http1MaxPendingRequests
+					http2MaxRequests
+					maxRequestsPerConnection
+				  }
+				}
+			  }
+			}
+		  }
 		  virtualServices {
 			spec {
 			  exportTo
@@ -77,6 +102,17 @@ func (c *client) GetService(namespace, name string) (*MeshService, error) {
 					attempts
 					perTryTimeout
 					retryOn
+				}
+				rewrite {
+					uri
+					authority
+				}
+				mirror {
+					host
+					subset
+					port {
+						number
+					}
 				}
 				match {
 				  name

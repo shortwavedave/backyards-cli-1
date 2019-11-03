@@ -15,11 +15,12 @@
 package cb
 
 import (
+	"fmt"
+
 	"emperror.dev/errors"
 	"github.com/AlecAivazis/survey/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
@@ -79,11 +80,14 @@ func newDeleteCommand(cli cli.CLI) *cobra.Command {
 func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	var err error
 
-	service, err := common.GetServiceByName(cli, options.serviceName)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return err
-		}
+		return errors.WrapIf(err, "could not get initialized graphql client")
+	}
+	defer client.Close()
+
+	service, err := client.GetService(options.serviceName.Namespace, options.serviceName.Name)
+	if err != nil {
 		return errors.WrapIf(err, "could not get service")
 	}
 
@@ -97,7 +101,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 			return err
 		}
 
-		log.Info("current settings")
+		fmt.Printf("Settings for %s\n\n", options.serviceName)
 
 		err = Output(cli, data)
 		if err != nil {
@@ -113,12 +117,6 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 			return errors.New("deletion cancelled")
 		}
 	}
-
-	client, err := cmdCommon.GetGraphQLClient(cli)
-	if err != nil {
-		return errors.WrapIf(err, "could not get initialized graphql client")
-	}
-	defer client.Close()
 
 	req := graphql.DisableGlobalTrafficPolicyRequest{
 		Name:      service.Name,

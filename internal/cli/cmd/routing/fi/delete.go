@@ -112,7 +112,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	}
 
 	if matchedRoute.Fault == nil {
-		log.Infof("No fault injection found for %s", options.serviceName)
+		log.Infof("no fault injection found for %s", options.serviceName)
 		return nil
 	}
 

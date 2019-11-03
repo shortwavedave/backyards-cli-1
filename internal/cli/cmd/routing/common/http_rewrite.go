@@ -12,26 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package route
+package common
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
 
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
-func NewRootCmd(cli cli.CLI) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "route",
-		Aliases: []string{"r", "ro"},
-		Short:   "Manage route configurations",
+type HTTPRewrite v1alpha3.HTTPRewrite
+
+func (r HTTPRewrite) String() string {
+	var s string
+
+	if r.Authority != nil && *r.Authority != "" {
+		s = fmt.Sprintf("authority=%s", *r.Authority)
+	}
+	if r.URI != nil && *r.URI != "" {
+		if s != "" {
+			s += "\n"
+		}
+		s += fmt.Sprintf("uri=%s", *r.URI)
 	}
 
-	cmd.AddCommand(
-		NewGetCommand(cli),
-		newSetCommand(cli),
-		newDeleteCommand(cli),
-	)
+	if s == "" {
+		s = "-"
+	}
 
-	return cmd
+	return s
 }

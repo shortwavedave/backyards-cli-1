@@ -34,6 +34,8 @@ type HTTPRules struct {
 	FaultInjection *v1alpha3.HTTPFaultInjection     `json:"fault,omitempty"`
 	Timeout        *string                          `json:"timeout,omitempty"`
 	Retries        *v1alpha3.HTTPRetry              `json:"retries,omitempty"`
+	Rewrite        *v1alpha3.HTTPRewrite            `json:"rewrite,omitempty"`
+	Mirror         *v1alpha3.Destination            `json:"mirror,omitempty"`
 }
 
 type HTTPRouteSelector struct {

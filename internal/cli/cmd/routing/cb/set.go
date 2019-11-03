@@ -21,9 +21,9 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/apis/istio/v1alpha3"
+
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
@@ -167,40 +167,37 @@ func (c *setCommand) askQuestions(cli cli.CLI, options *setOptions) error {
 func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	var err error
 
-	service, err := common.GetServiceByName(cli, options.serviceName)
-	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return err
-		}
-		return errors.WrapIf(err, "could not get service")
-	}
-
 	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
 	defer client.Close()
 
+	service, err := client.GetService(options.serviceName.Namespace, options.serviceName.Name)
+	if err != nil {
+		return errors.WrapIf(err, "could not get service")
+	}
+
 	req := graphql.ApplyGlobalTrafficPolicyRequest{
 		Name:      service.Name,
 		Namespace: service.Namespace,
 		ConnectionPool: &v1alpha3.ConnectionPoolSettings{
 			TCP: &v1alpha3.TCPSettings{
-				MaxConnections: options.MaxConnections,
-				ConnectTimeout: options.ConnectTimeout,
+				MaxConnections: &options.MaxConnections,
+				ConnectTimeout: &options.ConnectTimeout,
 			},
 			HTTP: &v1alpha3.HTTPSettings{
-				HTTP1MaxPendingRequests:  options.HTTP1MaxPendingRequests,
-				HTTP2MaxRequests:         options.HTTP2MaxRequests,
-				MaxRequestsPerConnection: options.MaxRequestsPerConnection,
-				MaxRetries:               options.MaxRetries,
+				HTTP1MaxPendingRequests:  &options.HTTP1MaxPendingRequests,
+				HTTP2MaxRequests:         &options.HTTP2MaxRequests,
+				MaxRequestsPerConnection: &options.MaxRequestsPerConnection,
+				MaxRetries:               &options.MaxRetries,
 			},
 		},
 		OutlierDetection: &v1alpha3.OutlierDetection{
 			ConsecutiveErrors:  options.ConsecutiveErrors,
-			Interval:           options.Interval,
-			BaseEjectionTime:   options.BaseEjectionTime,
-			MaxEjectionPercent: options.MaxEjectionPercent,
+			Interval:           &options.Interval,
+			BaseEjectionTime:   &options.BaseEjectionTime,
+			MaxEjectionPercent: &options.MaxEjectionPercent,
 		},
 	}
 

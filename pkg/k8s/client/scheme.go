@@ -17,8 +17,8 @@ import (
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"knative.dev/pkg/apis/istio/v1alpha3"
 
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 	istiov1beta1 "github.com/banzaicloud/istio-operator/pkg/apis/istio/v1beta1"
 )
 

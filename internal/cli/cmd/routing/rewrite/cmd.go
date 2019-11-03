@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package route
+package rewrite
 
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "route",
-		Aliases: []string{"r", "ro"},
-		Short:   "Manage route configurations",
+		Use:   "rewrite",
+		Short: "Manage http route rewrite configurations",
 	}
 
 	cmd.AddCommand(
-		NewGetCommand(cli),
 		newSetCommand(cli),
+		route.NewGetCommand(cli),
 		newDeleteCommand(cli),
 	)
 
