@@ -184,11 +184,6 @@ func (c *installCommand) run(options *InstallOptions) error {
 	values, err := getValues(options.releaseName, options.istioNamespace, func(values *Values) {
 		if options.enableAuditSink {
 			values.AuditSink.Enabled = true
-			values.AuditSink.Mode = httpAudit
-		} else {
-			// workaround until logAudit mode will be restored as the default
-			values.AuditSink.Enabled = true
-			values.AuditSink.Mode = logAudit
 		}
 
 		if shouldCertManagerBeEnabled(options) {
