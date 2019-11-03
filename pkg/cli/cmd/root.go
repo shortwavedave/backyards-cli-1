@@ -62,7 +62,7 @@ const (
 	GAActionReject    = "reject"
 
 	AcceptLicense = "accept-license"
-	LicenseLink   = "https://banzaicloud.com/docs/backyards/license"
+	LicenseLink   = "https://banzaicloud.com/docs/backyards/evaluation-license"
 )
 
 // RootCmd represents the root Cobra command
