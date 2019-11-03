@@ -22,10 +22,14 @@ import (
 )
 
 type AuthMode string
+type AuditMode string
 
 const (
 	anonymous     AuthMode = "anonymous"
 	impersonation AuthMode = "impersonation"
+
+	httpAudit AuditMode = "http"
+	logAudit  AuditMode = "log"
 )
 
 type Values struct {
@@ -149,7 +153,7 @@ type Values struct {
 		Image       helm.Image                  `json:"image"`
 		Resources   corev1.ResourceRequirements `json:"resources"`
 		Tolerations []corev1.Toleration         `json:"tolerations"`
-		Mode        string                      `json:"mode"`
+		Mode        AuditMode                   `json:"mode"`
 		HTTP        struct {
 			Timeout        string `json:"timeout"`
 			RetryWaitMin   string `json:"retryWaitMin"`
