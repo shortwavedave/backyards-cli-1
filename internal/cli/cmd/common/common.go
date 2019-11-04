@@ -26,7 +26,6 @@ func GetGraphQLClient(cli cli.CLI) (graphql.Client, error) {
 	if token == "" {
 		err := login.Login(cli, func(body *auth.Credentials) {
 			token = body.User.Token
-			cli.GetPersistentConfig().SetToken(token)
 		})
 		if err != nil {
 			return nil, err

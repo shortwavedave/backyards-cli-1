@@ -92,7 +92,9 @@ func (c *versionCommand) run(cli cli.CLI, options *versionOptions) {
 func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	endpoint, err := cli.InitializedEndpoint()
 	if err != nil {
-		logrus.Error(err)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.Errorf("%+v", err)
+		}
 		return defaultVersionString
 	}
 	defer endpoint.Close()
@@ -101,10 +103,11 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	if token == "" {
 		err = login.Login(cli, func(authInfo *auth.Credentials) {
 			token = authInfo.User.Token
-			cli.GetPersistentConfig().SetToken(authInfo.User.Token)
 		})
 		if err != nil {
-			logrus.Error(err)
+			if logrus.IsLevelEnabled(logrus.DebugLevel) {
+				logrus.Errorf("%+v", err)
+			}
 			return defaultVersionString
 		}
 	}
@@ -113,7 +116,9 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		logrus.Error(err)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.Errorf("%+v", err)
+		}
 		return defaultVersionString
 	}
 	if token != "" {
@@ -123,7 +128,9 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	// nolint G107
 	resp, err := endpoint.HTTPClient().Do(request)
 	if err != nil {
-		logrus.Error(err)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.Errorf("%+v", err)
+		}
 		return defaultVersionString
 	}
 	defer resp.Body.Close()
@@ -132,12 +139,16 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&bi)
 	if err != nil {
-		logrus.Error(err)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.Errorf("%+v", err)
+		}
 		return defaultVersionString
 	}
 
 	if resp.StatusCode != 200 {
-		logrus.Errorf("Request failed: %s", resp.Status)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			logrus.Errorf("Request failed: %s", resp.Status)
+		}
 		return defaultVersionString
 	}
 

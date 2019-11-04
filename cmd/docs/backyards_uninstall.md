@@ -30,11 +30,7 @@ backyards uninstall [flags]
   -h, --help                     help for uninstall
       --istio-namespace string   Namespace of Istio sidecar injector (default "istio-system")
       --release-name string      Name of the release (default "backyards")
-      --uninstall-canary         Uninstall Canary feature as well
-      --uninstall-cert-manager   Uninstall cert-manager as well
-      --uninstall-demoapp        Uninstall Demo application as well
-  -a, --uninstall-everything     Uninstall every component at once
-      --uninstall-istio          Uninstall Istio mesh as well
+  -a, --uninstall-everything     Uninstall all components at once
 ```
 
 ### Options inherited from parent commands

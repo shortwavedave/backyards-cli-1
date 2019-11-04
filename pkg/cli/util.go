@@ -78,7 +78,7 @@ func getValidatedRawConfig() (*api.Config, error) {
 	}
 
 	if len(config.Clusters) == 0 {
-		return nil, errors.New("kubeconfig is invalid, no clusters defined")
+		return nil, errors.New("kubeconfig is not specified or invalid")
 	}
 
 	var ok bool
