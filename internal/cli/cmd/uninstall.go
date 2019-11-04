@@ -76,12 +76,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 			)
 
 			return cli.IfConfirmed("Uninstall Backyards. This command will destroy resources and cannot be undone. Are you sure to proceed?", func() error {
-				if cli.InteractiveTerminal() &&
-					!(options.uninstallEverything ||
-						options.uninstallCertManager ||
-						options.uninstallCanary ||
-						options.uninstallDemoapp ||
-						options.uninstallIstio) {
+				if cli.InteractiveTerminal() && !options.uninstallEverything {
 					var response string
 					fmt.Fprintln(cli.Out(), heredoc.Doc(`
 						Do you want to remove all resources deployed by the CLI, or just the Backyards component?
@@ -110,11 +105,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 	cmd.Flags().StringVar(&options.istioNamespace, "istio-namespace", "istio-system", "Namespace of Istio sidecar injector")
 	cmd.Flags().BoolVarP(&options.dumpResources, "dump-resources", "d", false, "Dump resources to stdout instead of applying them")
 
-	cmd.Flags().BoolVar(&options.uninstallCanary, "uninstall-canary", false, "Uninstall Canary feature as well")
-	cmd.Flags().BoolVar(&options.uninstallDemoapp, "uninstall-demoapp", false, "Uninstall Demo application as well")
-	cmd.Flags().BoolVar(&options.uninstallIstio, "uninstall-istio", false, "Uninstall Istio mesh as well")
-	cmd.Flags().BoolVar(&options.uninstallCertManager, "uninstall-cert-manager", false, "Uninstall cert-manager as well")
-	cmd.Flags().BoolVarP(&options.uninstallEverything, "uninstall-everything", "a", false, "Uninstall every component at once")
+	cmd.Flags().BoolVarP(&options.uninstallEverything, "uninstall-everything", "a", false, "Uninstall all components at once")
 
 	return cmd
 }
@@ -163,7 +154,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 	var err error
 	var scmd *cobra.Command
 
-	if options.uninstallDemoapp || options.uninstallEverything {
+	if options.uninstallEverything {
 		scmdOptions := demoapp.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
@@ -178,7 +169,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		}
 	}
 
-	if options.uninstallCanary || options.uninstallEverything {
+	if options.uninstallEverything {
 		scmdOptions := canary.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
@@ -193,7 +184,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		}
 	}
 
-	if options.uninstallCertManager || options.uninstallEverything {
+	if options.uninstallEverything {
 		scmdOptions := certmanager.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
@@ -208,7 +199,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		}
 	}
 
-	if options.uninstallIstio || options.uninstallEverything {
+	if options.uninstallEverything {
 		scmdOptions := istio.NewUninstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true

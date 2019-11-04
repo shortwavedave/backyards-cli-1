@@ -61,7 +61,6 @@ type installCommand struct {
 	shouldInstallIstio       bool
 	shouldInstallCanary      bool
 	shouldInstallCertManager bool
-	shouldInstallDemo        bool
 	shouldRunDemo            bool
 }
 
@@ -70,14 +69,12 @@ type InstallOptions struct {
 	istioNamespace string
 	dumpResources  bool
 
-	installCanary      bool
-	installDemoapp     bool
-	installIstio       bool
-	installCertManager bool
-	enableAuditSink    bool
-	anonymousAuth      bool
-	installEverything  bool
-	runDemo            bool
+	installDemoapp    bool
+	installIstio      bool
+	enableAuditSink   bool
+	anonymousAuth     bool
+	installEverything bool
+	runDemo           bool
 
 	apiImage       string
 	webImage       string
@@ -151,13 +148,9 @@ The command can install every component at once with the '--install-everything' 
 	cmd.Flags().StringVar(&options.releaseName, "release-name", defaultReleaseName, "Name of the release")
 	cmd.Flags().StringVar(&options.istioNamespace, "istio-namespace", istio.DefaultNamespace, "Namespace of Istio sidecar injector")
 
-	cmd.Flags().BoolVar(&options.installCanary, "install-canary", options.installCanary, "Install Canary feature as well")
-	cmd.Flags().BoolVar(&options.installDemoapp, "install-demoapp", options.installDemoapp, "Install Demo application as well")
-	cmd.Flags().BoolVar(&options.installIstio, "install-istio", options.installIstio, "Install Istio mesh as well")
-	cmd.Flags().BoolVar(&options.installCertManager, "install-cert-manager", options.installIstio, "Install cert-manager as well")
-	cmd.Flags().BoolVarP(&options.installEverything, "install-everything", "a", options.installEverything, "Install every component at once")
+	cmd.Flags().BoolVarP(&options.installEverything, "install-everything", "a", options.installEverything, "Install all required components at once")
+	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Install demo application, send load and open up the dashboard")
 
-	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Send load to demo application and opens up dashboard")
 	cmd.Flags().BoolVar(&options.enableAuditSink, "enable-auditsink", options.enableAuditSink, "Enable deploying the auditsink service and sending audit logs over http")
 	cmd.Flags().BoolVar(&options.anonymousAuth, "anonymous-auth", options.anonymousAuth, "Switch to anonymous mode")
 
@@ -421,10 +414,11 @@ func (c *installCommand) certManagerRunning() (exists bool, healthy bool, err er
 }
 
 func (c *installCommand) shouldInstallComponents(options *InstallOptions) error {
-	installIstioExplicitly := options.installIstio || options.installEverything
 	installIstioInteractively := false
 
-	if !installIstioExplicitly && c.cli.InteractiveTerminal() {
+	shouldAskComponents := !options.runDemo && !options.installEverything
+
+	if shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install istio-operator (recommended). Press enter to accept",
@@ -434,27 +428,25 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 			return err
 		}
 	}
-	c.shouldInstallIstio = installIstioExplicitly || installIstioInteractively
+	c.shouldInstallIstio = options.installEverything || installIstioInteractively
 
-	installCertManagerExplicitly := options.installCertManager || options.installEverything
-	installCertManagerInteractively := false
-
-	if !installCertManagerExplicitly && shouldCertManagerBeEnabled(options) && c.cli.InteractiveTerminal() {
-		err := survey.AskOne(&survey.Confirm{
-			Renderer: survey.Renderer{},
-			Message:  "Install cert-manager (recommended). Press enter to accept",
-			Default:  true,
-		}, &installCertManagerInteractively)
-		if err != nil {
-			return err
+	if shouldCertManagerBeEnabled(options) {
+		installCertManagerInteractively := false
+		if shouldAskComponents && c.cli.InteractiveTerminal() {
+			err := survey.AskOne(&survey.Confirm{
+				Renderer: survey.Renderer{},
+				Message:  "Install cert-manager (recommended). Press enter to accept",
+				Default:  true,
+			}, &installCertManagerInteractively)
+			if err != nil {
+				return err
+			}
 		}
+		c.shouldInstallCertManager = options.installEverything || installCertManagerInteractively
 	}
-	c.shouldInstallCertManager = installCertManagerExplicitly || installCertManagerInteractively
 
-	installCanaryExplicitly := options.installCanary || options.installEverything
 	installCanaryInteractively := false
-
-	if !installCanaryExplicitly && c.cli.InteractiveTerminal() {
+	if shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install canary-operator (recommended). Press enter to accept",
@@ -464,37 +456,20 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 			return err
 		}
 	}
-	c.shouldInstallCanary = installCanaryExplicitly || installCanaryInteractively
+	c.shouldInstallCanary = options.installEverything || installCanaryInteractively
 
-	installDemoExplicitly := options.installDemoapp || options.installEverything
-	installDemoInteractively := false
-
-	if !installDemoExplicitly && c.cli.InteractiveTerminal() {
-		err := survey.AskOne(&survey.Confirm{
-			Renderer: survey.Renderer{},
-			Message:  "Install demo application (optional). Press enter to skip",
-			Default:  false,
-		}, &installDemoInteractively)
-		if err != nil {
-			return err
-		}
-	}
-	c.shouldInstallDemo = installDemoExplicitly || installDemoInteractively
-
-	runDemoExplicitly := options.runDemo || options.installEverything
 	runDemoInteractively := false
-
-	if !runDemoExplicitly && c.cli.InteractiveTerminal() {
+	if shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
-			Message:  "Run demo application (optional). Press enter to skip",
+			Message:  "Install and run demo application (optional). Press enter to skip",
 			Default:  false,
 		}, &runDemoInteractively)
 		if err != nil {
 			return err
 		}
 	}
-	c.shouldRunDemo = runDemoExplicitly || runDemoInteractively
+	c.shouldRunDemo = options.runDemo || runDemoInteractively
 
 	return nil
 }
@@ -546,7 +521,7 @@ func (c *installCommand) runDemoInstall(options *InstallOptions) error {
 	var err error
 	var scmd *cobra.Command
 
-	if c.shouldInstallDemo {
+	if c.shouldRunDemo {
 		scmdOptions := demoapp.NewInstallOptions()
 		if options.dumpResources {
 			scmdOptions.DumpResources = true
