@@ -18,7 +18,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync"
 
+	"emperror.dev/errors"
 	"github.com/MakeNowJust/heredoc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -31,6 +33,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
+var mutex sync.Mutex
 var inMemoryAuthInfo *auth.Credentials
 
 func NewLoginCmd(cli cli.CLI) *cobra.Command {
@@ -73,6 +76,8 @@ func NewLoginCmd(cli cli.CLI) *cobra.Command {
 }
 
 func Login(cli cli.CLI, onAuth func(*auth.Credentials)) error {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if inMemoryAuthInfo != nil {
 		if onAuth != nil {
 			onAuth(inMemoryAuthInfo)
@@ -99,7 +104,7 @@ func Login(cli cli.CLI, onAuth func(*auth.Credentials)) error {
 	authInfo, err := authClient.Login()
 	if err != nil {
 		if err != servererror.ErrAuthDisabled {
-			return err
+			return errors.Wrap(err, "failed to log in, you may need to install backyards first")
 		}
 	}
 	if authInfo != nil {
@@ -109,6 +114,7 @@ func Login(cli cli.CLI, onAuth func(*auth.Credentials)) error {
 			logrus.Debugf("Token: %s", authInfo.User.Token)
 			logrus.Debugf("Wrapped token: %s", authInfo.User.WrappedToken)
 		}
+		cli.GetPersistentConfig().SetToken(authInfo.User.Token)
 		if onAuth != nil {
 			onAuth(authInfo)
 		}

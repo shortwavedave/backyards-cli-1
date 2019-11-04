@@ -93,7 +93,7 @@ func (c *client) Login() (*Credentials, error) {
 		}
 		err = json.NewDecoder(bytes.NewBuffer(responseBody)).Decode(parsedResponse)
 		if err != nil {
-			return nil, errors.WrapWithDetails(err, "failed to decode response", "response", string(responseBody))
+			return nil, errors.WrapWithDetails(err, "invalid response", "response", string(responseBody))
 		}
 		if response.StatusCode < 500 {
 			if parsedResponse.ErrorCode == servererror.AuthDisabledErrorCode {
@@ -111,7 +111,7 @@ func (c *client) Login() (*Credentials, error) {
 	}
 	err = json.NewDecoder(bytes.NewBuffer(responseBody)).Decode(parsedResponse)
 	if err != nil {
-		return parsedResponse, errors.WrapWithDetails(err, "failed to decode response", "response", string(responseBody))
+		return parsedResponse, errors.WrapWithDetails(err, "invalid response", "response", string(responseBody))
 	}
 	if parsedResponse.User.Name == "" {
 		return nil, errors.New("invalid response")

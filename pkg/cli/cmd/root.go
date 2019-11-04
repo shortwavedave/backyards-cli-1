@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	logrushandler "emperror.dev/handler/logrus"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/MakeNowJust/heredoc"
 	ga "github.com/jpillora/go-ogle-analytics"
@@ -97,8 +96,20 @@ func GetRootCommand() *cobra.Command {
 // This is called by main.main(). It only needs to happen once to the RootCmd
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		handler := logrushandler.New(log.New())
-		handler.Handle(err)
+		if verbose {
+			fmt.Fprintf(RootCmd.ErrOrStderr(), "Error with stack:\n%+v\n\n", err)
+			if len(errors.GetDetails(err)) > 0 {
+				fmt.Fprintf(RootCmd.ErrOrStderr(), "Details:\n%+v\n", errors.GetDetails(err))
+			}
+		} else {
+			if len(errors.GetErrors(err)) == 1 {
+				fmt.Fprintf(RootCmd.ErrOrStderr(), "%s\n", err)
+			} else {
+				for _, err := range errors.GetErrors(err) {
+					fmt.Fprintf(RootCmd.ErrOrStderr(), "- %s\n", err)
+				}
+			}
+		}
 		os.Exit(1)
 	}
 }

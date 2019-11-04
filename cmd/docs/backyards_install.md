@@ -33,14 +33,10 @@ backyards install [flags]
   -d, --dump-resources           Dump resources to stdout instead of applying them
       --enable-auditsink         Enable deploying the auditsink service and sending audit logs over http
   -h, --help                     help for install
-      --install-canary           Install Canary feature as well
-      --install-cert-manager     Install cert-manager as well
-      --install-demoapp          Install Demo application as well
-  -a, --install-everything       Install every component at once
-      --install-istio            Install Istio mesh as well
+  -a, --install-everything       Install all required components at once
       --istio-namespace string   Namespace of Istio sidecar injector (default "istio-system")
       --release-name string      Name of the release (default "backyards")
-      --run-demo                 Send load to demo application and opens up dashboard
+      --run-demo                 Install demo application, send load and open up the dashboard
       --web-image string         Image for the frontend
 ```
 
