@@ -291,7 +291,7 @@ func (c *backyardsCLI) withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint,
 	client.RetryMax = 5
 	client.Logger = hclog.NewNullLogger()
 	level := hclog.Info
-	if viper.GetBool("output.verbose") {
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
 		level = hclog.Debug
 	}
 	client.Logger = hclog.New(&hclog.LoggerOptions{

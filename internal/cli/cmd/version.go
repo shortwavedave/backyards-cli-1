@@ -103,7 +103,6 @@ func getAPIVersion(cli cli.CLI, versionEndpoint string) string {
 	if token == "" {
 		err = login.Login(cli, func(authInfo *auth.Credentials) {
 			token = authInfo.User.Token
-			cli.GetPersistentConfig().SetToken(authInfo.User.Token)
 		})
 		if err != nil {
 			if logrus.IsLevelEnabled(logrus.DebugLevel) {
