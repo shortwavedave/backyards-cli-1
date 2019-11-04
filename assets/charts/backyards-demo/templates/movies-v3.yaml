@@ -1,5 +1,5 @@
 {{ if .Values.moviesv3 }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: movies-v3
@@ -10,6 +10,10 @@ metadata:
 {{ include "backyards-demo.labels" . | indent 4 }}
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: movies
+      version: v3
   strategy:
     rollingUpdate:
       maxSurge: 1
