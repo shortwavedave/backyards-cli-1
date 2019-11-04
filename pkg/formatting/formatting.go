@@ -130,22 +130,12 @@ func asSlice(slice interface{}) []interface{} {
 }
 
 func (t *Table) Format(color bool) string {
-	colWidths := make([]int, len(t.Columns))
-	for i, column := range t.Columns {
-		colWidths[i] = len(column.Name)
-	}
-
 	formattedFields := make([][]string, len(t.Rows))
 	for i, row := range t.Rows {
 		formattedRow := make([]string, len(t.Columns))
-
 		for i, column := range t.Columns {
 			value := column.FormatField(row)
 			formattedRow[i] = value
-
-			if len := len(value); len > colWidths[i] {
-				colWidths[i] = len
-			}
 		}
 
 		formattedFields[i] = formattedRow

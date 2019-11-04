@@ -19,6 +19,8 @@ import (
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/cb"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/fi"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/mirror"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/rewrite"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/ts"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
@@ -38,6 +40,8 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 		cb.NewRootCmd(cli),
 		fi.NewRootCmd(cli),
 		route.NewRootCmd(cli),
+		rewrite.NewRootCmd(cli),
+		mirror.NewRootCmd(cli),
 	)
 
 	return cmd

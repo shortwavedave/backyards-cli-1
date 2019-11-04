@@ -18,21 +18,23 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
 type deleteCommand struct{}
 
 type deleteOptions struct {
 	serviceID string
+	matches   []string
 
-	serviceName types.NamespacedName
+	parsedMatches []*v1alpha3.HTTPMatchRequest
+	serviceName   types.NamespacedName
 }
 
 func newDeleteOptions() *deleteOptions {
@@ -59,6 +61,15 @@ func newDeleteCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("service must be specified")
 			}
 
+			if len(options.matches) == 0 {
+				return errors.New("at least one route match must be specified")
+			}
+
+			options.parsedMatches, err = common.ParseHTTPRequestMatches(options.matches)
+			if err != nil {
+				return errors.WrapIf(err, "could not parse matches")
+			}
+
 			options.serviceName, err = common.ParseServiceID(options.serviceID)
 			if err != nil {
 				return err
@@ -70,6 +81,7 @@ func newDeleteCommand(cli cli.CLI) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.StringVar(&options.serviceID, "service", "", "Service name")
+	flags.StringArrayVarP(&options.matches, "match", "m", options.matches, "HTTP request match")
 
 	return cmd
 }
@@ -77,30 +89,37 @@ func newDeleteCommand(cli cli.CLI) *cobra.Command {
 func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	var err error
 
-	service, err := common.GetServiceByName(cli, options.serviceName)
-	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return err
-		}
-		return errors.WrapIf(err, "could not get service")
-	}
-
 	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
 	defer client.Close()
 
-	req := graphql.DisableHTTPRouteRequest{
+	service, err := client.GetService(options.serviceName.Namespace, options.serviceName.Name)
+	if err != nil {
+		return errors.WrapIf(err, "could not get service")
+	}
+
+	req := graphql.ApplyHTTPRouteRequest{
 		Selector: graphql.HTTPRouteSelector{
 			Name:      service.Name,
 			Namespace: service.Namespace,
+			Matches:   options.parsedMatches,
 		},
-		Rules: []string{
-			"Route",
+		Rule: graphql.HTTPRules{
+			Matches: options.parsedMatches,
+			Route:   make([]*v1alpha3.HTTPRouteDestination, 0),
 		},
 	}
-	r, err := client.DisableHTTPRoute(req)
+
+	req.Rule.Route = append(req.Rule.Route, &v1alpha3.HTTPRouteDestination{
+		Destination: &v1alpha3.Destination{
+			Host: service.Name,
+		},
+		Weight: 100,
+	})
+
+	r, err := client.ApplyHTTPRoute(req)
 	if err != nil {
 		return err
 	}
@@ -109,7 +128,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return errors.New("unknown error: cannot delete traffic shifting")
 	}
 
-	log.Infof("traffic shifting rules set to %s successfully deleted", options.serviceName)
+	log.Infof("traffic shifting rules set to %s successfully reset", options.serviceName)
 
 	return nil
 }

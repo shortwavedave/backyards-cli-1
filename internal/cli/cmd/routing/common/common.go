@@ -15,20 +15,16 @@
 package common
 
 import (
-	"context"
 	"regexp"
 	"strings"
 
 	"emperror.dev/errors"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/apis/istio/v1alpha3"
-
-	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 const (
 	dns1123LabelFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	nbsp            rune   = '\u00A0'
 )
 
 var dns1123LabelRegexp = regexp.MustCompile("^" + dns1123LabelFmt + "$")
@@ -49,52 +45,4 @@ func ParseServiceID(serviceID string) (types.NamespacedName, error) {
 		Namespace: parts[0],
 		Name:      parts[1],
 	}, nil
-}
-
-func GetServiceByName(cli cli.CLI, serviceName types.NamespacedName) (*corev1.Service, error) {
-	var service corev1.Service
-
-	k8sclient, err := cli.GetK8sClient()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = k8sclient.Get(context.Background(), serviceName, &service)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return &service, nil
-}
-
-func GetDestinationRuleByName(cli cli.CLI, serviceName types.NamespacedName) (*v1alpha3.DestinationRule, error) {
-	var drule v1alpha3.DestinationRule
-
-	k8sclient, err := cli.GetK8sClient()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = k8sclient.Get(context.Background(), serviceName, &drule)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return &drule, nil
-}
-
-func GetVirtualserviceByName(cli cli.CLI, serviceName types.NamespacedName) (*v1alpha3.VirtualService, error) {
-	var vservice v1alpha3.VirtualService
-
-	k8sclient, err := cli.GetK8sClient()
-	if err != nil {
-		return nil, err
-	}
-
-	err = k8sclient.Get(context.Background(), serviceName, &vservice)
-	if err != nil {
-		return nil, errors.WrapIf(err, "could not get virtual service")
-	}
-
-	return &vservice, nil
 }

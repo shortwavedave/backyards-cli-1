@@ -19,7 +19,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 
-	"knative.dev/pkg/apis/istio/v1alpha3"
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
 type ApplyGlobalTrafficPolicyRequest struct {

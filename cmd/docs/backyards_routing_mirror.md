@@ -1,15 +1,15 @@
-## backyards routing
+## backyards routing mirror
 
-Manage service routing configurations
+Manage http route mirror configurations
 
 ### Synopsis
 
-Manage service routing configurations
+Manage http route mirror configurations
 
 ### Options
 
 ```
-  -h, --help   help for routing
+  -h, --help   help for mirror
 ```
 
 ### Options inherited from parent commands
@@ -35,11 +35,8 @@ Manage service routing configurations
 
 ### SEE ALSO
 
-* [backyards](backyards.md)	 - Install and manage Backyards
-* [backyards routing circuit-breaker](backyards_routing_circuit-breaker.md)	 - Manage circuit-breaker configurations
-* [backyards routing fault-injection](backyards_routing_fault-injection.md)	 - Manage fault injection configurations
-* [backyards routing mirror](backyards_routing_mirror.md)	 - Manage http route mirror configurations
-* [backyards routing rewrite](backyards_routing_rewrite.md)	 - Manage http route rewrite configurations
-* [backyards routing route](backyards_routing_route.md)	 - Manage route configurations
-* [backyards routing traffic-shifting](backyards_routing_traffic-shifting.md)	 - Manage traffic-shifting configurations
+* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
+* [backyards routing mirror delete](backyards_routing_mirror_delete.md)	 - Delete http route mirror configuration of a service
+* [backyards routing mirror get](backyards_routing_mirror_get.md)	 - Get route configuration for a service
+* [backyards routing mirror set](backyards_routing_mirror_set.md)	 - Set http route rewrite configuration of a service
 

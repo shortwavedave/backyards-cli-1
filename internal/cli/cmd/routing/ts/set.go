@@ -18,7 +18,6 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
@@ -98,7 +97,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.StringVar(&options.serviceID, "service", "", "Service name")
-	flags.StringArrayVar(&options.subsets, "subset", []string{}, "Subsets with weights (sum of the weight must add up to 100)")
+	flags.StringArrayVarP(&options.subsets, "subset", "s", []string{}, "Subsets with weights (sum of the weight must add up to 100)")
 	flags.StringArrayVarP(&options.matches, "match", "m", options.matches, "HTTP request match")
 
 	return cmd
@@ -107,19 +106,16 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	var err error
 
-	service, err := common.GetServiceByName(cli, options.serviceName)
-	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return err
-		}
-		return errors.WrapIf(err, "could not get service")
-	}
-
 	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
 		return errors.WrapIf(err, "could not get initialized graphql client")
 	}
 	defer client.Close()
+
+	service, err := client.GetService(options.serviceName.Namespace, options.serviceName.Name)
+	if err != nil {
+		return errors.WrapIf(err, "could not get service")
+	}
 
 	req := graphql.ApplyHTTPRouteRequest{
 		Selector: graphql.HTTPRouteSelector{

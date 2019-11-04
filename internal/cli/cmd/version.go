@@ -74,7 +74,7 @@ func (c *versionCommand) run(cli cli.CLI, options *versionOptions) {
 	if options.shortVersion {
 		fmt.Println(clientVersion)
 	} else {
-		fmt.Printf("Client version: %s\n", clientVersion)
+		fmt.Fprintf(cli.Out(), "Client version: %s\n", clientVersion)
 	}
 
 	if options.onlyClientVersion {
@@ -85,7 +85,7 @@ func (c *versionCommand) run(cli cli.CLI, options *versionOptions) {
 	if options.shortVersion {
 		fmt.Println(apiVersion)
 	} else {
-		fmt.Printf("API version: %s\n", apiVersion)
+		fmt.Fprintf(cli.Out(), "API version: %s\n", apiVersion)
 	}
 }
 

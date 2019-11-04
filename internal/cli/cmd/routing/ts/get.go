@@ -106,7 +106,7 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 	}
 
 	if len(service.VirtualServices) == 0 {
-		log.Infof("No routing configuration found for %s", options.serviceName)
+		log.Infof("no routing configuration found for %s", options.serviceName)
 		return nil
 	}
 
@@ -116,7 +116,7 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 
 	matchedRoute := common.HTTPRoutes(service.VirtualServices[0].Spec.HTTP).GetMatchedRoute(options.parsedMatches)
 	if matchedRoute == nil {
-		log.Infof("No route found for %s", options.serviceName)
+		log.Infof("no route found for %s", options.serviceName)
 	}
 
 	return route.Output(cli, options.serviceName, *matchedRoute)

@@ -112,7 +112,7 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	}
 
 	if matchedRoute.Route == nil && matchedRoute.Redirect == nil {
-		log.Infof("No route found for %s", options.serviceName)
+		log.Infof("no route found for %s", options.serviceName)
 		return nil
 	}
 

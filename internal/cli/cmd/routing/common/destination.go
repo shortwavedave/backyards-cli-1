@@ -15,6 +15,7 @@
 package common
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,6 +32,24 @@ const qualifiedNameFmt string = "(" + qnameCharFmt + qnameExtCharFmt + "*)?" + q
 var qualifiedNameRegexp = regexp.MustCompile("^" + qualifiedNameFmt + "$")
 
 type Destination v1alpha3.Destination
+
+func (d Destination) String() string {
+	s := d.Host
+
+	if d.Port != nil && d.Port.Number > 0 {
+		s = fmt.Sprintf("%s:%d", s, d.Port.Number)
+	}
+
+	if d.Subset != nil {
+		s = fmt.Sprintf("%s%c(%s)", s, nbsp, *d.Subset)
+	}
+
+	if s == "" {
+		s = "-"
+	}
+
+	return s
+}
 
 func ParseDestinations(ds []string) ([]v1alpha3.Destination, error) {
 	destinations := make([]v1alpha3.Destination, 0)

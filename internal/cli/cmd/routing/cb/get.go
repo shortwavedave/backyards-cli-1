@@ -15,15 +15,18 @@
 package cb
 
 import (
+	"fmt"
+
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	clierrors "github.com/banzaicloud/backyards-cli/internal/errors"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
+	"github.com/banzaicloud/backyards-cli/pkg/output"
 )
 
 type getCommand struct{}
@@ -76,46 +79,66 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 func getCircuitBreakerRulesByServiceName(cli cli.CLI, serviceName types.NamespacedName) (*CircuitBreakerSettings, error) {
 	var err error
 
-	_, err = common.GetServiceByName(cli, serviceName)
+	client, err := cmdCommon.GetGraphQLClient(cli)
 	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			return nil, err
-		}
+		return nil, errors.WrapIf(err, "could not get initialized graphql client")
+	}
+	defer client.Close()
+
+	service, err := client.GetService(serviceName.Namespace, serviceName.Name)
+	if err != nil {
 		return nil, errors.WrapIf(err, "could not get service")
 	}
 
-	drule, err := common.GetDestinationRuleByName(cli, serviceName)
-	notfound := false
-	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
-			notfound = true
-		} else {
-			return nil, errors.WrapIf(err, "could not get service")
-		}
-	} else if drule.Spec.TrafficPolicy == nil || drule.Spec.TrafficPolicy.ConnectionPool == nil {
-		notfound = true
+	if len(service.DestinationRules) == 0 {
+		return nil, clierrors.NotFoundError{}
 	}
 
-	if notfound {
+	drule := service.DestinationRules[0]
+	if drule.Spec.TrafficPolicy == nil || drule.Spec.TrafficPolicy.ConnectionPool == nil {
 		return nil, clierrors.NotFoundError{}
 	}
 
 	tp := drule.Spec.TrafficPolicy
+	cb := CircuitBreakerSettings{}
 
-	return &CircuitBreakerSettings{
-		MaxConnections: tp.ConnectionPool.TCP.MaxConnections,
-		ConnectTimeout: tp.ConnectionPool.TCP.ConnectTimeout,
+	if tp.ConnectionPool != nil {
+		if tp.ConnectionPool.TCP != nil {
+			if tp.ConnectionPool.TCP.MaxConnections != nil {
+				cb.MaxConnections = *tp.ConnectionPool.TCP.MaxConnections
+			}
+			if tp.ConnectionPool.TCP.ConnectTimeout != nil {
+				cb.ConnectTimeout = *tp.ConnectionPool.TCP.ConnectTimeout
+			}
+		}
+		if tp.ConnectionPool.HTTP != nil && tp.ConnectionPool.HTTP.HTTP1MaxPendingRequests != nil {
+			cb.HTTP1MaxPendingRequests = *tp.ConnectionPool.HTTP.HTTP1MaxPendingRequests
+		}
+		if tp.ConnectionPool.HTTP != nil && tp.ConnectionPool.HTTP.HTTP2MaxRequests != nil {
+			cb.HTTP2MaxRequests = *tp.ConnectionPool.HTTP.HTTP2MaxRequests
+		}
+		if tp.ConnectionPool.HTTP != nil && tp.ConnectionPool.HTTP.MaxRequestsPerConnection != nil {
+			cb.MaxRequestsPerConnection = *tp.ConnectionPool.HTTP.MaxRequestsPerConnection
+		}
+		if tp.ConnectionPool.HTTP != nil && tp.ConnectionPool.HTTP.MaxRetries != nil {
+			cb.MaxRetries = *tp.ConnectionPool.HTTP.MaxRetries
+		}
+	}
 
-		HTTP1MaxPendingRequests:  tp.ConnectionPool.HTTP.HTTP1MaxPendingRequests,
-		HTTP2MaxRequests:         tp.ConnectionPool.HTTP.HTTP2MaxRequests,
-		MaxRequestsPerConnection: tp.ConnectionPool.HTTP.MaxRequestsPerConnection,
-		MaxRetries:               tp.ConnectionPool.HTTP.MaxRetries,
+	if tp.OutlierDetection != nil {
+		cb.ConsecutiveErrors = tp.OutlierDetection.ConsecutiveErrors
+		if tp.OutlierDetection.Interval != nil {
+			cb.Interval = *tp.OutlierDetection.Interval
+		}
+		if tp.OutlierDetection.BaseEjectionTime != nil {
+			cb.BaseEjectionTime = *tp.OutlierDetection.BaseEjectionTime
+		}
+		if tp.OutlierDetection.MaxEjectionPercent != nil {
+			cb.MaxEjectionPercent = *tp.OutlierDetection.MaxEjectionPercent
+		}
+	}
 
-		ConsecutiveErrors:  tp.OutlierDetection.ConsecutiveErrors,
-		Interval:           tp.OutlierDetection.Interval,
-		BaseEjectionTime:   tp.OutlierDetection.BaseEjectionTime,
-		MaxEjectionPercent: tp.OutlierDetection.MaxEjectionPercent,
-	}, nil
+	return &cb, nil
 }
 
 func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
@@ -128,6 +151,10 @@ func (c *getCommand) run(cli cli.CLI, options *getOptions) error {
 			return nil
 		}
 		return err
+	}
+
+	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
+		fmt.Fprintf(cli.Out(), "Settings for %s\n\n", options.serviceName)
 	}
 
 	err = Output(cli, data)

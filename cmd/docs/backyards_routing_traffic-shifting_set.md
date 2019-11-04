@@ -16,7 +16,7 @@ backyards routing traffic-shifting set [[--service=]namespace/servicename] [[--m
   -h, --help                 help for set
   -m, --match stringArray    HTTP request match
       --service string       Service name
-      --subset stringArray   Subsets with weights (sum of the weight must add up to 100)
+  -s, --subset stringArray   Subsets with weights (sum of the weight must add up to 100)
 ```
 
 ### Options inherited from parent commands
