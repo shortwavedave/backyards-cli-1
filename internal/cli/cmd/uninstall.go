@@ -41,11 +41,7 @@ type UninstallOptions struct {
 	istioNamespace string
 	dumpResources  bool
 
-	uninstallCanary      bool
-	uninstallDemoapp     bool
-	uninstallIstio       bool
-	uninstallCertManager bool
-	uninstallEverything  bool
+	uninstallEverything bool
 }
 
 func NewUninstallCommand(cli cli.CLI) *cobra.Command {

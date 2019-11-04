@@ -69,8 +69,6 @@ type InstallOptions struct {
 	istioNamespace string
 	dumpResources  bool
 
-	installDemoapp    bool
-	installIstio      bool
 	enableAuditSink   bool
 	anonymousAuth     bool
 	installEverything bool
