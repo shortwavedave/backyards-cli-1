@@ -122,19 +122,7 @@ func (c *client) Login() (*Credentials, error) {
 func (c *client) requestBody() (*RequestBody, error) {
 	rb := &RequestBody{}
 	// nolint ifElseChain
-	if c.config.BearerToken != "" {
-		rb.Mode = TokenAuth
-		rb.Token = c.config.BearerToken
-		return rb, nil
-	} else if c.config.BearerTokenFile != "" {
-		bearerToken, err := ioutil.ReadFile(c.config.BearerTokenFile)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load bearer token from %s", c.config.BearerTokenFile)
-		}
-		rb.Mode = TokenAuth
-		rb.Token = string(bearerToken)
-		return rb, nil
-	} else if c.config.TLSClientConfig.CertFile != "" && c.config.TLSClientConfig.KeyFile != "" {
+	if c.config.TLSClientConfig.CertFile != "" && c.config.TLSClientConfig.KeyFile != "" {
 		cert, err := ioutil.ReadFile(c.config.TLSClientConfig.CertFile)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to load client cert from %s", c.config.TLSClientConfig.CertFile)
@@ -151,6 +139,18 @@ func (c *client) requestBody() (*RequestBody, error) {
 		rb.Mode = CertAuth
 		rb.ClientCert.Cert = base64.StdEncoding.EncodeToString(c.config.TLSClientConfig.CertData)
 		rb.ClientCert.Key = base64.StdEncoding.EncodeToString(c.config.TLSClientConfig.KeyData)
+		return rb, nil
+	} else if c.config.BearerToken != "" {
+		rb.Mode = TokenAuth
+		rb.Token = c.config.BearerToken
+		return rb, nil
+	} else if c.config.BearerTokenFile != "" {
+		bearerToken, err := ioutil.ReadFile(c.config.BearerTokenFile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load bearer token from %s", c.config.BearerTokenFile)
+		}
+		rb.Mode = TokenAuth
+		rb.Token = string(bearerToken)
 		return rb, nil
 	} else if c.config.ExecProvider != nil || c.config.AuthProvider != nil {
 		return rb, nil
