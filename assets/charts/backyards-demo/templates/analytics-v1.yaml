@@ -1,5 +1,5 @@
 {{ if .Values.analytics }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: analytics-v1
@@ -10,6 +10,10 @@ metadata:
 {{ include "backyards-demo.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: analytics
+      version: v1
   strategy:
     rollingUpdate:
       maxSurge: 1

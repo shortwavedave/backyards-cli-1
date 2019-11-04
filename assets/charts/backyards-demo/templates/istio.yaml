@@ -49,4 +49,15 @@ spec:
           number: 8080
       weight: 34
 ---
+apiVersion: networking.istio.io/v1alpha3
+kind: Sidecar
+metadata:
+  name: default
+  namespace: backyards-demo
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+---
 {{ end }}
