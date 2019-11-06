@@ -52,5 +52,6 @@ brews:
         folder: Formula
         homepage: https://banzaicloud.com/
         description: Command-line interface for Backyards
+        skip_upload: auto
         test: |
             system "#{bin}/backyards --version"
