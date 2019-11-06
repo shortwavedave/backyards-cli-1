@@ -50,14 +50,16 @@ func newOffCommand(cli cli.CLI) *cobra.Command {
 				options.namespaceName = args[0]
 			}
 
-			if cli.Interactive() {
-				var err error
-				options.namespaceName, err = common.GetNamespaceNamesInteractively(cli)
-				if err != nil {
-					return err
+			if options.namespaceName == "" {
+				if cli.Interactive() {
+					var err error
+					options.namespaceName, err = common.GetNamespaceNamesInteractively(cli)
+					if err != nil {
+						return err
+					}
+				} else {
+					return errors.New("namespace name must be specified")
 				}
-			} else {
-				return errors.New("namespace name must be specified")
 			}
 
 			return c.run(cli, options)
