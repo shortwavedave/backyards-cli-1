@@ -151,7 +151,7 @@ bin/goreleaser-${GORELEASER_VERSION}:
 
 .PHONY: release
 release: bin/goreleaser # Publish a release
-	bin/goreleaser release ${GORELEASERFLAGS}
+	TRACKING_ID="${TRACKING_ID}" bin/goreleaser release ${GORELEASERFLAGS}
 
 release-%:
 ifneq (${DRY}, 1)

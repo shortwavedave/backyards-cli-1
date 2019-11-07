@@ -4,7 +4,7 @@ builds:
         binary: backyards
         env:
             - CGO_ENABLED=0
-        ldflags: "-s -w -X main.version={{ .Version }} -X main.commitHash={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.trackingID=UA-109213883-4"
+        ldflags: "-s -w -X main.version={{ .Version }} -X main.commitHash={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.trackingID={{ .Env.TRACKING_ID }}"
         goos:
             - linux
             - darwin
