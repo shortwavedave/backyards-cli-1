@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/img/backyards-logo.svg" width="260"></p>
 
-This is a command line interface for [Backyards](https://banzaicloud.com/blog/istio-the-easy-way/), the Banzai Cloud automated service mesh, built on Istio.
+This is a command line interface for [Backyards](https://banzaicloud.com/blog/backyards-release-1-0/), the Banzai Cloud automated service mesh, built on Istio.
 
 ## Installation
 
