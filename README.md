@@ -2,9 +2,23 @@
 
 This is a command line interface for [Backyards](https://banzaicloud.com/blog/backyards-release-1-0/), the Banzai Cloud automated service mesh, built on Istio.
 
+## TL;DR
+
+To install and launch Backyards with a demo application in a few minutes, run the following command (`KUBECONFIG` must be set for your cluster):
+
+```bash
+curl https://getbackyards.sh | sh && backyards install -a --run-demo
+```
+
 ## Installation
 
-Pre-built binaries are available in multiple package formats. Download the [latest release](https://github.com/banzaicloud/backyards-cli/releases).
+Run the following command:
+
+```bash
+curl https://getbackyards.sh
+```
+
+Alternatively, pre-built binaries are available in multiple package formats. Download the [latest release](https://github.com/banzaicloud/backyards-cli/releases).
 
 ## Build from source
 
