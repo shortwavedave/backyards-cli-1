@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 )
 
@@ -72,7 +73,12 @@ func NewProxyEndpoint(localPort int, cfg *rest.Config, service K8sService) (Endp
 	}
 
 	go func() {
-		_ = ep.srv.ListenAndServe()
+		err := ep.srv.ListenAndServe()
+		if err != nil {
+			if err, ok := err.(*net.OpError); ok {
+				logrus.Fatalf("failed to set up dashboard proxy: %s\n", err)
+			}
+		}
 	}()
 
 	return ep, nil
