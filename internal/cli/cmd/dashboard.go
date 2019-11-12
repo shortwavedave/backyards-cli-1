@@ -24,11 +24,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/auth"
-
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
-
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
