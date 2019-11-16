@@ -215,13 +215,21 @@ func askLicense(cliRef cli.CLI) error {
 			)
 
 			fmt.Fprint(cliRef.Out(), heredoc.Doc(`
-				You have successfully downloaded and installed Backyards. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License
-
-				TL;DR:
-				- you receive a limited license to test and evaluate the product
-				- you allow Banzai Cloud to collect anonymous usage statistics
-				- if you would like to use the Banzai Cloud product in production,
-				  you will need to upgrade your license. Contact: sales@banzaicloud.com.
+				You have successfully downloaded and installed Backyards, a Banzai Cloud product. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License, which is available at https://banzaicloud.com/docs/backyards/evaluation-license/. If you would like to use the Banzai Cloud product in production, you will need a different license. Contact: sales@banzaicloud.com. 
+				
+				For your convenience here is a short summary of what you will agree to by commencing use of the Evaluation Product: 
+				
+				(a) You receive a limited license to test and evaluate the Evaluation Product;
+				
+				(b) You receive the Evaluation Product “as-is” and “as-available”, without any warranties of title, non-infringement or fitness for purpose;
+				
+				(c) Banzai Cloud disclaims and where disclaiming is not possible limits its liability for damages incurred by You or any third party;
+				
+				(d) any feedback on the Evaluation Product given by You will be used by Banzai Cloud freely and independently for any purpose.
+				
+				(e) Banzai Cloud may collect anonymized analytics data of your usage and use it for any purpose, including enhancements, statistics and business purposes. 
+				
+				This is a human-readable summary of (and not a substitute for) the Agreement https://banzaicloud.com/docs/backyards/evaluation-license/.
 
 				Please read the full license and confirm that you accept the terms!
 			`))
