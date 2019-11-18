@@ -29,6 +29,7 @@ spec:
       destination_app: destination.labels["app"] | "unknown"
       destination_cluster_id: conditional((destination.cluster.id | "unknown") != "unknown", destination.cluster.id, "master")
       destination_version: destination.labels["version"] | "unknown"
+      request_host: request.host | "unknown"
       request_protocol: api.protocol | context.protocol | "unknown"
       security_policy: conditional((context.reporter.kind | "inbound") == "outbound", "unknown", conditional(connection.mtls | false, "mutual_tls", "none"))
       reporter: conditional((context.reporter.kind | "inbound") == "outbound", "source", "destination")
@@ -66,6 +67,7 @@ spec:
       permissive_response_code: rbac.permissive.response_code | "none"
       permissive_response_policyid: rbac.permissive.effective_policy_id | "none"
       reporter: conditional((context.reporter.kind | "inbound") == "outbound", "source", "destination")
+      request_host: request.host | "unknown"
       request_protocol: api.protocol | context.protocol | "unknown"
       response_code: response.code | 200
       response_flags: context.proxy_error_code | "-"
@@ -110,6 +112,7 @@ spec:
         - destination_app
         - destination_cluster_id
         - destination_version
+        - request_host
         - request_protocol
         - security_policy
         - reporter
@@ -136,6 +139,7 @@ spec:
         - destination_cluster_id
         - connection_security_policy
         - response_flags
+        - request_host
         - request_protocol
         - response_code
         - permissive_response_code
