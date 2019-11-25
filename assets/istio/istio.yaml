@@ -3,8 +3,9 @@ kind: Istio
 metadata:
   name: mesh
 spec:
-  version: "1.3.4"
+  version: "1.4.0"
   mtls: true
+  autoMtls: false
   controlPlaneSecurityEnabled: true
   sidecarInjector:
     rewriteAppHTTPProbe: true
@@ -15,9 +16,9 @@ spec:
     egress:
       enabled: false
   pilot:
-    image: banzaicloud/istio-pilot:1.3.4-bzc
+    image: banzaicloud/istio-pilot:1.4.0-bzc
   mixer:
-    image: banzaicloud/istio-mixer:1.3.4-bzc
+    image: banzaicloud/istio-mixer:1.4.0-bzc
   tracing:
     enabled: true
     tracer: zipkin
