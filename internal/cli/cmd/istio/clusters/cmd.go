@@ -11,39 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package istio
+
+package clusters
 
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio/clusters"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
-const (
-	DefaultNamespace = "istio-system"
-)
-
-var (
-	IstioNamespace string
-)
-
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:         "istio",
-		Short:       "Install and manage Istio",
+		Use:         "cluster",
+		Short:       "Manage Istio mesh member clusters",
 		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.ComponentCommand},
 	}
 
 	cmd.AddCommand(
-		NewInstallCommand(cli, NewInstallOptions()),
-		NewUninstallCommand(cli, NewUninstallOptions()),
-		NewOverviewCommand(cli, NewOverviewOptions(defaultEvaluationDurationSeconds)),
-		clusters.NewRootCmd(cli),
+		NewStatusCommand(cli),
+		NewAttachCommand(cli, NewAttachOptions()),
+		NewDetachCommand(cli, NewDetachOptions()),
 	)
-
-	cmd.PersistentFlags().StringVarP(&IstioNamespace, "namespace", "n", DefaultNamespace, "Namespace in which Istio is installed [$ISTIO_NAMESPACE]")
 
 	return cmd
 }

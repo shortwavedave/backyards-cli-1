@@ -112,4 +112,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = vfsgen.Generate(static.PeerClusterAssetsSource, vfsgen.Options{
+		Filename:     "static/peercluster/assets.gogen.go",
+		PackageName:  "peercluster",
+		VariableName: "Assets",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

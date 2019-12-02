@@ -6,6 +6,7 @@ spec:
   version: "1.4.0"
   mtls: true
   autoMtls: false
+  meshExpansion: true
   controlPlaneSecurityEnabled: true
   sidecarInjector:
     rewriteAppHTTPProbe: true

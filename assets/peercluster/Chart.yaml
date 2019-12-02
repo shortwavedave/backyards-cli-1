@@ -1,0 +1,10 @@
+apiVersion: v1
+appVersion: 0.0.1
+description: Manifest for peer clusters kubeconfig generation
+home: https://banzaicloud.com
+icon: https://banzaicloud.com/img/banzai-cloud-logo.png
+maintainers:
+- email: info@banzaicloud.com
+  name: Banzai Cloud
+name: peer-cluster-manifests
+version: 0.0.1
