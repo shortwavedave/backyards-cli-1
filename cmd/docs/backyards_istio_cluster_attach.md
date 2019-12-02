@@ -1,15 +1,20 @@
-## backyards istio
+## backyards istio cluster attach
 
-Install and manage Istio
+Attach peer cluster to the mesh
 
 ### Synopsis
 
-Install and manage Istio
+Attach peer cluster to the mesh
+
+```
+backyards istio cluster attach [path-to-kubeconfig] [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for istio
+  -h, --help          help for attach
+      --name string   Name override for the peer cluster
 ```
 
 ### Options inherited from parent commands
@@ -24,7 +29,7 @@ Install and manage Istio
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
   -p, --local-port int                  Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
-  -n, --namespace string                Namespace in which Backyards is installed [$BACKYARDS_NAMESPACE] (default "backyards-system")
+  -n, --namespace string                Namespace in which Istio is installed [$ISTIO_NAMESPACE] (default "istio-system")
       --non-interactive                 never ask questions interactively
   -o, --output string                   output format (table|yaml|json) (default "table")
       --persistent-config-file string   Backyards persistent config file to use instead of the default at ~/.banzai/backyards/
@@ -35,9 +40,5 @@ Install and manage Istio
 
 ### SEE ALSO
 
-* [backyards](backyards.md)	 - Install and manage Backyards
 * [backyards istio cluster](backyards_istio_cluster.md)	 - Manage Istio mesh member clusters
-* [backyards istio install](backyards_istio_install.md)	 - Installs Istio utilizing Banzai Cloud's Istio-operator
-* [backyards istio overview](backyards_istio_overview.md)	 - Show basic mesh overview metrics
-* [backyards istio uninstall](backyards_istio_uninstall.md)	 - Output or delete Kubernetes resources to uninstall Istio
 
