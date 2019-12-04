@@ -30,6 +30,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/istio_assets"
@@ -42,7 +43,6 @@ import (
 )
 
 const (
-	IstioCRName         = "mesh"
 	istioCRYamlFilename = "istio.yaml"
 )
 
@@ -207,13 +207,12 @@ func (c *installCommand) applyResources(crds, objects object.K8sObjects) error {
 }
 
 func (c *installCommand) getIstioDeploymentsToWaitFor() []k8s.NamespacedNameWithGVK {
-	var istioCR v1beta1.Istio
+	cl, err := c.cli.GetK8sClient()
+	if err != nil {
+		panic(errors.WrapIf(err, "could not get k8s client"))
+	}
 
-	client, _ := c.cli.GetK8sClient()
-	err := client.Get(context.Background(), types.NamespacedName{
-		Name:      IstioCRName,
-		Namespace: IstioNamespace,
-	}, &istioCR)
+	istioCR, err := FetchIstioCR(cl)
 	if err != nil {
 		panic(err)
 	}
@@ -318,7 +317,6 @@ func getIstioCR(filename string) (*object.K8sObject, error) {
 
 	metadata := obj.UnstructuredObject().Object["metadata"].(map[string]interface{})
 	metadata["namespace"] = IstioNamespace
-	metadata["name"] = IstioCRName
 
 	return obj, nil
 }
@@ -346,4 +344,21 @@ func (c *installCommand) isCRDsExists(crdNames []string) (bool, error) {
 	}
 
 	return found == len(crdNames), nil
+}
+
+func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
+	var istioCR v1beta1.Istio
+	var istios v1beta1.IstioList
+	err := cl.List(context.Background(), &istios, client.InNamespace(IstioNamespace))
+	if err != nil {
+		return istioCR, errors.WrapIf(err, "could not list istios")
+	}
+
+	if len(istios.Items) == 0 {
+		return istioCR, errors.WrapIf(err, "no Istio CR found")
+	} else if len(istios.Items) > 1 {
+		return istioCR, errors.WrapIf(err, "multiple Istio CRs found")
+	}
+
+	return istios.Items[0], nil
 }

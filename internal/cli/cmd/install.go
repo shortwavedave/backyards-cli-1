@@ -42,7 +42,6 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
-	"github.com/banzaicloud/istio-operator/pkg/apis/istio/v1beta1"
 )
 
 const (
@@ -300,7 +299,11 @@ func getBackyardsObjects(values Values, cli cli.CLI) (object.K8sObjects, error) 
 func (c *installCommand) setTracingAddress(values Values) error {
 	cl, err := c.cli.GetK8sClient()
 	if err != nil {
-		err = errors.WrapIf(err, "could not get k8s client")
+		return errors.WrapIf(err, "could not get k8s client")
+	}
+
+	istioCR, err := istio.FetchIstioCR(cl)
+	if err != nil {
 		return err
 	}
 
@@ -311,12 +314,9 @@ func (c *installCommand) setTracingAddress(values Values) error {
 	}}
 	payloadBytes, _ := json.Marshal(payload)
 
-	istioCR := v1beta1.Istio{}
-	istioCR.Name = istio.IstioCRName
-	istioCR.Namespace = istio.IstioNamespace
 	err = cl.Patch(context.Background(), &istioCR, client.ConstantPatch(types.JSONPatchType, payloadBytes))
 	if err != nil {
-		return err
+		return errors.WrapIf(err, "could not patch Istio CR")
 	}
 
 	return nil

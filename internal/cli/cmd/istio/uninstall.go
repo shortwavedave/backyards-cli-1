@@ -21,6 +21,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
@@ -89,7 +91,7 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 	}
 	objects.Sort(helm.UninstallObjectOrder())
 
-	istioCRObj, err := getIstioCR("")
+	istioCRObj, err := c.getIstioCRObject()
 	if err != nil {
 		return err
 	}
@@ -130,4 +132,28 @@ func (c *uninstallCommand) deleteResources(objects object.K8sObjects) error {
 	}
 
 	return nil
+}
+
+func (c *uninstallCommand) getIstioCRObject() (*object.K8sObject, error) {
+	var istioCRObject object.K8sObject
+	cl, err := c.cli.GetK8sClient()
+	if err != nil {
+		return &istioCRObject, errors.WrapIf(err, "could not get k8s client")
+	}
+
+	istioCR, err := FetchIstioCR(cl)
+	if err != nil {
+		return &istioCRObject, err
+	}
+
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&istioCR)
+	if err != nil {
+		return &istioCRObject, err
+	}
+
+	istioCRUnstructured := &unstructured.Unstructured{
+		Object: obj,
+	}
+
+	return object.NewK8sObject(istioCRUnstructured, nil, nil), nil
 }
