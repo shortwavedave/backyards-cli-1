@@ -30,7 +30,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd.AddCommand(
 		NewGetCommand(cli),
 		newSetCommand(cli),
-		//newDeleteCommand(cli),
+		newDeleteCommand(cli),
 	)
 
 	return cmd
