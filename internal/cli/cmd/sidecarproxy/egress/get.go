@@ -20,6 +20,8 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
+
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
@@ -58,7 +60,7 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("workload must be specified")
 			}
 
-			options.workloadName, err = util.ParseK8sResourceID(options.workloadID)
+			options.workloadName, err = util.ParseK8sResourceIDAllowWildcard(options.workloadID)
 			if err != nil {
 				return errors.WrapIf(err, "could not parse workload ID")
 			}
@@ -82,22 +84,31 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 	}
 	defer client.Close()
 
-	wl, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
-	if err != nil {
-		return errors.WrapIf(err, "could not get workload")
+	var egressListeners map[string][]*v1alpha3.IstioEgressListener
+	if options.workloadName.Name != "*" {
+		wl, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		if err != nil {
+			return errors.Wrap(err, "couldn't query workload sidecars")
+		}
+
+		if len(wl.Sidecars) == 0 {
+			log.Infof("no sidecar found for %s", options.workloadName)
+			return nil
+		}
+
+		egressListeners = common.GetEgressListenerMap(wl.Sidecars)
+	} else {
+		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "couldn't query namespace sidecars")
+		}
+		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
 	}
 
-	if len(wl.Sidecars) == 0 {
-		log.Infof("no sidecar found for %s", options.workloadName)
-		return nil
-	}
-
-	egressRules := common.GetEgressListenerMap(wl)
-
-	if len(egressRules) == 0 {
+	if len(egressListeners) == 0 {
 		log.Infof("no egress rule found for %s", options.workloadName)
 		return nil
 	}
 
-	return Output(cli, options.workloadName, egressRules)
+	return Output(cli, options.workloadName, egressListeners)
 }

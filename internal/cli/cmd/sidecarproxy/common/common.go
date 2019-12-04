@@ -19,6 +19,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
+
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
@@ -50,9 +51,9 @@ func GetNamespaceNamesInteractively(cli cli.CLI) (string, error) {
 	return namespaceName, nil
 }
 
-func GetEgressListenerMap(wl *graphql.MeshWorkloadSidecar) map[string][]*v1alpha3.IstioEgressListener {
+func GetEgressListenerMap(sidecars []graphql.Sidecar) map[string][]*v1alpha3.IstioEgressListener {
 	egressRules := make(map[string][]*v1alpha3.IstioEgressListener)
-	for _, s := range wl.Sidecars {
+	for _, s := range sidecars {
 		s := s
 		if len(s.Spec.Egress) > 0 {
 			egressRules[s.Namespace+"/"+s.Name] = s.Spec.Egress

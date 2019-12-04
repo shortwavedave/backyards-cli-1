@@ -23,6 +23,7 @@ import (
 type Client interface {
 	SetJWTToken(string)
 	GetNamespaces() (NamespacesResponse, error)
+	GetNamespaceWithSidecar(name string) (NamespaceResponse, error)
 	EnableAutoSidecarInjection(req EnableAutoSidecarInjectionRequest) (EnableAutoSidecarInjectionResponse, error)
 	DisableAutoSidecarInjection(req DisableAutoSidecarInjectionRequest) (DisableAutoSidecarInjectionResponse, error)
 	GenerateLoad(req GenerateLoadRequest) (GenerateLoadResponse, error)

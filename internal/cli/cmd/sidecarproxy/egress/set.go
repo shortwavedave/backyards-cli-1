@@ -146,12 +146,15 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	if options.workloadName.Name != "*" {
 		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(workload)
+		egressListeners = common.GetEgressListenerMap(workload.Sidecars)
 	} else {
-		// TODO 1: implement and call GetNamespaceSidecars
-		egressListeners = make(map[string][]*v1alpha3.IstioEgressListener)
+		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "couldn't query namespace sidecars")
+		}
+		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
 	}
 
 	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
