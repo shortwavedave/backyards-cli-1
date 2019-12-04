@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
@@ -92,13 +92,7 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 		return nil
 	}
 
-	egressRules := make(map[string][]*v1alpha3.IstioEgressListener)
-	for _, s := range wl.Sidecars {
-		s := s
-		if len(s.Spec.Egress) > 0 {
-			egressRules[s.Namespace+"/"+s.Name] = s.Spec.Egress
-		}
-	}
+	egressRules := common.GetEgressListenerMap(wl)
 
 	if len(egressRules) == 0 {
 		log.Infof("no egress rule found for %s", options.workloadName)

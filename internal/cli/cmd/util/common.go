@@ -30,15 +30,28 @@ const (
 var dns1123LabelRegexp = regexp.MustCompile("^" + dns1123LabelFmt + "$")
 
 func ParseK8sResourceID(id string) (types.NamespacedName, error) {
+	return parseK8sResourceID(id, false)
+}
+
+func ParseK8sResourceIDAllowWildcard(id string) (types.NamespacedName, error) {
+	return parseK8sResourceID(id, true)
+}
+
+func parseK8sResourceID(id string, allowWildcard bool) (types.NamespacedName, error) {
 	parts := strings.Split(id, "/")
 	if len(parts) != 2 {
 		return types.NamespacedName{}, errors.Errorf("invalid resource ID: '%s': format must be <namespace>/<name>", id)
 	}
 
-	for _, p := range parts {
-		if !dns1123LabelRegexp.MatchString(p) {
+	for i, p := range parts {
+		validFormat := dns1123LabelRegexp.MatchString(p)
+		if allowWildcard && i == 1 {
+			validFormat = validFormat || p == "*"
+		}
+		if !validFormat {
 			return types.NamespacedName{}, errors.Errorf("invalid resource ID: '%s': format must be <namespace>/<name>", id)
 		}
+
 	}
 
 	return types.NamespacedName{

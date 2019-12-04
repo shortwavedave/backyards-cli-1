@@ -30,9 +30,10 @@ type Sidecar struct {
 }
 
 type MeshWorkloadSidecar struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Namespace string            `json:"namespace,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty"`
 
 	Sidecars []Sidecar `json:"sidecars"`
 }
@@ -44,6 +45,7 @@ func (c *client) GetWorkloadSidecar(namespace, name string) (*MeshWorkloadSideca
         id
         name
         namespace
+        labels
         sidecars {
           name
           namespace

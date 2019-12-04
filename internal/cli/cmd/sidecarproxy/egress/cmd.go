@@ -29,7 +29,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 
 	cmd.AddCommand(
 		NewGetCommand(cli),
-		//newSetCommand(cli),
+		newSetCommand(cli),
 		//newDeleteCommand(cli),
 	)
 

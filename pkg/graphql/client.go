@@ -36,6 +36,8 @@ type Client interface {
 	Clusters() (ClustersResponse, error)
 	AttachPeerCluster(req AttachPeerClusterRequest) (bool, error)
 	DetachPeerCluster(name string) (bool, error)
+	ApplySidecarEgress(input ApplySidecarEgressInput) (ApplySidecarEgressResponse, error)
+	DisableSidecarEgress(input DisableSidecarEgressInput) (DisableSidecarEgressResponse, error)
 	Close()
 }
 
