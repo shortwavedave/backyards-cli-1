@@ -26,7 +26,7 @@ import (
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	clierrors "github.com/banzaicloud/backyards-cli/internal/errors"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
@@ -108,7 +108,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 			options.BaseEjectionTime = options.baseEjectionTime.String()
 			options.Interval = options.interval.String()
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return err
 			}

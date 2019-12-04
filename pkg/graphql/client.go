@@ -31,6 +31,7 @@ type Client interface {
 	ApplyGlobalTrafficPolicy(req ApplyGlobalTrafficPolicyRequest) (ApplyGlobalTrafficPolicyResponse, error)
 	DisableGlobalTrafficPolicy(req DisableGlobalTrafficPolicyRequest) (DisableGlobalTrafficPolicyResponse, error)
 	GetService(namespace, name string) (*MeshService, error)
+	GetWorkloadSidecar(namespace, name string) (*MeshWorkloadSidecar, error)
 	Overview(evaluationDurationSeconds uint) (OverviewResponse, error)
 	Clusters() (ClustersResponse, error)
 	AttachPeerCluster(req AttachPeerClusterRequest) (bool, error)

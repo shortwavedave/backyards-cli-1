@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
+
 	"emperror.dev/errors"
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
@@ -41,7 +43,7 @@ func (d Destination) String() string {
 	}
 
 	if d.Subset != nil {
-		s = fmt.Sprintf("%s%c(%s)", s, nbsp, *d.Subset)
+		s = fmt.Sprintf("%s%c(%s)", s, util.Nbsp, *d.Subset)
 	}
 
 	if s == "" {

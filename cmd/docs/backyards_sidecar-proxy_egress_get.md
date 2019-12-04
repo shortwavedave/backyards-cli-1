@@ -1,15 +1,20 @@
-## backyards sidecar-proxy
+## backyards sidecar-proxy egress get
 
-Manage sidecar-proxy related configurations
+Get sidecar configuration for a workload
 
 ### Synopsis
 
-Manage sidecar-proxy related configurations
+Get sidecar configuration for a workload
+
+```
+backyards sidecar-proxy egress get [[--workload=]namespace/workloadname] [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for sidecar-proxy
+  -h, --help              help for get
+      --workload string   Workload name
 ```
 
 ### Options inherited from parent commands
@@ -35,7 +40,5 @@ Manage sidecar-proxy related configurations
 
 ### SEE ALSO
 
-* [backyards](backyards.md)	 - Install and manage Backyards
-* [backyards sidecar-proxy auto-inject](backyards_sidecar-proxy_auto-inject.md)	 - Manage auto-injection configurations
 * [backyards sidecar-proxy egress](backyards_sidecar-proxy_egress.md)	 - Manage sidecar egress configurations
 

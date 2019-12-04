@@ -34,7 +34,6 @@ import (
 	"github.com/waynz0r/grafterm/pkg/view/render/termdash"
 
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/graphtemplates"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
@@ -75,7 +74,7 @@ func NewGraphCmd(cli cli.CLI, fileName string) *cobra.Command {
 			}
 
 			if options.serviceID != "" {
-				options.serviceName, err = common.ParseServiceID(options.serviceID)
+				options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 				if err != nil {
 					return err
 				}
