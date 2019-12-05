@@ -39,6 +39,18 @@ rules:
   - get
   - list
   - watch
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - edit
+  - update
+  - patch
+  - delete
 - apiGroups: ["apps"]
   resources:
   - deployments
@@ -62,6 +74,7 @@ rules:
   - istios
   - remoteistios
   verbs:
+  - create
   - get
   - list
   - watch
