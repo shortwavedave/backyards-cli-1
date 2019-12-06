@@ -15,7 +15,7 @@ curl https://getbackyards.sh | sh && backyards install -a --run-demo
 Run the following command:
 
 ```bash
-curl https://getbackyards.sh
+curl https://getbackyards.sh | sh
 ```
 
 Alternatively, pre-built binaries are available in multiple package formats. Download the [latest release](https://github.com/banzaicloud/backyards-cli/releases).
