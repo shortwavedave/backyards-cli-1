@@ -20,10 +20,12 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 )
@@ -76,7 +78,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("at least 1 subset must be specified")
 			}
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return err
 			}
@@ -131,12 +133,13 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 
 	for subset, weight := range options.parsedSubsets {
 		subset := subset
+		weight := weight
 		req.Rule.Route = append(req.Rule.Route, &v1alpha3.HTTPRouteDestination{
 			Destination: &v1alpha3.Destination{
 				Host:   service.Name,
 				Subset: &subset,
 			},
-			Weight: weight,
+			Weight: &weight,
 		})
 	}
 

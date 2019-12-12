@@ -1,15 +1,22 @@
-## backyards sidecar-proxy
+## backyards sidecar-proxy egress set
 
-Manage sidecar-proxy related configurations
+Set sidecar egress rule for a workload
 
 ### Synopsis
 
-Manage sidecar-proxy related configurations
+Set sidecar egress rule for a workload
+
+```
+backyards sidecar-proxy egress set --workload namespace/[workload|*] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2] [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for sidecar-proxy
+  -b, --bind string         Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]
+  -h, --help                help for set
+      --hosts stringArray   Egress listener Hosts
+      --workload string     Workload name [namespace/[workload|*]]
 ```
 
 ### Options inherited from parent commands
@@ -35,7 +42,5 @@ Manage sidecar-proxy related configurations
 
 ### SEE ALSO
 
-* [backyards](backyards.md)	 - Install and manage Backyards
-* [backyards sidecar-proxy auto-inject](backyards_sidecar-proxy_auto-inject.md)	 - Manage auto-injection configurations
 * [backyards sidecar-proxy egress](backyards_sidecar-proxy_egress.md)	 - Manage sidecar egress configurations
 

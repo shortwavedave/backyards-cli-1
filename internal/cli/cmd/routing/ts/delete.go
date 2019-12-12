@@ -20,8 +20,10 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
-	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+
+	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
@@ -70,7 +72,7 @@ func newDeleteCommand(cli cli.CLI) *cobra.Command {
 				return errors.WrapIf(err, "could not parse matches")
 			}
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return err
 			}
@@ -112,11 +114,12 @@ func (c *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		},
 	}
 
+	var hundred = 100
 	req.Rule.Route = append(req.Rule.Route, &v1alpha3.HTTPRouteDestination{
 		Destination: &v1alpha3.Destination{
 			Host: service.Name,
 		},
-		Weight: 100,
+		Weight: &hundred,
 	})
 
 	r, err := client.ApplyHTTPRoute(req)

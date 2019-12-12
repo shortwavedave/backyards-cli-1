@@ -2161,7 +2161,7 @@
   ],
   "refresh": "10s",
   "schemaVersion": 16,
-  "style": "dark",
+  "style": "light",
   "tags": [],
   "templating": {
     "list": [
@@ -2285,6 +2285,7 @@
       "1d"
     ],
     "time_options": [
+      "1m",
       "5m",
       "15m",
       "1h",

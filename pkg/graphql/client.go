@@ -23,6 +23,7 @@ import (
 type Client interface {
 	SetJWTToken(string)
 	GetNamespaces() (NamespacesResponse, error)
+	GetNamespaceWithSidecar(name string) (NamespaceResponse, error)
 	EnableAutoSidecarInjection(req EnableAutoSidecarInjectionRequest) (EnableAutoSidecarInjectionResponse, error)
 	DisableAutoSidecarInjection(req DisableAutoSidecarInjectionRequest) (DisableAutoSidecarInjectionResponse, error)
 	GenerateLoad(req GenerateLoadRequest) (GenerateLoadResponse, error)
@@ -31,10 +32,13 @@ type Client interface {
 	ApplyGlobalTrafficPolicy(req ApplyGlobalTrafficPolicyRequest) (ApplyGlobalTrafficPolicyResponse, error)
 	DisableGlobalTrafficPolicy(req DisableGlobalTrafficPolicyRequest) (DisableGlobalTrafficPolicyResponse, error)
 	GetService(namespace, name string) (*MeshService, error)
+	GetWorkloadSidecar(namespace, name string) (*MeshWorkloadSidecar, error)
 	Overview(evaluationDurationSeconds uint) (OverviewResponse, error)
 	Clusters() (ClustersResponse, error)
 	AttachPeerCluster(req AttachPeerClusterRequest) (bool, error)
 	DetachPeerCluster(name string) (bool, error)
+	ApplySidecarEgress(input ApplySidecarEgressInput) (ApplySidecarEgressResponse, error)
+	DisableSidecarEgress(input DisableSidecarEgressInput) (DisableSidecarEgressResponse, error)
 	Close()
 }
 

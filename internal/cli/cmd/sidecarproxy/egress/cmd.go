@@ -12,29 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sidecarproxy
+package egress
 
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/egress"
-
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/autoinject"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
 func NewRootCmd(cli cli.CLI) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:         "sidecar-proxy",
-		Aliases:     []string{"sp"},
-		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
-		Short:       "Manage sidecar-proxy related configurations",
+		Use:     "egress",
+		Aliases: []string{"e", "eg"},
+		Short:   "Manage sidecar egress configurations",
 	}
 
 	cmd.AddCommand(
-		autoinject.NewRootCmd(cli),
-		egress.NewRootCmd(cli),
+		NewGetCommand(cli),
+		newSetCommand(cli),
+		newDeleteCommand(cli),
 	)
 
 	return cmd

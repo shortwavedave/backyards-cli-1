@@ -21,11 +21,16 @@ import (
 )
 
 type IstioNamespace struct {
-	Name string `json:"name"`
+	Name     string    `json:"name"`
+	Sidecars []Sidecar `json:"sidecars"`
 }
 
 type NamespacesResponse struct {
 	Namespaces []IstioNamespace `json:"namespaces"`
+}
+
+type NamespaceResponse struct {
+	Namespace IstioNamespace `json:"namespace"`
 }
 
 func (c *client) GetNamespaces() (NamespacesResponse, error) {
@@ -37,6 +42,54 @@ func (c *client) GetNamespaces() (NamespacesResponse, error) {
 		}`)
 	r := c.NewRequest(request)
 	var respData NamespacesResponse
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return respData, err
+	}
+
+	return respData, nil
+}
+
+func (c *client) GetNamespaceWithSidecar(name string) (NamespaceResponse, error) {
+	request := heredoc.Doc(`
+		query($name: String!){
+          namespace(name: $name) {
+            name
+            sidecars {
+              name
+              namespace
+              spec {
+                workloadSelector {
+                  labels
+                }
+                egress {
+                  port {
+                    number
+                    protocol
+                    name
+                  }
+                  bind
+                  captureMode
+                  hosts
+                }
+                ingress {
+                  port {
+                    number
+                    protocol
+                    name
+                  }
+                  bind
+                  captureMode
+                  defaultEndpoint
+                }
+                outboundTrafficPolicy
+              }
+            }
+          }
+        }`)
+	r := c.NewRequest(request)
+	r.Var("name", name)
+
+	var respData NamespaceResponse
 	if err := c.client.Run(context.Background(), r, &respData); err != nil {
 		return respData, err
 	}

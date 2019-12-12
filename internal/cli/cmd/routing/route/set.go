@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,7 +28,7 @@ import (
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 )
@@ -100,7 +102,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("service must be specified")
 			}
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return errors.WrapIf(err, "could not parse service ID")
 			}
@@ -199,7 +201,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 		d := d
 		routes = append(routes, &v1alpha3.HTTPRouteDestination{
 			Destination: &d,
-			Weight:      options.parsedWeights[i],
+			Weight:      &options.parsedWeights[i],
 		})
 	}
 

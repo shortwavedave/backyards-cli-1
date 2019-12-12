@@ -16,40 +16,27 @@ package common
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 )
 
-type HTTPRoute v1alpha3.HTTPRoute
-type HTTPRouteDestination v1alpha3.HTTPRouteDestination
-type HTTPRouteDestinations []HTTPRouteDestination
+type Port v1alpha3.Port
 
-func (ds HTTPRouteDestinations) String() string {
-	if len(ds) == 0 {
+func (p Port) String() string {
+	var s string
+
+	if p.Protocol == "" && p.Number == 0 {
 		return "-"
 	}
 
-	s := make([]string, len(ds))
-	for k, v := range ds {
-		s[k] = v.String()
-	}
-	return strings.Join(s, "\n")
-}
+	s += fmt.Sprintf("%s:%d", string(p.Protocol), p.Number)
 
-func (d HTTPRouteDestination) String() string {
-	var s string
-
-	if d.Destination == nil {
-		return s
+	if p.Name != "" {
+		s += fmt.Sprintf(" (name=%s)", p.Name)
 	}
 
-	s = Destination(*d.Destination).String()
-
-	if d.Weight != nil && *d.Weight > 0 {
-		s = fmt.Sprintf("%d%%%c%s", *d.Weight, util.Nbsp, s)
+	if s == "" {
+		s = "-"
 	}
 
 	return s

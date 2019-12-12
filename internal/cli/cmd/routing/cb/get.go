@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	clierrors "github.com/banzaicloud/backyards-cli/internal/errors"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
@@ -61,7 +61,7 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("service must be specified")
 			}
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return err
 			}

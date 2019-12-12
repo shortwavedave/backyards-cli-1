@@ -20,11 +20,13 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
+
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing/route"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
@@ -66,7 +68,7 @@ func newGetCommand(cli cli.CLI) *cobra.Command {
 				return errors.New("service must be specified")
 			}
 
-			options.serviceName, err = common.ParseServiceID(options.serviceID)
+			options.serviceName, err = util.ParseK8sResourceID(options.serviceID)
 			if err != nil {
 				return err
 			}

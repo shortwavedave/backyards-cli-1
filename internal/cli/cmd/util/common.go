@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package util
 
 import (
 	"regexp"
@@ -24,21 +24,34 @@ import (
 
 const (
 	dns1123LabelFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-	nbsp            rune   = '\u00A0'
+	Nbsp            rune   = '\u00A0'
 )
 
 var dns1123LabelRegexp = regexp.MustCompile("^" + dns1123LabelFmt + "$")
 
-func ParseServiceID(serviceID string) (types.NamespacedName, error) {
-	parts := strings.Split(serviceID, "/")
+func ParseK8sResourceID(id string) (types.NamespacedName, error) {
+	return parseK8sResourceID(id, false)
+}
+
+func ParseK8sResourceIDAllowWildcard(id string) (types.NamespacedName, error) {
+	return parseK8sResourceID(id, true)
+}
+
+func parseK8sResourceID(id string, allowWildcard bool) (types.NamespacedName, error) {
+	parts := strings.Split(id, "/")
 	if len(parts) != 2 {
-		return types.NamespacedName{}, errors.Errorf("invalid service ID: '%s': format must be <namespace>/<name>", serviceID)
+		return types.NamespacedName{}, errors.Errorf("invalid resource ID: '%s': format must be <namespace>/<name>", id)
 	}
 
-	for _, p := range parts {
-		if !dns1123LabelRegexp.MatchString(p) {
-			return types.NamespacedName{}, errors.Errorf("invalid service ID: '%s': format must be <namespace>/<name>", serviceID)
+	for i, p := range parts {
+		validFormat := dns1123LabelRegexp.MatchString(p)
+		if allowWildcard && i == 1 {
+			validFormat = validFormat || p == "*"
 		}
+		if !validFormat {
+			return types.NamespacedName{}, errors.Errorf("invalid resource ID: '%s': format must be <namespace>/<name>", id)
+		}
+
 	}
 
 	return types.NamespacedName{
