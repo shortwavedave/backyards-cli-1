@@ -16,15 +16,15 @@ jobs:
         steps:
             - checkout
 
-            -
-                run:
-                    name: Check chart differences
-                    command: make check-charts-diff
+            # -
+            #     run:
+            #         name: Check chart differences
+            #         command: make check-charts-diff
 
-            -
-                run:
-                  name: Check docs differences
-                  command: make check-docs-diff
+            # -
+            #     run:
+            #       name: Check docs differences
+            #       command: make check-docs-diff
 
             -
                 restore_cache:
