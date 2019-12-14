@@ -23,6 +23,8 @@ spec:
       app.kubernetes.io/part-of: {{ include "backyards.name" . }}
   template:
     metadata:
+      annotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "15090"
       labels:
         app: {{ include "prometheus.fullname" . }}
         app.kubernetes.io/name: {{ include "prometheus.name" . }}

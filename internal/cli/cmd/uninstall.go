@@ -28,6 +28,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/kafka"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
@@ -149,6 +150,21 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions) error {
 	var err error
 	var scmd *cobra.Command
+
+	if options.uninstallEverything {
+		scmdOptions := kafka.NewUninstallOptions()
+		if options.dumpResources {
+			scmdOptions.DumpResources = true
+		}
+		if options.uninstallEverything {
+			scmdOptions.UninstallEverything = true
+		}
+		scmd = kafka.NewUninstallCommand(cli, scmdOptions)
+		err = scmd.RunE(scmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during kafka uninstall")
+		}
+	}
 
 	if options.uninstallEverything {
 		scmdOptions := demoapp.NewUninstallOptions()

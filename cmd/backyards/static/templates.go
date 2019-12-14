@@ -51,6 +51,15 @@ var Licenses http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/license
 // PeerClusterAssetsSource contains manifest to pre-configure peer clusters before attach
 var PeerClusterAssetsSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/peercluster"))
 
+// KafkaOperatorChartSource chart that will be rendered by `backyards kafka install`
+var KafkaOperatorChartSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/charts/kafka-operator"))
+
+// ZookeeperOperatorChartSource chart that will be rendered by `backyards zookeeper install`
+var ZookeeperOperatorChartSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/charts/zookeeper-operator"))
+
+// KafkaAssetsSource istio assets
+var KafkaAssetsSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/kafka"))
+
 // getRepoRoot returns the full path to the root of the repo
 func getRepoRoot() string {
 	_, filename, _, _ := runtime.Caller(0)

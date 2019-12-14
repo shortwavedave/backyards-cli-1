@@ -40,6 +40,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/graph"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/kafka"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/login"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/routing"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy"
@@ -161,6 +162,7 @@ func init() {
 	RootCmd.AddCommand(config.NewConfigCmd(cliRef))
 	RootCmd.AddCommand(sidecarproxy.NewRootCmd(cliRef))
 	RootCmd.AddCommand(cmd.NewLicenseCommand(cliRef))
+	RootCmd.AddCommand(kafka.NewRootCmd(cliRef))
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		err := cliRef.Initialize()
 		if err != nil {
@@ -215,20 +217,20 @@ func askLicense(cliRef cli.CLI) error {
 			)
 
 			fmt.Fprint(cliRef.Out(), heredoc.Doc(`
-				You have successfully downloaded and installed Backyards, a Banzai Cloud product. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License, which is available at https://banzaicloud.com/docs/backyards/evaluation-license/. If you would like to use the Banzai Cloud product in production, you will need a different license. Contact: sales@banzaicloud.com. 
-				
-				For your convenience here is a short summary of what you will agree to by commencing use of the Evaluation Product: 
-				
+				You have successfully downloaded and installed Backyards, a Banzai Cloud product. Before commencing the use of the product, You must read, acknowledge and agree to the Banzai Cloud Evaluation License, which is available at https://banzaicloud.com/docs/backyards/evaluation-license/. If you would like to use the Banzai Cloud product in production, you will need a different license. Contact: sales@banzaicloud.com.
+
+				For your convenience here is a short summary of what you will agree to by commencing use of the Evaluation Product:
+
 				(a) You receive a limited license to test and evaluate the Evaluation Product;
-				
+
 				(b) You receive the Evaluation Product “as-is” and “as-available”, without any warranties of title, non-infringement or fitness for purpose;
-				
+
 				(c) Banzai Cloud disclaims and where disclaiming is not possible limits its liability for damages incurred by You or any third party;
-				
+
 				(d) any feedback on the Evaluation Product given by You will be used by Banzai Cloud freely and independently for any purpose.
-				
-				(e) Banzai Cloud may collect anonymized analytics data of your usage and use it for any purpose, including enhancements, statistics and business purposes. 
-				
+
+				(e) Banzai Cloud may collect anonymized analytics data of your usage and use it for any purpose, including enhancements, statistics and business purposes.
+
 				This is a human-readable summary of (and not a substitute for) the Agreement https://banzaicloud.com/docs/backyards/evaluation-license/.
 
 				Please read the full license and confirm that you accept the terms!

@@ -121,4 +121,31 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = vfsgen.Generate(static.KafkaOperatorChartSource, vfsgen.Options{
+		Filename:     "static/kafka_operator/chart.gogen.go",
+		PackageName:  "kafka_operator",
+		VariableName: "Chart",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = vfsgen.Generate(static.ZookeeperOperatorChartSource, vfsgen.Options{
+		Filename:     "static/zookeeper_operator/chart.gogen.go",
+		PackageName:  "zookeeper_operator",
+		VariableName: "Chart",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = vfsgen.Generate(static.KafkaAssetsSource, vfsgen.Options{
+		Filename:     "static/kafka/assets.gogen.go",
+		PackageName:  "kafka",
+		VariableName: "Assets",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

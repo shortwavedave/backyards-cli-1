@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: loadtest
+  name: perf-load
+  namespace: kafka
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: loadtest
+  template:
+    metadata:
+      labels:
+        app: loadtest
+    spec:
+      containers:
+      - args:
+        - -brokers=kafka-0,kafka-1,kafka-2:29092
+        - -topic=perftest2
+        - -required-acks=all
+        - -message-size=512
+        - -workers=1
+        - -produce-rate=100
+        image: banzaicloud/perfload:0.1.0-blog
+        imagePullPolicy: Always
+        name: sangrenel
+        resources: {}
+      terminationGracePeriodSeconds: 5
+---

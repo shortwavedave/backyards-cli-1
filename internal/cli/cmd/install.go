@@ -38,6 +38,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/kafka"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
@@ -60,6 +61,7 @@ type installCommand struct {
 	shouldInstallIstio       bool
 	shouldInstallCanary      bool
 	shouldInstallCertManager bool
+	shouldInstallKafka       bool
 	shouldRunDemo            bool
 }
 
@@ -176,7 +178,7 @@ func (c *installCommand) run(options *InstallOptions) error {
 			values.AuditSink.Enabled = true
 		}
 
-		if shouldCertManagerBeEnabled(options) {
+		if c.shouldCertManagerBeEnabled(options) {
 			values.CertManager.Enabled = true
 		}
 		if options.anonymousAuth {
@@ -341,7 +343,7 @@ func (c *installCommand) validate(options *InstallOptions) error {
 			errors.Errorf("Istio sidecar injector not healthy yet in '%s' namespace", options.istioNamespace))
 	}
 
-	if shouldCertManagerBeEnabled(options) {
+	if c.shouldCertManagerBeEnabled(options) {
 		certManagerExists, certManagerHealthy, err := c.certManagerRunning()
 		if err != nil {
 			return errors.WrapIf(err, "failed to check cert-manager state")
@@ -416,7 +418,20 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 
 	shouldAskComponents := !options.runDemo && !options.installEverything
 
+	installKafkaInteractively := false
 	if shouldAskComponents && c.cli.InteractiveTerminal() {
+		err := survey.AskOne(&survey.Confirm{
+			Renderer: survey.Renderer{},
+			Message:  "Install kafka cluster (recommended). Press enter to accept",
+			Default:  true,
+		}, &installKafkaInteractively)
+		if err != nil {
+			return err
+		}
+	}
+	c.shouldInstallKafka = options.installEverything || installKafkaInteractively
+
+	if !c.shouldInstallKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install istio-operator (recommended). Press enter to accept",
@@ -426,11 +441,11 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 			return err
 		}
 	}
-	c.shouldInstallIstio = options.installEverything || installIstioInteractively
+	c.shouldInstallIstio = options.installEverything || installIstioInteractively || c.shouldInstallKafka
 
-	if shouldCertManagerBeEnabled(options) {
+	if c.shouldCertManagerBeEnabled(options) {
 		installCertManagerInteractively := false
-		if shouldAskComponents && c.cli.InteractiveTerminal() {
+		if !c.shouldInstallKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
 			err := survey.AskOne(&survey.Confirm{
 				Renderer: survey.Renderer{},
 				Message:  "Install cert-manager (recommended). Press enter to accept",
@@ -500,6 +515,18 @@ func (c *installCommand) runSubcommands(options *InstallOptions) error {
 		}
 	}
 
+	if c.shouldInstallKafka {
+		scmdOptions := kafka.NewInstallOptions()
+		if options.dumpResources {
+			scmdOptions.DumpResources = true
+		}
+		scmd = kafka.NewInstallCommand(c.cli, scmdOptions)
+		err = scmd.RunE(scmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during kafka install")
+		}
+	}
+
 	if c.shouldInstallCanary {
 		scmdOptions := canary.NewInstallOptions()
 		if options.dumpResources {
@@ -552,6 +579,6 @@ func (c *installCommand) runDemoInstall(options *InstallOptions) error {
 	return nil
 }
 
-func shouldCertManagerBeEnabled(options *InstallOptions) bool {
-	return options.enableAuditSink
+func (c *installCommand) shouldCertManagerBeEnabled(options *InstallOptions) bool {
+	return options.enableAuditSink || c.shouldInstallKafka
 }

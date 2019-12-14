@@ -134,7 +134,7 @@ func getFiles(fs http.FileSystem) ([]*chartutil.BufferedFile, error) {
 	}
 
 	for _, f := range files {
-		data, err := readIntoBytes(fs, f.Name)
+		data, err := ReadIntoBytes(fs, f.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func getFiles(fs http.FileSystem) ([]*chartutil.BufferedFile, error) {
 	return files, nil
 }
 
-func readIntoBytes(fs http.FileSystem, filename string) ([]byte, error) {
+func ReadIntoBytes(fs http.FileSystem, filename string) ([]byte, error) {
 	file, err := fs.Open(filename)
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not open file")
@@ -262,6 +262,6 @@ func UninstallObjectOrder() func(o *object.K8sObject) int {
 		if nr, ok := order[o.Kind]; ok {
 			return nr
 		}
-		return 1000
+		return -1000
 	}
 }

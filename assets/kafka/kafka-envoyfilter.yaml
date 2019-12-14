@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: kafka-filter
+spec:
+  workloadSelector:
+    labels:
+      app: kafka
+  configPatches:
+  - applyTo: NETWORK_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        portNumber: 15006
+        filterChain:
+          filter:
+            name: "mixer"
+    patch:
+      operation: INSERT_AFTER
+      value:
+        name: envoy.filters.network.kafka_broker
+        config:
+          stat_prefix: exampleprefix
+---

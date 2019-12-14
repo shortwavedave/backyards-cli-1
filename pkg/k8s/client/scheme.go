@@ -14,10 +14,12 @@
 package client
 
 import (
+	zkv1beta1 "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
+	kafkav1beta1 "github.com/banzaicloud/backyards-cli/internal/apis/kafka-operator/v1beta1"
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 	istiov1beta1 "github.com/banzaicloud/istio-operator/pkg/apis/istio/v1beta1"
 )
@@ -31,6 +33,8 @@ func init() {
 	_ = istiov1beta1.AddToScheme(scheme)
 	_ = apiextensionsv1beta1.AddToScheme(scheme)
 	_ = v1alpha3.AddToScheme(scheme)
+	_ = zkv1beta1.SchemeBuilder.AddToScheme(scheme)
+	_ = kafkav1beta1.AddToScheme(scheme)
 }
 
 // GetScheme gets an initialized runtime.Scheme with k8s core added by default

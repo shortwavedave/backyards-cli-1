@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	zkv1beta1 "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 	log "github.com/sirupsen/logrus"
 	"istio.io/operator/pkg/object"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	kafkav1beta1 "github.com/banzaicloud/backyards-cli/internal/apis/kafka-operator/v1beta1"
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
 )
 
@@ -74,6 +76,35 @@ func CRDEstablishedConditionCheck(obj *unstructured.Unstructured, k8serror error
 	return false
 }
 
+func ZookeeperClusterReady(obj *unstructured.Unstructured, k8serror error) bool {
+	var resource zkv1beta1.ZookeeperCluster
+	err := k8sclient.GetScheme().Convert(obj, &resource, nil)
+	// simply return true for unconvertable objects
+	if err != nil {
+		return true
+	}
+
+	if resource.Status.Replicas > 0 && resource.Status.Replicas == resource.Status.ReadyReplicas {
+		return true
+	}
+
+	return false
+}
+
+func KafkaClusterReady(obj *unstructured.Unstructured, k8serror error) bool {
+	var resource kafkav1beta1.KafkaCluster
+	err := k8sclient.GetScheme().Convert(obj, &resource, nil)
+	// simply return true for unconvertable objects
+	if err != nil {
+		return true
+	}
+
+	if resource.Status.State == kafkav1beta1.KafkaClusterRunning {
+		return true
+	}
+
+	return false
+}
 func ReadyReplicasConditionCheck(obj *unstructured.Unstructured, k8serror error) bool {
 	var deployment appsv1.Deployment
 	deploymentErr := k8sclient.GetScheme().Convert(obj, &deployment, nil)
@@ -162,13 +193,14 @@ func NamesWithGVKFromK8sObjects(objects object.K8sObjects, kind ...string) []Nam
 	}
 	names := make([]NamespacedNameWithGVK, 0)
 	for _, obj := range objects {
+		uobj := obj.UnstructuredObject()
 		if len(kinds) > 0 && !kinds[obj.GroupVersionKind().Kind] {
 			continue
 		}
 		names = append(names, NamespacedNameWithGVK{
 			NamespacedName: types.NamespacedName{
-				Name:      obj.Name,
-				Namespace: obj.Namespace,
+				Name:      uobj.GetName(),
+				Namespace: uobj.GetNamespace(),
 			},
 			GroupVersionKind: obj.GroupVersionKind(),
 		})
