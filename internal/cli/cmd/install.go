@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/backyards"
+	kafkav1beta1 "github.com/banzaicloud/backyards-cli/internal/apis/kafka-operator/v1beta1"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/canary"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
@@ -392,6 +393,32 @@ func (c *installCommand) istioRunning(istioNamespace string) (exists bool, healt
 	return
 }
 
+func (c *installCommand) kafkaInstalled() (exists bool, healthy bool, err error) {
+	kafkaNamespace := kafka.GetNamespace()
+
+	cl, err := c.cli.GetK8sClient()
+	if err != nil {
+		err = errors.WrapIf(err, "could not get k8s client")
+		return
+	}
+	var clusters kafkav1beta1.KafkaClusterList
+	err = cl.List(context.Background(), &clusters, client.InNamespace(kafkaNamespace))
+	if err != nil {
+		err = errors.WrapIf(err, "could not list kafka clusters")
+		return
+	}
+	if len(clusters.Items) > 0 {
+		exists = true
+	}
+	for _, cluster := range clusters.Items {
+		if cluster.Status.State == kafkav1beta1.KafkaClusterRunning {
+			healthy = true
+			break
+		}
+	}
+	return
+}
+
 func (c *installCommand) certManagerRunning() (exists bool, healthy bool, err error) {
 	cl, err := c.cli.GetK8sClient()
 	if err != nil {
@@ -422,8 +449,13 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 
 	shouldAskComponents := !options.runDemo && !options.installEverything
 
+	kafkaExists, _, err := c.kafkaInstalled()
+	if err != nil {
+		return errors.WrapIf(err, "failed to check Istio state")
+	}
+
 	installKafkaInteractively := false
-	if !options.installKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
+	if !kafkaExists && !options.installKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install kafka cluster (recommended). Press enter to accept",
@@ -433,7 +465,7 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 			return err
 		}
 	}
-	c.shouldInstallKafka = options.installKafka || options.installEverything || installKafkaInteractively
+	c.shouldInstallKafka = !kafkaExists && (options.installKafka || options.installEverything || installKafkaInteractively)
 
 	istioExists, istioHealthy, err := c.istioRunning(options.istioNamespace)
 	if err != nil {
