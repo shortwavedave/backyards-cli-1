@@ -91,7 +91,7 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 	}
 	objects.Sort(helm.UninstallObjectOrder())
 
-	istioCRObj, err := c.getIstioCRObject()
+	istioCRObj, err := GetIstioCRObject(c.cli)
 	if err != nil {
 		return err
 	}
@@ -134,9 +134,9 @@ func (c *uninstallCommand) deleteResources(objects object.K8sObjects) error {
 	return nil
 }
 
-func (c *uninstallCommand) getIstioCRObject() (*object.K8sObject, error) {
+func GetIstioCRObject(cli cli.CLI) (*object.K8sObject, error) {
 	var istioCRObject object.K8sObject
-	cl, err := c.cli.GetK8sClient()
+	cl, err := cli.GetK8sClient()
 	if err != nil {
 		return &istioCRObject, errors.WrapIf(err, "could not get k8s client")
 	}

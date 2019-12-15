@@ -12,6 +12,7 @@ require (
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-retryablehttp v0.6.2
+	github.com/imdario/mergo v0.3.7
 	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect

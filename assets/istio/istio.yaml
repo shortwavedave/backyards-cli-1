@@ -20,8 +20,6 @@ spec:
     image: banzaicloud/istio-pilot:1.4.0-bzc
   mixer:
     image: banzaicloud/istio-mixer:1.4.0-bzc
-  proxy:
-    image: banzaicloud/proxyv2:devfilter
   tracing:
     enabled: true
     tracer: zipkin

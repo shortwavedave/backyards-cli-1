@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,6 +31,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/helm/pkg/strvals"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -62,6 +64,7 @@ type InstallOptions struct {
 
 	istioCRFilename string
 	releaseName     string
+	values          []string
 }
 
 func NewInstallOptions() *InstallOptions {
@@ -99,7 +102,7 @@ The installer automatically detects whether the CRDs are installed or not, and b
 
 	cmd.Flags().StringVar(&options.releaseName, "release-name", "istio-operator", "Name of the release")
 	cmd.Flags().StringVarP(&options.istioCRFilename, "istio-cr-file", "f", "", "Filename of a custom Istio CR yaml")
-
+	cmd.Flags().StringSliceVarP(&options.values, "set", "s", options.values, "set Istio CR values (can specify multiple or separate values with commas: =val1,key2=val2)")
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
 
 	return cmd
@@ -112,7 +115,21 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	}
 	objects.Sort(helm.InstallObjectOrder())
 
-	istioCRObj, err := getIstioCR(options.istioCRFilename)
+	istioCRObj, err := getIstioCR(c.cli, options.istioCRFilename)
+	if err != nil {
+		return err
+	}
+
+	a := make(map[string]interface{}, 0)
+	for _, s := range options.values {
+		err = strvals.ParseInto(s, a)
+		if err != nil {
+			return errors.WrapIf(err, "could not set value")
+		}
+	}
+
+	b := istioCRObj.UnstructuredObject().Object
+	err = mergo.MergeWithOverwrite(&b, a)
 	if err != nil {
 		return err
 	}
@@ -291,8 +308,15 @@ func getIstioOperatorObjects(releaseName string) (object.K8sObjects, error) {
 	return objects, nil
 }
 
-func getIstioCR(filename string) (*object.K8sObject, error) {
+func getIstioCR(cli cli.CLI, filename string) (*object.K8sObject, error) {
 	var err error
+
+	// give back existing CR
+	istioCRObj, err := GetIstioCRObject(cli)
+	if err == nil {
+		return istioCRObj, nil
+	}
+
 	var istioCRFile http.File
 	if filename != "" {
 		istioCRFile, err = os.Open(filename)
@@ -355,9 +379,9 @@ func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
 	}
 
 	if len(istios.Items) == 0 {
-		return istioCR, errors.WrapIf(err, "no Istio CR found")
+		return istioCR, errors.New("no Istio CR found")
 	} else if len(istios.Items) > 1 {
-		return istioCR, errors.WrapIf(err, "multiple Istio CRs found")
+		return istioCR, errors.New("multiple Istio CRs found")
 	}
 
 	return istios.Items[0], nil
