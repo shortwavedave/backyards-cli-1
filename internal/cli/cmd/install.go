@@ -78,6 +78,8 @@ type InstallOptions struct {
 	apiImage       string
 	webImage       string
 	trackingIDFunc func() string
+
+	installKafka bool
 }
 
 // patchStringValue specifies a patch operation for a string value
@@ -157,6 +159,8 @@ The command can install every component at once with the '--install-everything' 
 	cmd.Flags().StringVar(&options.webImage, "web-image", options.webImage, "Image for the frontend")
 
 	cmd.Flags().BoolVarP(&options.dumpResources, "dump-resources", "d", options.dumpResources, "Dump resources to stdout instead of applying them")
+
+	cmd.Flags().BoolVar(&options.installKafka, "with-kafka-cluster", options.installKafka, "Enable deploying a 3 broker kafka cluster with zookeeper")
 
 	return cmd
 }
@@ -419,7 +423,7 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 	shouldAskComponents := !options.runDemo && !options.installEverything
 
 	installKafkaInteractively := false
-	if shouldAskComponents && c.cli.InteractiveTerminal() {
+	if !options.installKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install kafka cluster (recommended). Press enter to accept",
@@ -429,9 +433,14 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 			return err
 		}
 	}
-	c.shouldInstallKafka = options.installEverything || installKafkaInteractively
+	c.shouldInstallKafka = options.installKafka || options.installEverything || installKafkaInteractively
 
-	if !c.shouldInstallKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
+	istioExists, istioHealthy, err := c.istioRunning(options.istioNamespace)
+	if err != nil {
+		return errors.WrapIf(err, "failed to check Istio state")
+	}
+
+	if (!istioExists || !istioHealthy) && !c.shouldInstallKafka && shouldAskComponents && c.cli.InteractiveTerminal() {
 		err := survey.AskOne(&survey.Confirm{
 			Renderer: survey.Renderer{},
 			Message:  "Install istio-operator (recommended). Press enter to accept",
