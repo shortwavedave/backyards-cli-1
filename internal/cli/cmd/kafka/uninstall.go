@@ -80,7 +80,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 	}
 
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
-	cmd.Flags().BoolVarP(&options.UninstallEverything, "uninstall-everything", "a", false, "Uninstall all components at once")
+	cmd.Flags().BoolVarP(&options.UninstallEverything, "uninstall-everything", "a", options.UninstallEverything, "Uninstall all components at once")
 
 	return cmd
 }
