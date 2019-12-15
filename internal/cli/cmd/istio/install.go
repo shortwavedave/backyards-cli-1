@@ -120,7 +120,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 		return err
 	}
 
-	a := make(map[string]interface{}, 0)
+	a := make(map[string]interface{})
 	for _, s := range options.values {
 		err = strvals.ParseInto(s, a)
 		if err != nil {

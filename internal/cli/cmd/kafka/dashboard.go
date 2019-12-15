@@ -28,18 +28,7 @@ import (
 
 type dashboardCommand struct{}
 
-type DashboardOptions struct {
-	QueryParams  map[string]string
-	WrappedToken string
-}
-
-func NewDashboardOptions() *DashboardOptions {
-	return &DashboardOptions{
-		QueryParams: make(map[string]string),
-	}
-}
-
-func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command {
+func NewDashboardCommand(cli cli.CLI) *cobra.Command {
 	c := dashboardCommand{}
 
 	cmd := &cobra.Command{
@@ -48,7 +37,7 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 		Args:        cobra.NoArgs,
 		Annotations: map[string]string{util.CommandGroupAnnotationKey: util.OperationCommand},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := c.run(cli, options)
+			err := c.run(cli)
 			if err != nil {
 				return err
 			}
@@ -59,7 +48,7 @@ func NewDashboardCommand(cli cli.CLI, options *DashboardOptions) *cobra.Command 
 	return cmd
 }
 
-func (c *dashboardCommand) run(cli cli.CLI, options *DashboardOptions) error {
+func (c *dashboardCommand) run(cli cli.CLI) error {
 	var err error
 	var url string
 

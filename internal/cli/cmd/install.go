@@ -444,6 +444,7 @@ func (c *installCommand) certManagerRunning() (exists bool, healthy bool, err er
 	return
 }
 
+//nolint:gocyclo
 func (c *installCommand) shouldInstallComponents(options *InstallOptions) error {
 	installIstioInteractively := false
 
@@ -451,7 +452,7 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 
 	kafkaExists, _, err := c.kafkaInstalled()
 	if err != nil {
-		return errors.WrapIf(err, "failed to check Istio state")
+		return errors.WrapIf(err, "failed to check Kafka state")
 	}
 
 	installKafkaInteractively := false
