@@ -404,7 +404,7 @@ func (c *installCommand) kafkaInstalled() (exists bool, healthy bool, err error)
 	var clusters kafkav1beta1.KafkaClusterList
 	err = cl.List(context.Background(), &clusters, client.InNamespace(kafkaNamespace))
 	if err != nil {
-		err = errors.WrapIf(err, "could not list kafka clusters")
+		err = nil
 		return
 	}
 	if len(clusters.Items) > 0 {
