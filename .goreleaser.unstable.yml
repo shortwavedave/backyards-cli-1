@@ -1,0 +1,39 @@
+builds:
+    -
+        main: ./cmd/backyards
+        binary: backyards
+        env:
+            - CGO_ENABLED=0
+        ldflags: "-s -w -X main.version={{ .Version }} -X main.commitHash={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.trackingID={{ .Env.TRACKING_ID }}"
+        goos:
+            - linux
+            - darwin
+            - windows
+        goarch:
+            - amd64
+
+archives:
+    -
+        name_template: "backyards_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+        format_overrides:
+            -
+                goos: windows
+                format: zip
+
+checksum:
+    name_template: "backyards_checksums.txt"
+
+changelog:
+    skip: true
+
+nfpms:
+    -
+        vendor: Banzai Cloud
+        maintainer: Banzai Cloud <info@banzaicloud.com>
+        homepage: https://banzaicloud.com/
+        description: Command-line interface for Backyards
+        formats:
+            - deb
+            - rpm
+        bindir: /usr/bin
+        license: Apache 2.0
