@@ -36,6 +36,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 		NewInstallCommand(cli, NewInstallOptions()),
 		NewUninstallCommand(cli, NewUninstallOptions()),
 		NewDashboardCommand(cli),
+		NewLoadCommand(cli, NewLoadOptions()),
 	)
 
 	cmd.PersistentFlags().StringVar(&kafkaNamespace, "kafka-namespace", kafkaNamespace, "Namespace for kafka cluster")
