@@ -57,7 +57,7 @@ func (c *dashboardCommand) run(cli cli.CLI) error {
 		return err
 	}
 
-	url = endpoint.URLForPath("/grafana/d/r2jsS3-Zk/envoy-kafka-protocol-filter?orgId=1&var-brokerId=0")
+	url = endpoint.URLForPath("/grafana/d/g1_0xSfWz/envoy-kafka-protocol-filter?orgId=1&var-brokerId=0")
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
