@@ -15,9 +15,21 @@
     "editable": true,
     "gnetId": null,
     "graphTooltip": 0,
-    "iteration": 1576445705982,
+    "id": 6,
+    "iteration": 1576490735203,
     "links": [],
     "panels": [
+      {
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 40,
+        "title": "Main",
+        "type": "row"
+      },
       {
         "aliasColors": {
           "request broker-0": "yellow",
@@ -30,12 +42,12 @@
         "fill": 1,
         "fillGradient": 0,
         "gridPos": {
-          "h": 9,
-          "w": 12,
+          "h": 8,
+          "w": 7,
           "x": 0,
-          "y": 0
+          "y": 1
         },
-        "id": 2,
+        "id": 5,
         "legend": {
           "avg": false,
           "current": false,
@@ -66,12 +78,17 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "rate(envoy_kafka_exampleprefix_request_produce_request[1m])",
+            "expr": "rate(envoy_kafka_exampleprefix_request_produce_request{brokerId=~\"$brokerId\"}[1m])",
             "legendFormat": "request broker-{{brokerId}}",
             "refId": "A"
           },
           {
-            "expr": "rate(envoy_kafka_exampleprefix_req[1m])",
+            "expr": "rate(envoy_kafka_exampleprefix_response_produce_response{brokerId=~\"$brokerId\"}[1m])",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(envoy_kafka_exampleprefix_req{brokerId=~\"$brokerId\"}[1m])",
             "legendFormat": "failure broker-{{brokerId}}",
             "refId": "C"
           }
@@ -129,10 +146,10 @@
         "fill": 1,
         "fillGradient": 0,
         "gridPos": {
-          "h": 9,
-          "w": 12,
-          "x": 12,
-          "y": 0
+          "h": 8,
+          "w": 9,
+          "x": 7,
+          "y": 1
         },
         "id": 3,
         "legend": {
@@ -160,7 +177,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "rate(envoy_kafka_exampleprefix_response_produce_response[1m])",
+            "expr": "rate(envoy_kafka_exampleprefix_response_produce_response{brokerId=~\"$brokerId\"}[1m])",
             "legendFormat": "response broker-{{brokerId}}",
             "refId": "B"
           }
@@ -207,7 +224,10 @@
         }
       },
       {
-        "aliasColors": {},
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
         "bars": false,
         "dashLength": 10,
         "dashes": false,
@@ -216,9 +236,9 @@
         "fillGradient": 0,
         "gridPos": {
           "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 9
+          "w": 8,
+          "x": 16,
+          "y": 1
         },
         "id": 8,
         "legend": {
@@ -240,16 +260,19 @@
         "pointradius": 2,
         "points": false,
         "renderer": "flot",
-        "seriesOverrides": [],
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
         "spaceLength": 10,
         "stack": false,
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_produce_response_duration_bucket{brokerId=\"$brokerId\"}[1m]))",
-            "format": "time_series",
-            "instant": false,
-            "legendFormat": "broker-{{brokerId}}",
+            "expr": "envoy_kafka_exampleprefix_request_fetch_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
             "refId": "A"
           }
         ],
@@ -257,7 +280,7 @@
         "timeFrom": null,
         "timeRegions": [],
         "timeShift": null,
-        "title": "Produce request 50% percentiles in 1m",
+        "title": "Fetch Request ",
         "tooltip": {
           "shared": true,
           "sort": 0,
@@ -305,10 +328,10 @@
         "gridPos": {
           "h": 8,
           "w": 12,
-          "x": 12,
+          "x": 0,
           "y": 9
         },
-        "id": 6,
+        "id": 28,
         "legend": {
           "avg": false,
           "current": false,
@@ -334,7 +357,110 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "envoy_kafka_exampleprefix_response_produce_response_duration_sum{brokerId=\"$brokerId\"}/envoy_kafka_exampleprefix_response_produce_response_duration_count{brokerId=\"$brokerId\"}",
+            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_produce_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "format": "time_series",
+            "instant": false,
+            "legendFormat": "broker-{{brokerId}} P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, rate(envoy_kafka_exampleprefix_response_produce_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(envoy_kafka_exampleprefix_response_produce_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P95",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(envoy_kafka_exampleprefix_response_produce_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P99",
+            "refId": "D"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Produce request duration",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 9
+        },
+        "id": 30,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_response_produce_response_duration_sum{brokerId=~\"$brokerId\"}/envoy_kafka_exampleprefix_response_produce_response_duration_count{brokerId=~\"$brokerId\"}",
             "legendFormat": "broker-{{brokerId}}",
             "refId": "A"
           }
@@ -359,7 +485,7 @@
         },
         "yaxes": [
           {
-            "format": "short",
+            "format": "ms",
             "label": null,
             "logBase": 1,
             "max": null,
@@ -393,7 +519,7 @@
           "x": 0,
           "y": 17
         },
-        "id": 14,
+        "id": 32,
         "legend": {
           "avg": false,
           "current": false,
@@ -419,16 +545,31 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_fetch_response_duration_bucket{brokerId=\"$brokerId\"}[1m]))",
-            "legendFormat": "broker-{{brokerId}}",
+            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_fetch_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P50",
             "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, rate(envoy_kafka_exampleprefix_response_fetch_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(envoy_kafka_exampleprefix_response_fetch_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P95",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(envoy_kafka_exampleprefix_response_fetch_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P99",
+            "refId": "D"
           }
         ],
         "thresholds": [],
         "timeFrom": null,
         "timeRegions": [],
         "timeShift": null,
-        "title": "Fetch request 50% percentiles in 1m",
+        "title": "Fetch request duration",
         "tooltip": {
           "shared": true,
           "sort": 0,
@@ -444,7 +585,7 @@
         },
         "yaxes": [
           {
-            "format": "short",
+            "format": "ms",
             "label": null,
             "logBase": 1,
             "max": null,
@@ -478,7 +619,7 @@
           "x": 12,
           "y": 17
         },
-        "id": 16,
+        "id": 34,
         "legend": {
           "avg": false,
           "current": false,
@@ -504,7 +645,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "envoy_kafka_exampleprefix_response_fetch_response_duration_sum{brokerId=\"$brokerId\"}/envoy_kafka_exampleprefix_response_fetch_response_duration_count{brokerId=\"$brokerId\"}",
+            "expr": "envoy_kafka_exampleprefix_response_fetch_response_duration_sum{brokerId=~\"$brokerId\"}/envoy_kafka_exampleprefix_response_fetch_response_duration_count{brokerId=~\"$brokerId\"}",
             "legendFormat": "broker-{{brokerId}}",
             "refId": "A"
           }
@@ -529,7 +670,7 @@
         },
         "yaxes": [
           {
-            "format": "short",
+            "format": "ms",
             "label": null,
             "logBase": 1,
             "max": null,
@@ -563,7 +704,7 @@
           "x": 0,
           "y": 25
         },
-        "id": 10,
+        "id": 36,
         "legend": {
           "avg": false,
           "current": false,
@@ -589,16 +730,31 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_metadata_response_duration_bucket{brokerId=\"$brokerId\"}[1m]))",
-            "legendFormat": "broker-{{brokerId}}",
+            "expr": "histogram_quantile(0.5, rate(envoy_kafka_exampleprefix_response_metadata_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P50",
             "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.9, rate(envoy_kafka_exampleprefix_response_metadata_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(envoy_kafka_exampleprefix_response_metadata_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P95",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(envoy_kafka_exampleprefix_response_metadata_response_duration_bucket{brokerId=~\"$brokerId\"}[1m]))",
+            "legendFormat": "broker-{{brokerId}} P99",
+            "refId": "D"
           }
         ],
         "thresholds": [],
         "timeFrom": null,
         "timeRegions": [],
         "timeShift": null,
-        "title": "Metadata request 50% percentile in 1m",
+        "title": "Metadata request duration",
         "tooltip": {
           "shared": true,
           "sort": 0,
@@ -614,7 +770,7 @@
         },
         "yaxes": [
           {
-            "format": "short",
+            "format": "ms",
             "label": null,
             "logBase": 1,
             "max": null,
@@ -648,7 +804,7 @@
           "x": 12,
           "y": 25
         },
-        "id": 12,
+        "id": 38,
         "legend": {
           "avg": false,
           "current": false,
@@ -674,7 +830,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "envoy_kafka_exampleprefix_response_metadata_response_duration_sum{brokerId=\"$brokerId\"}/envoy_kafka_exampleprefix_response_metadata_response_duration_count{brokerId=\"$brokerId\"}",
+            "expr": "envoy_kafka_exampleprefix_response_metadata_response_duration_sum{brokerId=~\"$brokerId\"}/envoy_kafka_exampleprefix_response_metadata_response_duration_count{brokerId=~\"$brokerId\"}",
             "legendFormat": "broker-{{brokerId}}",
             "refId": "A"
           }
@@ -699,11 +855,279 @@
         },
         "yaxes": [
           {
+            "format": "ms",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
             "format": "short",
             "label": null,
             "logBase": 1,
             "max": null,
             "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 33
+        },
+        "id": 13,
+        "panels": [],
+        "title": "Failure",
+        "type": "row"
+      },
+      {
+        "cacheTimeout": null,
+        "colorBackground": false,
+        "colorPrefix": false,
+        "colorValue": true,
+        "colors": [
+          "#299c46",
+          "rgba(237, 129, 40, 0.89)",
+          "#d44a3a"
+        ],
+        "decimals": 0,
+        "format": "none",
+        "gauge": {
+          "maxValue": 100,
+          "minValue": 0,
+          "show": false,
+          "thresholdLabels": false,
+          "thresholdMarkers": true
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 0,
+          "y": 34
+        },
+        "id": 26,
+        "interval": null,
+        "links": [],
+        "mappingType": 1,
+        "mappingTypes": [
+          {
+            "name": "value to text",
+            "value": 1
+          },
+          {
+            "name": "range to text",
+            "value": 2
+          }
+        ],
+        "maxDataPoints": 100,
+        "nullPointMode": "connected",
+        "nullText": null,
+        "options": {},
+        "postfix": "",
+        "postfixFontSize": "50%",
+        "prefix": "",
+        "prefixFontSize": "50%",
+        "rangeMaps": [
+          {
+            "from": "null",
+            "text": "N/A",
+            "to": "null"
+          }
+        ],
+        "sparkline": {
+          "fillColor": "rgba(31, 118, 189, 0.18)",
+          "full": false,
+          "lineColor": "rgb(31, 120, 193)",
+          "show": true,
+          "ymax": null,
+          "ymin": null
+        },
+        "tableColumn": "",
+        "targets": [
+          {
+            "expr": "sum(envoy_kafka_exampleprefix_request_produce_request)-sum(envoy_kafka_exampleprefix_response_produce_response)",
+            "refId": "A"
+          }
+        ],
+        "thresholds": "10,20",
+        "timeFrom": null,
+        "timeShift": null,
+        "title": "Produce Buffer",
+        "type": "singlestat",
+        "valueFontSize": "80%",
+        "valueMaps": [
+          {
+            "op": "=",
+            "text": "N/A",
+            "value": "null"
+          }
+        ],
+        "valueName": "avg"
+      },
+      {
+        "cacheTimeout": null,
+        "colorBackground": false,
+        "colorValue": false,
+        "colors": [
+          "#299c46",
+          "rgba(237, 129, 40, 0.89)",
+          "#d44a3a"
+        ],
+        "format": "none",
+        "gauge": {
+          "maxValue": 100,
+          "minValue": 0,
+          "show": false,
+          "thresholdLabels": false,
+          "thresholdMarkers": true
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 3,
+          "y": 34
+        },
+        "id": 9,
+        "interval": null,
+        "links": [],
+        "mappingType": 1,
+        "mappingTypes": [
+          {
+            "name": "value to text",
+            "value": 1
+          },
+          {
+            "name": "range to text",
+            "value": 2
+          }
+        ],
+        "maxDataPoints": 100,
+        "nullPointMode": "connected",
+        "nullText": null,
+        "options": {},
+        "pluginVersion": "6.3.0",
+        "postfix": "",
+        "postfixFontSize": "50%",
+        "prefix": "",
+        "prefixFontSize": "50%",
+        "rangeMaps": [
+          {
+            "from": "null",
+            "text": "N/A",
+            "to": "null"
+          }
+        ],
+        "sparkline": {
+          "fillColor": "rgba(31, 118, 189, 0.18)",
+          "full": false,
+          "lineColor": "rgb(31, 120, 193)",
+          "show": false,
+          "ymax": null,
+          "ymin": null
+        },
+        "tableColumn": "",
+        "targets": [
+          {
+            "expr": "sum(envoy_kafka_exampleprefix_response_failure)",
+            "legendFormat": "",
+            "refId": "A"
+          }
+        ],
+        "thresholds": "0,10",
+        "timeFrom": null,
+        "timeShift": null,
+        "title": "Response Failure",
+        "type": "singlestat",
+        "valueFontSize": "80%",
+        "valueMaps": [
+          {
+            "op": "=",
+            "text": "N/A",
+            "value": "null"
+          }
+        ],
+        "valueName": "avg"
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 6,
+          "y": 34
+        },
+        "id": 7,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pluginVersion": "6.3.0",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_response_failure{brokerId=~\"$brokerId\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Response Failure",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": "0",
             "show": true
           },
           {
@@ -732,9 +1156,9 @@
         "fillGradient": 0,
         "gridPos": {
           "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 33
+          "w": 10,
+          "x": 14,
+          "y": 34
         },
         "id": 4,
         "legend": {
@@ -807,6 +1231,840 @@
           "align": false,
           "alignLevel": null
         }
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 40
+        },
+        "id": 15,
+        "panels": [],
+        "title": "Create",
+        "type": "row"
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 41
+        },
+        "id": 2,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_create_partitions_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_create_partitions_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Partitions",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 41
+        },
+        "id": 17,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_create_topics_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_create_topics_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Topics",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 41
+        },
+        "id": 16,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_create_acls_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_create_acls_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Acls",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 41
+        },
+        "id": 18,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_create_delegation_token_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_create_delegation_token_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Delegation",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 49
+        },
+        "id": 20,
+        "panels": [],
+        "title": "Delete",
+        "type": "row"
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 50
+        },
+        "id": 21,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_delete_groups_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_delete_groups_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Groups",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 50
+        },
+        "id": 22,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_delete_topics_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_delete_topics_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Topics",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 50
+        },
+        "id": 23,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_delete_acls_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_delete_acls_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Acls",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {
+          "request broker-0": "yellow",
+          "{app=\"kafka\",brokerId=\"0\",instance=\"192.168.71.107:15090\",job=\"envoy-stats\",kafka_cr=\"kafka\",namespace=\"kafka\",pod_name=\"kafkabfmmq\",security_istio_io_tlsMode=\"istio\"}": "yellow"
+        },
+        "bars": false,
+        "dashLength": 10,
+        "dashes": false,
+        "datasource": "Prometheus",
+        "fill": 1,
+        "fillGradient": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 50
+        },
+        "id": 24,
+        "legend": {
+          "avg": false,
+          "current": false,
+          "max": false,
+          "min": false,
+          "show": true,
+          "total": false,
+          "values": false
+        },
+        "lines": true,
+        "linewidth": 1,
+        "nullPointMode": "null",
+        "options": {
+          "dataLinks": []
+        },
+        "percentage": false,
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [
+          {
+            "alias": "request broker-0",
+            "yaxis": 1
+          }
+        ],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "envoy_kafka_exampleprefix_request_delete_records_request{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "request broker-{{brokerId}}",
+            "refId": "A"
+          },
+          {
+            "expr": "envoy_kafka_exampleprefix_response_delete_records_response{brokerId=~\"$brokerId$\"}",
+            "legendFormat": "response broker-{{brokerId}}",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Records",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "short",
+            "label": "",
+            "logBase": 1,
+            "max": null,
+            "min": "0",
+            "show": true
+          },
+          {
+            "decimals": null,
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
       }
     ],
     "refresh": "",
@@ -816,25 +2074,48 @@
     "templating": {
       "list": [
         {
-          "allValue": null,
+          "allValue": ".*",
           "current": {
             "tags": [],
-            "text": "2",
-            "value": "2"
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
           },
           "datasource": "Prometheus",
           "definition": "label_values(envoy_kafka_exampleprefix_request_produce_request,  brokerId)",
           "hide": 0,
-          "includeAll": false,
-          "label": null,
-          "multi": false,
+          "includeAll": true,
+          "label": "Broker ID",
+          "multi": true,
           "name": "brokerId",
-          "options": [],
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "selected": false,
+              "text": "0",
+              "value": "0"
+            },
+            {
+              "selected": false,
+              "text": "1",
+              "value": "1"
+            },
+            {
+              "selected": false,
+              "text": "2",
+              "value": "2"
+            }
+          ],
           "query": "label_values(envoy_kafka_exampleprefix_request_produce_request,  brokerId)",
-          "refresh": 1,
+          "refresh": 0,
           "regex": "",
           "skipUrlSync": false,
-          "sort": 0,
+          "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
           "tagsQuery": "",
@@ -863,6 +2144,6 @@
     },
     "timezone": "",
     "title": "Envoy Kafka protocol filter",
-    "uid": "r2jsS3-Zk",
-    "version": 1
+    "uid": "g1_0xSfWz",
+    "version": 22
   }
