@@ -118,7 +118,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 
 	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
 		}
@@ -144,7 +144,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 
 	var egressListeners map[string][]*v1alpha3.IstioEgressListener
 	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
@@ -159,5 +159,5 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 
 	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, egressListeners)
+	return Output(cli, options.workloadName, egressListeners, false)
 }

@@ -29,24 +29,25 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 )
 
-type getCommand struct{}
+type recommendCommand struct{}
 
-type GetOptions struct {
-	workloadID   string
-	workloadName types.NamespacedName
+type RecommendOptions struct {
+	workloadID     string
+	workloadName   types.NamespacedName
+	isolationLevel string
 }
 
-func NewGetOptions() *GetOptions {
-	return &GetOptions{}
+func NewRecommendOptions() *RecommendOptions {
+	return &RecommendOptions{}
 }
 
-func NewGetCommand(cli cli.CLI) *cobra.Command {
-	c := &getCommand{}
-	options := NewGetOptions()
+func NewRecommendCommand(cli cli.CLI) *cobra.Command {
+	c := &recommendCommand{}
+	options := NewRecommendOptions()
 
 	cmd := &cobra.Command{
-		Use:           "get [[--workload=]namespace/workloadname]",
-		Short:         "Get sidecar configuration for a workload",
+		Use:           "recommend [[--workload=]namespace/workloadname] [--isolationLevel=NAMESPACE|WORKLOAD]",
+		Short:         "Recommend sidecar configuration for a workload",
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,17 +66,32 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 				return errors.WrapIf(err, "could not parse workload ID")
 			}
 
+			err = c.validateOptions(options)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			return c.run(cli, options)
 		},
 	}
 
 	flags := cmd.Flags()
 	flags.StringVar(&options.workloadID, "workload", "", "Workload name")
+	flags.StringVarP(&options.isolationLevel, "isolationLevel", "i", "", "Isolation level (NAMESPACE|WORKLOAD)")
 
 	return cmd
 }
 
-func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
+func (c *recommendCommand) validateOptions(options *RecommendOptions) error {
+
+	if len(options.isolationLevel) != 0 && options.isolationLevel != "WORKLOAD" && options.isolationLevel != "NAMESPACE" {
+		return errors.New("isolation level must be one of WORKLOAD or NAMESPACE")
+	}
+
+	return nil
+}
+
+func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 	var err error
 
 	client, err := cmdCommon.GetGraphQLClient(cli)
@@ -86,29 +102,29 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 
 	var egressListeners map[string][]*v1alpha3.IstioEgressListener
 	if options.workloadName.Name != "*" {
-		wl, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		wl, err := client.GetWorkloadWithSidecarRecommendation(options.workloadName.Namespace, options.workloadName.Name, options.isolationLevel, nil)
 		if err != nil {
-			return errors.Wrap(err, "couldn't query workload sidecars")
+			return errors.Wrap(err, "couldn't query workload sidecar recommendations")
 		}
 
-		if len(wl.Sidecars) == 0 {
-			log.Infof("no sidecar found for %s", options.workloadName)
+		if len(wl.RecommendedSidecars) == 0 {
+			log.Infof("no sidecar recommendations found for %s", options.workloadName)
 			return nil
 		}
 
-		egressListeners = common.GetEgressListenerMap(wl.Sidecars)
+		egressListeners = common.GetEgressListenerMap(wl.RecommendedSidecars)
 	} else {
-		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		resp, err := client.GetNamespaceWithSidecarRecommendation(options.workloadName.Namespace, options.isolationLevel)
 		if err != nil {
-			return errors.Wrap(err, "couldn't query namespace sidecars")
+			return errors.Wrap(err, "couldn't query namespace sidecar recommendations")
 		}
-		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
+		egressListeners = common.GetEgressListenerMap(resp.Namespace.RecommendedSidecars)
 	}
 
 	if len(egressListeners) == 0 {
-		log.Infof("no egress rule found for %s", options.workloadName)
+		log.Infof("no recommended egress rule found for %s", options.workloadName)
 		return nil
 	}
 
-	return Output(cli, options.workloadName, egressListeners, false)
+	return Output(cli, options.workloadName, egressListeners, true)
 }

@@ -36,7 +36,7 @@ type Out struct {
 	CaptureMode string      `json:"capture_mode,omitempty"`
 }
 
-func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1alpha3.IstioEgressListener) error {
+func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1alpha3.IstioEgressListener, recommendation bool) error {
 	var err error
 
 	outs := make([]Out, 0)
@@ -56,7 +56,11 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1a
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
-		fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s\n\n", workloadName)
+		if recommendation {
+			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s\n\n", workloadName)
+		} else {
+			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s\n\n", workloadName)
+		}
 	}
 
 	err = show(cli, outs)

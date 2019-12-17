@@ -105,7 +105,7 @@ func (d *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 	}
 
 	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
 		}
@@ -131,7 +131,7 @@ func (d *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 
 	var egressListeners map[string][]*v1alpha3.IstioEgressListener
 	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
@@ -146,5 +146,5 @@ func (d *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 
 	log.Infof("sidecar egress for %s deleted successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, egressListeners)
+	return Output(cli, options.workloadName, egressListeners, false)
 }

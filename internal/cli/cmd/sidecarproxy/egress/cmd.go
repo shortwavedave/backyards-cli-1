@@ -31,6 +31,7 @@ func NewRootCmd(cli cli.CLI) *cobra.Command {
 		NewGetCommand(cli),
 		newSetCommand(cli),
 		newDeleteCommand(cli),
+		NewRecommendCommand(cli),
 	)
 
 	return cmd
