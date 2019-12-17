@@ -30,6 +30,7 @@ type MeshService struct {
 
 	VirtualServices  []v1alpha3.VirtualService  `json:"virtualServices"`
 	DestinationRules []v1alpha3.DestinationRule `json:"destinationRules"`
+	Policies         []Policy                   `json:"policies"`
 }
 
 func (c *client) GetService(namespace, name string) (*MeshService, error) {
@@ -152,6 +153,56 @@ func (c *client) GetService(namespace, name string) (*MeshService, error) {
 		  }
 		}
 	  }
+`)
+
+	type Response struct {
+		Service MeshService `json:"service"`
+	}
+
+	r := c.NewRequest(request)
+	r.Var("name", name)
+	r.Var("namespace", namespace)
+
+	// run it and capture the response
+	var respData Response
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return nil, err
+	}
+
+	if respData.Service.ID == "" {
+		return nil, errors.New("not found")
+	}
+
+	return &respData.Service, nil
+}
+
+func (c *client) GetServiceWithMTLS(namespace, name string) (*MeshService, error) {
+	request := heredoc.Doc(`
+	query service($name:String!, $namespace: String!) {
+		service(name:$name, namespace: $namespace){
+		  id
+		  name
+		  namespace
+		  policies {
+		    name
+		    namespace
+		    spec {
+			  targets {
+			    name
+			    ports {
+				  name
+				  number
+			    }
+			  }
+			  peers {
+			    mtls {
+				  mode
+			    }
+			  }
+		    }
+		  }
+        }
+      }
 `)
 
 	type Response struct {

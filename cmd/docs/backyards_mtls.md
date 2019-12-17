@@ -1,12 +1,18 @@
-## backyards
+## backyards mtls
 
-Install and manage Backyards
+Manage mTLS policy related configurations
 
 ### Synopsis
 
-Install and manage Backyards
+Manage mTLS policy related configurations
 
 ### Options
+
+```
+  -h, --help   help for mtls
+```
+
+### Options inherited from parent commands
 
 ```
       --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/evaluation-license
@@ -15,7 +21,6 @@ Install and manage Backyards
       --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --formatting.force-color          force color even when non in a terminal
-  -h, --help                            help for backyards
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
   -p, --local-port int                  Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
@@ -30,19 +35,10 @@ Install and manage Backyards
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage canary feature
-* [backyards cert-manager](backyards_cert-manager.md)	 - Install and manage cert-manager
-* [backyards config](backyards_config.md)	 - View and manage persistent configuration
-* [backyards dashboard](backyards_dashboard.md)	 - Open the Backyards dashboard in a web browser
-* [backyards demoapp](backyards_demoapp.md)	 - Install and manage demo application
-* [backyards graph](backyards_graph.md)	 - Show graph
-* [backyards install](backyards_install.md)	 - Install Backyards
-* [backyards istio](backyards_istio.md)	 - Install and manage Istio
-* [backyards license](backyards_license.md)	 - Shows Backyards license
-* [backyards login](backyards_login.md)	 - Log in to Backyards
-* [backyards mtls](backyards_mtls.md)	 - Manage mTLS policy related configurations
-* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
-* [backyards sidecar-proxy](backyards_sidecar-proxy.md)	 - Manage sidecar-proxy related configurations
-* [backyards uninstall](backyards_uninstall.md)	 - Uninstall Backyards
-* [backyards version](backyards_version.md)	 - Print the client and api version information
+* [backyards](backyards.md)	 - Install and manage Backyards
+* [backyards mtls allow](backyards_mtls_allow.md)	 - Set mTLS policy setting for a resource to PERMISSIVE
+* [backyards mtls disable](backyards_mtls_disable.md)	 - Set mTLS policy setting for a resource to DISABLED
+* [backyards mtls get](backyards_mtls_get.md)	 - Get mTLS policy setting for a resource
+* [backyards mtls require](backyards_mtls_require.md)	 - Set mTLS policy setting for a resource to STRICT
+* [backyards mtls unset](backyards_mtls_unset.md)	 - Delete mTLS policy setting for a resource
 

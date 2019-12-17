@@ -3,9 +3,9 @@ kind: Istio
 metadata:
   name: mesh
 spec:
-  version: "1.4.2"
-  mtls: true
-  autoMtls: false
+  version: "1.4.0"
+  mtls: false
+  autoMtls: true
   meshExpansion: true
   controlPlaneSecurityEnabled: true
   sidecarInjector:

@@ -9,7 +9,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/banzaicloud/istio-client-go v0.0.0-20191203163313-928801ec5028
-	github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a
+	github.com/banzaicloud/istio-operator v0.0.0-20191212123221-6e3658721f00
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-retryablehttp v0.6.2

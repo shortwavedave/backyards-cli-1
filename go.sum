@@ -52,6 +52,8 @@ github.com/banzaicloud/istio-client-go v0.0.0-20191203163313-928801ec5028 h1:5K/
 github.com/banzaicloud/istio-client-go v0.0.0-20191203163313-928801ec5028/go.mod h1:kKhUPoDXdY0EE1hTBiN+R9C2mVgSNyvkt8dZ/xb9obM=
 github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a h1:GWmQFsDaT20UeScckdq5u1P5xSx0W36KAz0iUjbqQFs=
 github.com/banzaicloud/istio-operator v0.0.0-20190821151858-a47cd7d9bc7a/go.mod h1:ZsHnkYOQmq/OhsTX/apqgSoT2Jt5qkr15zuoVcj48Xk=
+github.com/banzaicloud/istio-operator v0.0.0-20191212123221-6e3658721f00 h1:RpxUAyBPcN+pgNDy9KlpQlUNtGmQsesbDteXuwHMpU8=
+github.com/banzaicloud/istio-operator v0.0.0-20191212123221-6e3658721f00/go.mod h1:ZsHnkYOQmq/OhsTX/apqgSoT2Jt5qkr15zuoVcj48Xk=
 github.com/banzaicloud/k8s-objectmatcher v1.0.1 h1:1UAwHRAwE4cSO+DiUiPqwk+iTTixdowTMpUNlq4+BbE=
 github.com/banzaicloud/k8s-objectmatcher v1.0.1/go.mod h1:tpTVEwbLtR0FGmyBXxsjM1gaLufmlph99D44NvoZPhA=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

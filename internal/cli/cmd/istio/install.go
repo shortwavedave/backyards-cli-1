@@ -355,9 +355,9 @@ func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
 	}
 
 	if len(istios.Items) == 0 {
-		return istioCR, errors.WrapIf(err, "no Istio CR found")
+		return istioCR, errors.New("no Istio CR found")
 	} else if len(istios.Items) > 1 {
-		return istioCR, errors.WrapIf(err, "multiple Istio CRs found")
+		return istioCR, errors.New("multiple Istio CRs found")
 	}
 
 	return istios.Items[0], nil

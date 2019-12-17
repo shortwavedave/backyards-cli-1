@@ -18,12 +18,21 @@ import (
 	"context"
 
 	"github.com/MakeNowJust/heredoc"
+
+	"github.com/banzaicloud/istio-client-go/pkg/authentication/v1alpha1"
 )
+
+type Policy struct {
+	v1alpha1.Policy
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
 
 type IstioNamespace struct {
 	Name                string    `json:"name"`
 	Sidecars            []Sidecar `json:"sidecars"`
 	RecommendedSidecars []Sidecar `json:"recommendedSidecars"`
+	Policy              Policy    `json:"policy"`
 }
 
 type NamespacesResponse struct {
@@ -121,7 +130,7 @@ func (c *client) GetNamespaceWithSidecarRecommendation(name string, isolationLev
                   hosts
                 }
               }
-            }    
+            }
           }
         }`)
 	r := c.NewRequest(request)
@@ -129,6 +138,35 @@ func (c *client) GetNamespaceWithSidecarRecommendation(name string, isolationLev
 	if isolationLevel != "" {
 		r.Var("isolationLevel", isolationLevel)
 	}
+
+	var respData NamespaceResponse
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return respData, err
+	}
+
+	return respData, nil
+}
+
+func (c *client) GetNamespaceWithMTLS(name string) (NamespaceResponse, error) {
+	request := heredoc.Doc(`
+		query($name: String!){
+          namespace(name: $name) {
+			name
+			policy {
+			  name
+			  namespace
+			  spec {
+			    peers {
+				  mtls {
+				    mode
+				  }
+			    }
+			  }
+		    }
+		  }
+	    }`)
+	r := c.NewRequest(request)
+	r.Var("name", name)
 
 	var respData NamespaceResponse
 	if err := c.client.Run(context.Background(), r, &respData); err != nil {
