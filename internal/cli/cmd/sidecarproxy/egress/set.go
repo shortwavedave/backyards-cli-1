@@ -15,8 +15,6 @@
 package egress
 
 import (
-	"fmt"
-
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -37,8 +35,9 @@ type setOptions struct {
 	workloadID   string
 	workloadName types.NamespacedName
 
-	bind  string
-	hosts []string
+	bind           string
+	hosts          []string
+	labelWhitelist []string
 
 	parsedBind string
 	parsedPort *v1alpha3.Port
@@ -89,6 +88,7 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	flags.StringVar(&options.workloadID, "workload", "", "Workload name [namespace/[workload|*]]")
 	flags.StringVarP(&options.bind, "bind", "b", "", "Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]")
 	flags.StringArrayVar(&options.hosts, "hosts", options.hosts, "Egress listener Hosts")
+	flags.StringArrayVarP(&options.labelWhitelist, "labelWhitelist", "l", options.labelWhitelist, "Labels to include in the workload selector")
 
 	return cmd
 }
@@ -110,7 +110,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 	defer client.Close()
 
-	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort, nil)
+	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort, options.labelWhitelist)
 	if err != nil {
 		return errors.WrapIf(err, "could not apply sidecar egress rules")
 	}
@@ -136,7 +136,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 
 	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, sidecars, false)
+	return Output(cli, options.workloadName, sidecars, false, false)
 }
 
 func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port, labelWhitelist []string) (bool, error) {
@@ -165,7 +165,6 @@ func applyEgress(client graphql.Client, namespace, name, bind string, hosts []st
 				return false, errors.New("workload has no matching label from label whitelist")
 			}
 			req.Selector.WorkloadLabels = &labels
-			fmt.Println("888", req.Selector.WorkloadLabels)
 		} else {
 			req.Selector.WorkloadLabels = &workload.Labels
 		}

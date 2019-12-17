@@ -87,7 +87,7 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 		return errors.WrapIf(err, "could not retrieve sidecars through graphql")
 	}
 
-	return Output(cli, options.workloadName, sidecars, false)
+	return Output(cli, options.workloadName, sidecars, false, false)
 }
 
 func getSidecars(client graphql.Client, namespace, name string) ([]graphql.Sidecar, error) {

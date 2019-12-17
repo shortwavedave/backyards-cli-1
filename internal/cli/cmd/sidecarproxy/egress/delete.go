@@ -146,5 +146,5 @@ func (d *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 
 	log.Infof("sidecar egress for %s deleted successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, sidecars, false)
+	return Output(cli, options.workloadName, sidecars, false, false)
 }

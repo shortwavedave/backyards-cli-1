@@ -108,7 +108,7 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 		return err
 	}
 
-	err = Output(cli, options.workloadName, sidecars, true)
+	err = Output(cli, options.workloadName, sidecars, true, options.apply)
 	if err != nil {
 		return err
 	}
@@ -128,8 +128,14 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 		}
 
 		for _, s := range sidecars {
+			var labelWhitelist []string
+			if s.Spec.WorkloadSelector != nil {
+				for l := range s.Spec.WorkloadSelector.Labels {
+					labelWhitelist = append(labelWhitelist, l)
+				}
+			}
 			for _, e := range s.Spec.Egress {
-				_, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, "", e.Hosts, nil, options.labelWhitelist)
+				_, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, "", e.Hosts, nil, labelWhitelist)
 				if err != nil {
 					return errors.WrapIf(err, "could not apply recommended sidecar egress rules")
 				}
@@ -142,7 +148,7 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 
 		fmt.Fprintf(cli.Out(), "\nRecommendations were successfully applied\n")
 
-		return Output(cli, options.workloadName, sidecars, false)
+		return Output(cli, options.workloadName, sidecars, false, false)
 	}
 
 	return nil

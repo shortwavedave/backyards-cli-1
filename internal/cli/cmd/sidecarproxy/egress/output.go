@@ -38,7 +38,7 @@ type Out struct {
 	CaptureMode string      `json:"capture_mode,omitempty"`
 }
 
-func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.Sidecar, recommendation bool) error {
+func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.Sidecar, recommendation, apply bool) error {
 	var err error
 
 	outs := make([]Out, 0)
@@ -95,6 +95,13 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.S
 		return err
 	}
 
+	if recommendation {
+		// recommendation shouldn't contain more than 1 sidecar, and we don't want to print a hint when there's no recommendation
+		if len(sidecars) == 1 {
+			printRecommendationHint(cli, workloadName, sidecars[0], apply)
+		}
+	}
+
 	if cli.Interactive() {
 		fmt.Println()
 	}
@@ -117,4 +124,40 @@ func show(cli output.FormatContext, data interface{}) error {
 	}
 
 	return nil
+}
+
+func printRecommendationHint(cli output.FormatContext, workloadName types.NamespacedName, sidecar graphql.Sidecar, apply bool) {
+	var hosts []string
+	for _, e := range sidecar.Spec.Egress {
+		// recommendations are always for egress without bind and port
+		if e.Port == nil && e.Bind == "" {
+			hosts = e.Hosts
+			break
+		}
+	}
+
+	// couldn't find recommended hosts, we don't print anything
+	if len(hosts) == 0 {
+		return
+	}
+
+	var applyCommand = fmt.Sprintf("> backyards sp egress set --workload %s/%s", workloadName.Namespace, workloadName.Name)
+	for _, h := range hosts {
+		applyCommand += fmt.Sprintf(" --hosts=%s", h)
+	}
+	if sidecar.Spec.WorkloadSelector != nil {
+		for l := range sidecar.Spec.WorkloadSelector.Labels {
+			applyCommand += fmt.Sprintf(" -l=%s", l)
+		}
+	}
+	var hint string
+	if apply {
+		hint = fmt.Sprintf("\nHint: use this command to apply these recommendations manually:\n"+
+			"%s\n\n", applyCommand)
+	} else {
+		hint = fmt.Sprintf("\nHint: to apply these recommendations, use the --apply switch, or apply it manually using this command:\n"+
+			"%s\n\n", applyCommand)
+
+	}
+	fmt.Fprintf(cli.Out(), "%s", hint)
 }

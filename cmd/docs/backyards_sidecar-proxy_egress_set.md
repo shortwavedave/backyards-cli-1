@@ -13,10 +13,11 @@ backyards sidecar-proxy egress set --workload namespace/[workload|*] [--bind [PR
 ### Options
 
 ```
-  -b, --bind string         Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]
-  -h, --help                help for set
-      --hosts stringArray   Egress listener Hosts
-      --workload string     Workload name [namespace/[workload|*]]
+  -b, --bind string                  Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]
+  -h, --help                         help for set
+      --hosts stringArray            Egress listener Hosts
+  -l, --labelWhitelist stringArray   Labels to include in the workload selector
+      --workload string              Workload name [namespace/[workload|*]]
 ```
 
 ### Options inherited from parent commands
