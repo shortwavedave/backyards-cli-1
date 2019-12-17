@@ -17,12 +17,12 @@ package egress
 import (
 	"fmt"
 
+	"github.com/banzaicloud/backyards-cli/pkg/graphql"
+
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
 
 	"emperror.dev/errors"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
@@ -36,11 +36,21 @@ type Out struct {
 	CaptureMode string      `json:"capture_mode,omitempty"`
 }
 
-func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1alpha3.IstioEgressListener, recommendation bool) error {
+func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.Sidecar, recommendation bool) error {
 	var err error
 
+	egressListeners := common.GetEgressListenerMap(sidecars)
+	if len(egressListeners) == 0 {
+		if recommendation {
+			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s\n\n", workloadName)
+		} else {
+			fmt.Fprintf(cli.Out(), "no egress rule found for %s\n\n", workloadName)
+		}
+		return nil
+	}
+
 	outs := make([]Out, 0)
-	for sidecarName, egress := range sc {
+	for sidecarName, egress := range egressListeners {
 		for _, e := range egress {
 			o := Out{}
 			o.Sidecar = sidecarName

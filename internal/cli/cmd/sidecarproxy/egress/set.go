@@ -108,56 +108,64 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 	defer client.Close()
 
-	req := graphql.ApplySidecarEgressInput{
-		Selector: graphql.SidecarEgressSelector{
-			Namespace: options.workloadName.Namespace,
-		},
-		Egress: graphql.Egress{
-			Hosts: options.hosts,
-		},
-	}
-
-	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
-		if err != nil {
-			return errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
-		}
-		req.Selector.WorkloadLabels = &workload.Labels
-	}
-
-	if options.parsedBind != "" {
-		req.Selector.Bind = &options.parsedBind
-	}
-
-	if options.parsedPort != nil {
-		req.Selector.Port = options.parsedPort
-	}
-
-	response, err := client.ApplySidecarEgress(req)
+	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort)
 	if err != nil {
-		return errors.WrapIf(err, "could not apply sidecar egress")
+		return errors.WrapIf(err, "could not apply sidecar egress rules")
 	}
 
 	if !response {
 		return errors.New("unknown internal error: could not apply sidecar egress")
 	}
 
-	var egressListeners map[string][]*v1alpha3.IstioEgressListener
+	var sidecars []graphql.Sidecar
 	if options.workloadName.Name != "*" {
 		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(workload.Sidecars)
+		sidecars = workload.Sidecars
 	} else {
 		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query namespace sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
+		sidecars = resp.Namespace.Sidecars
 	}
 
 	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, egressListeners, false)
+	return Output(cli, options.workloadName, sidecars, false)
+}
+
+func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port) (bool, error) {
+	req := graphql.ApplySidecarEgressInput{
+		Selector: graphql.SidecarEgressSelector{
+			Namespace: namespace,
+		},
+		Egress: graphql.Egress{
+			Hosts: hosts,
+		},
+	}
+
+	if name != "*" {
+		workload, err := client.GetWorkloadWithSidecar(namespace, name)
+		if err != nil {
+			return false, errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
+		}
+		req.Selector.WorkloadLabels = &workload.Labels
+	}
+
+	if bind != "" {
+		req.Selector.Bind = &bind
+	}
+
+	if port != nil {
+		req.Selector.Port = port
+	}
+
+	response, err := client.ApplySidecarEgress(req)
+	if err != nil {
+		return false, errors.WrapIf(err, "could not apply sidecar egress")
+	}
+	return bool(response), nil
 }

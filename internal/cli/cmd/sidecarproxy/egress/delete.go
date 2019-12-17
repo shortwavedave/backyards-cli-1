@@ -129,22 +129,22 @@ func (d *deleteCommand) run(cli cli.CLI, options *deleteOptions) error {
 		return errors.New("unknown internal error: could not delete sidecar egress")
 	}
 
-	var egressListeners map[string][]*v1alpha3.IstioEgressListener
+	var sidecars []graphql.Sidecar
 	if options.workloadName.Name != "*" {
 		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(workload.Sidecars)
+		sidecars = workload.Sidecars
 	} else {
 		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query namespace sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
+		sidecars = resp.Namespace.Sidecars
 	}
 
 	log.Infof("sidecar egress for %s deleted successfully\n\n", options.workloadName)
 
-	return Output(cli, options.workloadName, egressListeners, false)
+	return Output(cli, options.workloadName, sidecars, false)
 }

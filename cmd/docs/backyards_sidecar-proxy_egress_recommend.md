@@ -13,6 +13,7 @@ backyards sidecar-proxy egress recommend [[--workload=]namespace/workloadname] [
 ### Options
 
 ```
+      --apply                   Apply recommendations
   -h, --help                    help for recommend
   -i, --isolationLevel string   Isolation level (NAMESPACE|WORKLOAD)
       --workload string         Workload name
