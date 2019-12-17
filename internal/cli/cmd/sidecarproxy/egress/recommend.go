@@ -37,6 +37,7 @@ type RecommendOptions struct {
 	workloadName   types.NamespacedName
 	isolationLevel string
 	apply          bool
+	labelWhitelist []string
 }
 
 func NewRecommendOptions() *RecommendOptions {
@@ -48,7 +49,7 @@ func NewRecommendCommand(cli cli.CLI) *cobra.Command {
 	options := NewRecommendOptions()
 
 	cmd := &cobra.Command{
-		Use:           "recommend [[--workload=]namespace/workloadname] [--isolationLevel=NAMESPACE|WORKLOAD]",
+		Use:           "recommend [[--workload=]namespace/name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label]",
 		Short:         "Recommend sidecar configuration for a workload",
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
@@ -81,6 +82,7 @@ func NewRecommendCommand(cli cli.CLI) *cobra.Command {
 	flags.StringVar(&options.workloadID, "workload", "", "Workload name")
 	flags.StringVarP(&options.isolationLevel, "isolationLevel", "i", "", "Isolation level (NAMESPACE|WORKLOAD)")
 	flags.BoolVar(&options.apply, "apply", false, "Apply recommendations")
+	flags.StringArrayVarP(&options.labelWhitelist, "labelWhitelist", "l", options.labelWhitelist, "Labels to include in the workload selector")
 
 	return cmd
 }
@@ -127,7 +129,7 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 
 		for _, s := range sidecars {
 			for _, e := range s.Spec.Egress {
-				_, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, "", e.Hosts, nil)
+				_, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, "", e.Hosts, nil, options.labelWhitelist)
 				if err != nil {
 					return errors.WrapIf(err, "could not apply recommended sidecar egress rules")
 				}
@@ -149,7 +151,7 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 func getRecommendations(client graphql.Client, options *RecommendOptions) ([]graphql.Sidecar, error) {
 	var sidecars []graphql.Sidecar
 	if options.workloadName.Name != "*" {
-		wl, err := client.GetWorkloadWithSidecarRecommendation(options.workloadName.Namespace, options.workloadName.Name, options.isolationLevel, nil)
+		wl, err := client.GetWorkloadWithSidecarRecommendation(options.workloadName.Namespace, options.workloadName.Name, options.isolationLevel, options.labelWhitelist)
 		if err != nil {
 			return nil, errors.Wrap(err, "couldn't query workload sidecar recommendations")
 		}

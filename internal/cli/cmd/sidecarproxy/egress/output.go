@@ -15,6 +15,7 @@
 package egress
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
@@ -30,7 +31,8 @@ import (
 
 type Out struct {
 	Sidecar     string      `json:"sidecar,omitempty"`
-	Hosts       []string    `json:"hosts,omitempty"`
+	Selector    string      `json:"selector:omitempty"`
+	Hosts       string      `json:"hosts,omitempty"`
 	Port        common.Port `json:"port,omitempty"`
 	Bind        string      `json:"bind,omitempty"`
 	CaptureMode string      `json:"capture_mode,omitempty"`
@@ -39,22 +41,28 @@ type Out struct {
 func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.Sidecar, recommendation bool) error {
 	var err error
 
-	egressListeners := common.GetEgressListenerMap(sidecars)
-	if len(egressListeners) == 0 {
-		if recommendation {
-			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s\n\n", workloadName)
-		} else {
-			fmt.Fprintf(cli.Out(), "no egress rule found for %s\n\n", workloadName)
-		}
-		return nil
-	}
-
 	outs := make([]Out, 0)
-	for sidecarName, egress := range egressListeners {
-		for _, e := range egress {
+	for _, sc := range sidecars {
+		var selector string
+		if sc.Spec.WorkloadSelector != nil {
+			b := new(bytes.Buffer)
+			for key, value := range sc.Spec.WorkloadSelector.Labels {
+				fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
+			}
+			selector = b.String()
+		}
+		for _, e := range sc.Spec.Egress {
+			var hosts string
+			b := new(bytes.Buffer)
+			for _, h := range e.Hosts {
+				fmt.Fprintf(b, "%s\n", h)
+			}
+			hosts = b.String()
+
 			o := Out{}
-			o.Sidecar = sidecarName
-			o.Hosts = e.Hosts
+			o.Sidecar = sc.Name
+			o.Selector = selector
+			o.Hosts = hosts
 			o.Bind = e.Bind
 			if e.Port != nil {
 				o.Port = common.Port(*e.Port)
@@ -63,6 +71,15 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.S
 
 			outs = append(outs, o)
 		}
+	}
+
+	if len(outs) == 0 {
+		if recommendation {
+			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s\n\n", workloadName)
+		} else {
+			fmt.Fprintf(cli.Out(), "no egress rule found for %s\n\n", workloadName)
+		}
+		return nil
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
@@ -90,8 +107,8 @@ func show(cli output.FormatContext, data interface{}) error {
 		Out:     cli.Out(),
 		Color:   cli.Color(),
 		Format:  cli.OutputFormat(),
-		Fields:  []string{"Sidecar", "Hosts", "Bind", "Port", "CaptureMode"},
-		Headers: []string{"Sidecar", "Hosts", "Bind", "Port", "Capture Mode"},
+		Fields:  []string{"Sidecar", "Selector", "Hosts", "Bind", "Port", "CaptureMode"},
+		Headers: []string{"Sidecar", "Selector", "Hosts", "Bind", "Port", "Capture Mode"},
 	}
 
 	err := output.Output(ctx, data)

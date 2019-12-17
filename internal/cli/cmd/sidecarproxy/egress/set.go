@@ -15,6 +15,8 @@
 package egress
 
 import (
+	"fmt"
+
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -108,7 +110,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 	defer client.Close()
 
-	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort)
+	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort, nil)
 	if err != nil {
 		return errors.WrapIf(err, "could not apply sidecar egress rules")
 	}
@@ -137,7 +139,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	return Output(cli, options.workloadName, sidecars, false)
 }
 
-func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port) (bool, error) {
+func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port, labelWhitelist []string) (bool, error) {
 	req := graphql.ApplySidecarEgressInput{
 		Selector: graphql.SidecarEgressSelector{
 			Namespace: namespace,
@@ -152,7 +154,22 @@ func applyEgress(client graphql.Client, namespace, name, bind string, hosts []st
 		if err != nil {
 			return false, errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
 		}
-		req.Selector.WorkloadLabels = &workload.Labels
+		if len(labelWhitelist) > 0 {
+			labels := make(map[string]string)
+			for _, l := range labelWhitelist {
+				if wl, ok := workload.Labels[l]; ok {
+					labels[l] = wl
+				}
+			}
+			if len(labels) == 0 {
+				return false, errors.New("workload has no matching label from label whitelist")
+			}
+			req.Selector.WorkloadLabels = &labels
+			fmt.Println("888", req.Selector.WorkloadLabels)
+		} else {
+			req.Selector.WorkloadLabels = &workload.Labels
+		}
+
 	}
 
 	if bind != "" {

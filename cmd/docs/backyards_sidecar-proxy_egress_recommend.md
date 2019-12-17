@@ -7,16 +7,17 @@ Recommend sidecar configuration for a workload
 Recommend sidecar configuration for a workload
 
 ```
-backyards sidecar-proxy egress recommend [[--workload=]namespace/workloadname] [--isolationLevel=NAMESPACE|WORKLOAD] [flags]
+backyards sidecar-proxy egress recommend [[--workload=]namespace/name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label] [flags]
 ```
 
 ### Options
 
 ```
-      --apply                   Apply recommendations
-  -h, --help                    help for recommend
-  -i, --isolationLevel string   Isolation level (NAMESPACE|WORKLOAD)
-      --workload string         Workload name
+      --apply                        Apply recommendations
+  -h, --help                         help for recommend
+  -i, --isolationLevel string        Isolation level (NAMESPACE|WORKLOAD)
+  -l, --labelWhitelist stringArray   Labels to include in the workload selector
+      --workload string              Workload name
 ```
 
 ### Options inherited from parent commands

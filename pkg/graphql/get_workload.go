@@ -18,15 +18,41 @@ import (
 	"context"
 	"errors"
 
-	"github.com/MakeNowJust/heredoc"
-
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
+
+	"github.com/MakeNowJust/heredoc"
 )
 
+// the only reason for not using the types from the Istio client go package here is that Istio uses snake case in YAML...
 type Sidecar struct {
-	v1alpha3.Sidecar
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
+	Spec      SidecarSpec `json:"spec"`
+	Name      string      `json:"name"`
+	Namespace string      `json:"namespace"`
+}
+
+type SidecarSpec struct {
+	WorkloadSelector      *WorkloadSelector               `json:"workloadSelector,omitempty"`
+	Ingress               []*IstioIngressListener         `json:"ingress,omitempty"`
+	Egress                []*IstioEgressListener          `json:"egress"`
+	OutboundTrafficPolicy *v1alpha3.OutboundTrafficPolicy `json:"outboundTrafficPolicy,omitempty"`
+}
+
+type WorkloadSelector struct {
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
+type IstioIngressListener struct {
+	Port            *v1alpha3.Port       `json:"port"`
+	Bind            string               `json:"bind,omitempty"`
+	CaptureMode     v1alpha3.CaptureMode `json:"captureMode,omitempty"`
+	DefaultEndpoint string               `json:"defaultEndpoint"`
+}
+
+type IstioEgressListener struct {
+	Port        *v1alpha3.Port       `json:"port,omitempty"`
+	Bind        string               `json:"bind,omitempty"`
+	CaptureMode v1alpha3.CaptureMode `json:"capture_mode,omitempty"`
+	Hosts       []string             `json:"hosts"`
 }
 
 type MeshWorkloadSidecar struct {
