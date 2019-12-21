@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	emperror.dev/errors v0.4.2
-	emperror.dev/handler/logrus v0.1.0
 	github.com/AlecAivazis/survey/v2 v2.0.2
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
@@ -37,7 +36,6 @@ require (
 	k8s.io/apimachinery v0.0.0-20190704094733-8f6ac2502e51
 	k8s.io/client-go v11.0.1-0.20190516230509-ae8359b20417+incompatible
 	k8s.io/helm v2.14.3+incompatible
-	knative.dev/pkg v0.0.0-20190903162800-3dd5d66573f6
 	sigs.k8s.io/controller-runtime v0.2.0-beta.4
 	sigs.k8s.io/yaml v1.1.0
 )
