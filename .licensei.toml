@@ -13,19 +13,7 @@ ignored = [
     "gomodules.xyz/jsonpatch/v2",
     "gopkg.in/fsnotify.v1",
 
-    # Vanity URLS :\
-    "knative.dev/pkg",
-    "istio.io/operator",
-    "istio.io/pkg",
-    "go.uber.org/atomic",
-    "go.uber.org/multierr",
-    "go.uber.org/zap",
-    "emperror.dev/handler/logrus",
-    "emperror.dev/errors",
-    "google.golang.org/grpc",
-    "google.golang.org/genproto",
-    "cloud.google.com/go",
-    "google.golang.org/api",
     "sigs.k8s.io/yaml",
-    "go.opencensus.io",
+    "google.golang.org/api",
+    "cloud.google.com/go",
 ]
