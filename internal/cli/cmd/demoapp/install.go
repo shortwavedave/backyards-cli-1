@@ -44,13 +44,25 @@ backyards istio install
 `
 )
 
+var availableServices = map[string]bool{
+	"analytics":     true,
+	"bookings":      true,
+	"catalog":       true,
+	"frontpage":     true,
+	"movies":        true,
+	"notifications": true,
+	"payments":      true,
+}
+
 type installCommand struct {
 	cli cli.CLI
 }
 
 type InstallOptions struct {
-	namespace      string
-	istioNamespace string
+	namespace       string
+	istioNamespace  string
+	peerCluster     bool
+	enabledServices []string
 
 	DumpResources bool
 }
@@ -85,12 +97,21 @@ It can only dump the applicable resources with the '--dump-resources' option.`,
 				options.namespace = backyardsDemoNamespace
 			}
 
+			if len(options.enabledServices) > 0 {
+				for _, n := range options.enabledServices {
+					if !availableServices[n] {
+						return errors.Errorf("invalid service '%s'", n)
+					}
+				}
+			}
+
 			return c.run(cli, options)
 		},
 	}
 
 	cmd.Flags().StringVar(&options.istioNamespace, "istio-namespace", "istio-system", "Namespace of Istio sidecar injector")
-
+	cmd.Flags().BoolVar(&options.peerCluster, "peer", options.peerCluster, "The destination cluster is a peer in a multi-cluster mesh")
+	cmd.Flags().StringSliceVarP(&options.enabledServices, "enabled-services", "s", options.enabledServices, "Enabled services of the demo app")
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
 
 	return cmd
@@ -103,7 +124,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 		return nil
 	}
 
-	objects, err := getBackyardsDemoObjects(options.namespace)
+	objects, err := getBackyardsDemoObjects(options.namespace, options.peerCluster, options.enabledServices...)
 	if err != nil {
 		return err
 	}
@@ -140,7 +161,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	return nil
 }
 
-func getBackyardsDemoObjects(namespace string) (object.K8sObjects, error) {
+func getBackyardsDemoObjects(namespace string, peerCluster bool, enabledServices ...string) (object.K8sObjects, error) {
 	var values Values
 
 	valuesYAML, err := helm.GetDefaultValues(backyards_demo.Chart)
@@ -154,6 +175,10 @@ func getBackyardsDemoObjects(namespace string) (object.K8sObjects, error) {
 	}
 
 	values.UseNamespaceResource = true
+	if peerCluster {
+		values.IstioResources = false
+	}
+	setEnabledServices(&values, enabledServices)
 
 	rawValues, err := yaml.Marshal(values)
 	if err != nil {
@@ -171,6 +196,49 @@ func getBackyardsDemoObjects(namespace string) (object.K8sObjects, error) {
 	}
 
 	return objects, nil
+}
+
+func setEnabledServices(values *Values, enabledServices []string) {
+	if len(enabledServices) == 0 {
+		return
+	}
+	services := make(map[string]bool)
+	for _, n := range enabledServices {
+		services[n] = true
+	}
+
+	values.Analytics = false
+	if services["analytics"] {
+		values.Analytics = true
+	}
+	values.Bookings = false
+	if services["bookings"] {
+		values.Bookings = true
+	}
+	values.Catalog = false
+	if services["catalog"] {
+		values.Catalog = true
+	}
+	values.Frontpage = false
+	if services["frontpage"] {
+		values.Frontpage = true
+	}
+	values.MoviesV1 = false
+	values.MoviesV2 = false
+	values.MoviesV3 = false
+	if services["movies"] {
+		values.MoviesV1 = true
+		values.MoviesV2 = true
+		values.MoviesV3 = true
+	}
+	values.Notifications = false
+	if services["notifications"] {
+		values.Notifications = true
+	}
+	values.Payments = false
+	if services["payments"] {
+		values.Payments = true
+	}
 }
 
 func (c *installCommand) validate(istioNamespace string) error {

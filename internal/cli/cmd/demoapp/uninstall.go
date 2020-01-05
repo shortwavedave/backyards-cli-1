@@ -85,7 +85,7 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 }
 
 func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
-	objects, err := getBackyardsDemoObjects(options.namespace)
+	objects, err := getBackyardsDemoObjects(options.namespace, false)
 	if err != nil {
 		return err
 	}
