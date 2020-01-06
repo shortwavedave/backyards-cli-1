@@ -26,9 +26,11 @@ backyards demoapp install [flags]
 ### Options
 
 ```
-  -d, --dump-resources           Dump resources to stdout instead of applying them
-  -h, --help                     help for install
-      --istio-namespace string   Namespace of Istio sidecar injector (default "istio-system")
+  -d, --dump-resources             Dump resources to stdout instead of applying them
+  -s, --enabled-services strings   Enabled services of the demo app
+  -h, --help                       help for install
+      --istio-namespace string     Namespace of Istio sidecar injector (default "istio-system")
+      --peer                       The destination cluster is a peer in a multi-cluster mesh
 ```
 
 ### Options inherited from parent commands
