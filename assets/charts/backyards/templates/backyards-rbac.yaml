@@ -107,6 +107,11 @@ rules:
   - get
   - list
   - watch
+  - create
+  - edit
+  - update
+  - patch
+  - delete
 - apiGroups: ["deployments.banzaicloud.io"]
   resources:
   - canaries

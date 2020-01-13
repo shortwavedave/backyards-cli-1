@@ -6,13 +6,22 @@ replicas: 2
 
 image:
   repository: banzaicloud/allspark
-  tag: "0.0.3"
+  tag: "0.1.1"
   pullPolicy: IfNotPresent
+
+resources: {}
+  # limits:
+  #  cpu: 200m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 64Mi
 
 services: true
 
 istioresources: true
 
+bombardier: true
 analytics: true
 bookings: true
 catalog: true
@@ -22,3 +31,4 @@ moviesv2: true
 moviesv3: true
 notifications: true
 payments: true
+database: true

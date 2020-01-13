@@ -1,6 +1,6 @@
-{{- if not .Values.ingressgateway.meshgateway.enabled -}}
-apiVersion: v1
-kind: Service
+{{- if .Values.ingressgateway.meshgateway.enabled -}}
+apiVersion: istio.banzaicloud.io/v1beta1
+kind: MeshGateway
 metadata:
   name: {{ include "ingressgateway.fullname" . }}
   namespace: {{ .Release.Namespace }}
@@ -14,18 +14,23 @@ metadata:
     app.kubernetes.io/component: ingressgateway
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
 spec:
-  ports:
-    - name: status-port
-      port: 15020
-      protocol: TCP
-      targetPort: 15020
-    - name: http2
-      port: 80
-      protocol: TCP
-      targetPort: 80
-  selector:
+  labels:
+    app: {{ include "ingressgateway.name" . }}
     app.kubernetes.io/name: {{ include "ingressgateway.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  sessionAffinity: None
-  type: {{ .Values.ingressgateway.service.type }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: ingressgateway
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+  maxReplicas: 1
+  minReplicas: 1
+  ports:
+  - name: http2
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  replicaCount: 1
+  serviceType: {{ .Values.ingressgateway.service.type }}
+  type: ingress
 {{- end }}

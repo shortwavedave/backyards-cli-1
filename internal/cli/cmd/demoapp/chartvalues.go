@@ -32,6 +32,8 @@ type Values struct {
 	MoviesV3       bool       `json:"moviesv3"`
 	Notifications  bool       `json:"notifications"`
 	Payments       bool       `json:"payments"`
+	Database       bool       `json:"database"`
+	Bombardier     bool       `json:"bombardier"`
 
 	UseNamespaceResource bool `json:"useNamespaceResource"`
 }

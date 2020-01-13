@@ -7,7 +7,7 @@ metadata:
   labels:
     app: analytics
     version: v1
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -31,9 +31,15 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: 8080
+        - containerPort: 8082
+        - containerPort: 8083
         env:
         - name: WORKLOAD
           value: PI
         - name: PI_COUNT
           value: "1000"
+      {{- with .Values.resources }}
+      resources:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
 {{ end }}

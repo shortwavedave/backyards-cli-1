@@ -3,7 +3,7 @@ kind: Istio
 metadata:
   name: mesh
 spec:
-  version: "1.4.0"
+  version: "1.4.2"
   mtls: true
   autoMtls: false
   meshExpansion: true
@@ -20,6 +20,7 @@ spec:
     image: banzaicloud/istio-pilot:1.4.0-bzc
   mixer:
     image: banzaicloud/istio-mixer:1.4.0-bzc
+    multiClusterSupport: true
   tracing:
     enabled: true
     tracer: zipkin
