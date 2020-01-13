@@ -7,7 +7,7 @@ metadata:
   labels:
     app: frontpage
     version: v1
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -31,6 +31,8 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: 8080
+        - containerPort: 8082
+        - containerPort: 8083
         env:
         - name: WORKLOAD
           value: Echo
@@ -38,4 +40,8 @@ spec:
           value: "frontpage"
         - name: REQUESTS
           value: "http://catalog:8080/#2 http://bookings:8080#1"
+      {{- with .Values.resources }}
+      resources:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
 {{ end }}

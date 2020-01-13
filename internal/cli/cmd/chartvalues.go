@@ -139,6 +139,9 @@ type Values struct {
 	} `json:"tracing"`
 
 	IngressGateway struct {
+		MeshGateway struct {
+			Enabled bool `json:"enabled"`
+		} `json:"meshgateway"`
 		Service struct {
 			Type string `json:"type"`
 		} `json:"service"`

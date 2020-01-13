@@ -7,11 +7,15 @@ metadata:
   labels:
     app: analytics
     service: analytics
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: analytics
 ---
@@ -23,11 +27,15 @@ metadata:
   labels:
     app: bookings
     service: bookings
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: bookings
 ---
@@ -39,11 +47,15 @@ metadata:
   labels:
     app: catalog
     service: catalog
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: catalog
 ---
@@ -55,11 +67,15 @@ metadata:
   labels:
     app: frontpage
     service: frontpage
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: frontpage
 ---
@@ -71,11 +87,15 @@ metadata:
   labels:
     app: movies
     service: movies
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: movies
 ---
@@ -87,11 +107,15 @@ metadata:
   labels:
     app: notifications
     service: notifications
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: notifications
 ---
@@ -103,12 +127,36 @@ metadata:
   labels:
     app: payments
     service: payments
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
   ports:
   - port: 8080
     name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
   selector:
     app: payments
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: database
+    service: database
+    {{ include "backyards-demo.labels" . | nindent 4 }}
+spec:
+  ports:
+  - port: 8080
+    name: http
+  - port: 8082
+    name: grpc
+  - port: 8083
+    name: tcp
+  selector:
+    app: database
 ---
 {{ end }}

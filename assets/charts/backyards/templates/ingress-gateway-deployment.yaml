@@ -1,3 +1,4 @@
+{{- if not .Values.ingressgateway.meshgateway.enabled -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -167,3 +168,4 @@ spec:
             defaultMode: 420
             optional: true
             secretName: istio.{{ include "ingressgateway.fullname" . }}
+{{- end }}

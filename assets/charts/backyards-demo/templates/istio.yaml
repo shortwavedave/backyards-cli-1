@@ -29,24 +29,26 @@ spec:
   hosts:
     - movies
   http:
-  - route:
+  - match:
+    - port: 8082
+    route:
     - destination:
         host: movies
         subset: v1
         port:
-          number: 8080
+          number: 8082
       weight: 33
     - destination:
         host: movies
         subset: v2
         port:
-          number: 8080
+          number: 8082
       weight: 33
     - destination:
         host: movies
         subset: v3
         port:
-          number: 8080
+          number: 8082
       weight: 34
 ---
 apiVersion: networking.istio.io/v1alpha3

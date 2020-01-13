@@ -4,6 +4,6 @@ kind: Namespace
 metadata:
   name: {{ .Release.Namespace }}
   labels:
-{{ include "backyards-demo.labels" . | indent 4 }}
+    {{ include "backyards-demo.labels" . | nindent 4 }}
     istio-injection: enabled
 {{- end }}

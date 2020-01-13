@@ -45,6 +45,7 @@ backyards istio install
 )
 
 var availableServices = map[string]bool{
+	"bombardier":    true,
 	"analytics":     true,
 	"bookings":      true,
 	"catalog":       true,
@@ -52,6 +53,7 @@ var availableServices = map[string]bool{
 	"movies":        true,
 	"notifications": true,
 	"payments":      true,
+	"database":      true,
 }
 
 type installCommand struct {
@@ -238,6 +240,14 @@ func setEnabledServices(values *Values, enabledServices []string) {
 	values.Payments = false
 	if services["payments"] {
 		values.Payments = true
+	}
+	values.Database = false
+	if services["database"] {
+		values.Database = true
+	}
+	values.Bombardier = false
+	if services["bombardier"] {
+		values.Bombardier = true
 	}
 }
 
