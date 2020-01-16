@@ -7,7 +7,7 @@ Set sidecar egress rule for a workload
 Set sidecar egress rule for a workload
 
 ```
-backyards sidecar-proxy egress set --workload namespace/[workload|*] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2] [flags]
+backyards sidecar-proxy egress set [--namespace] namespace [--workload name] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2] [flags]
 ```
 
 ### Options
@@ -17,7 +17,7 @@ backyards sidecar-proxy egress set --workload namespace/[workload|*] [--bind [PR
   -h, --help                         help for set
       --hosts stringArray            Egress listener Hosts
   -l, --labelWhitelist stringArray   Labels to include in the workload selector
-      --workload string              Workload name [namespace/[workload|*]]
+      --workload string              Namespace name
 ```
 
 ### Options inherited from parent commands

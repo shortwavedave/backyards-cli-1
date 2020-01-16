@@ -7,7 +7,7 @@ Recommend sidecar configuration for a workload
 Recommend sidecar configuration for a workload
 
 ```
-backyards sidecar-proxy egress recommend [[--workload=]namespace/name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label] [flags]
+backyards sidecar-proxy egress recommend [--namespace] namespace [--workload name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label] [flags]
 ```
 
 ### Options

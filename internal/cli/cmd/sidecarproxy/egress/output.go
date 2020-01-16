@@ -23,7 +23,6 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
 
 	"emperror.dev/errors"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
@@ -38,7 +37,7 @@ type Out struct {
 	CaptureMode string      `json:"capture_mode,omitempty"`
 }
 
-func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.Sidecar, recommendation, apply bool) error {
+func Output(cli cli.CLI, namespace, workload string, sidecars []graphql.Sidecar, recommendation, apply bool) error {
 	var err error
 
 	outs := make([]Out, 0)
@@ -75,18 +74,18 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.S
 
 	if len(outs) == 0 {
 		if recommendation {
-			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s\n\n", workloadName)
+			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s/%s\n\n", namespace, workload)
 		} else {
-			fmt.Fprintf(cli.Out(), "no egress rule found for %s\n\n", workloadName)
+			fmt.Fprintf(cli.Out(), "no egress rule found for %s/%s\n\n", namespace, workload)
 		}
 		return nil
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
 		if recommendation {
-			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s\n\n", workloadName)
+			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s/%s\n\n", namespace, workload)
 		} else {
-			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s\n\n", workloadName)
+			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s/%s\n\n", namespace, workload)
 		}
 	}
 
@@ -98,7 +97,7 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sidecars []graphql.S
 	if recommendation {
 		// recommendation shouldn't contain more than 1 sidecar, and we don't want to print a hint when there's no recommendation
 		if len(sidecars) == 1 {
-			printRecommendationHint(cli, workloadName, sidecars[0], apply)
+			printRecommendationHint(cli, namespace, workload, sidecars[0], apply)
 		}
 	}
 
@@ -126,7 +125,7 @@ func show(cli output.FormatContext, data interface{}) error {
 	return nil
 }
 
-func printRecommendationHint(cli output.FormatContext, workloadName types.NamespacedName, sidecar graphql.Sidecar, apply bool) {
+func printRecommendationHint(cli output.FormatContext, namespace, workload string, sidecar graphql.Sidecar, apply bool) {
 	var hosts []string
 	for _, e := range sidecar.Spec.Egress {
 		// recommendations are always for egress without bind and port
@@ -141,7 +140,7 @@ func printRecommendationHint(cli output.FormatContext, workloadName types.Namesp
 		return
 	}
 
-	var applyCommand = fmt.Sprintf("> backyards sp egress set --workload %s/%s", workloadName.Namespace, workloadName.Name)
+	var applyCommand = fmt.Sprintf("> backyards sp egress set --namespace %s --workload	 %s", namespace, workload)
 	for _, h := range hosts {
 		applyCommand += fmt.Sprintf(" --hosts=%s", h)
 	}

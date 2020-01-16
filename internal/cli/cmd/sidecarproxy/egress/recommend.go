@@ -21,7 +21,6 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 
@@ -34,7 +33,7 @@ type recommendCommand struct{}
 
 type RecommendOptions struct {
 	workloadID     string
-	workloadName   types.NamespacedName
+	namespaceID    string
 	isolationLevel string
 	apply          bool
 	labelWhitelist []string
@@ -49,24 +48,34 @@ func NewRecommendCommand(cli cli.CLI) *cobra.Command {
 	options := NewRecommendOptions()
 
 	cmd := &cobra.Command{
-		Use:           "recommend [[--workload=]namespace/name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label]",
+		Use:           "recommend [--namespace] namespace [--workload name] [--isolationLevel=NAMESPACE|WORKLOAD] [--labelWhitelist=label]",
 		Short:         "Recommend sidecar configuration for a workload",
-		Args:          cobra.MaximumNArgs(1),
+		Args:          cobra.MaximumNArgs(2),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 
-			if len(args) > 0 {
-				options.workloadID = args[0]
+			if len(args) == 1 {
+				if options.namespaceID == "" {
+					options.namespaceID = args[0]
+				} else if options.workloadID == "" {
+					options.workloadID = args[0]
+				}
+			}
+			if len(args) == 2 {
+				options.namespaceID = args[0]
+				options.workloadID = args[1]
 			}
 
-			if options.workloadID == "" {
-				return errors.New("workload must be specified")
+			if options.namespaceID == "" {
+				return errors.New("namespace must be specified")
 			}
 
-			options.workloadName, err = util.ParseK8sResourceIDAllowWildcard(options.workloadID)
-			if err != nil {
-				return errors.WrapIf(err, "could not parse workload ID")
+			if options.workloadID != "" {
+				_, err = util.ParseK8sResourceID(options.namespaceID + "/" + options.workloadID)
+				if err != nil {
+					return errors.WrapIf(err, "could not parse workload ID")
+				}
 			}
 
 			err = c.validateOptions(options)
@@ -79,6 +88,7 @@ func NewRecommendCommand(cli cli.CLI) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
+	flags.StringVar(&options.namespaceID, "namespace", "", "Namespace name")
 	flags.StringVar(&options.workloadID, "workload", "", "Workload name")
 	flags.StringVarP(&options.isolationLevel, "isolationLevel", "i", "", "Isolation level (NAMESPACE|WORKLOAD)")
 	flags.BoolVar(&options.apply, "apply", false, "Apply recommendations")
@@ -108,7 +118,7 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 		return err
 	}
 
-	err = Output(cli, options.workloadName, sidecars, true, options.apply)
+	err = Output(cli, options.namespaceID, options.workloadID, sidecars, true, options.apply)
 	if err != nil {
 		return err
 	}
@@ -135,20 +145,20 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 				}
 			}
 			for _, e := range s.Spec.Egress {
-				_, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, "", e.Hosts, nil, labelWhitelist)
+				_, err := applyEgress(client, options.namespaceID, options.workloadID, "", e.Hosts, nil, labelWhitelist)
 				if err != nil {
 					return errors.WrapIf(err, "could not apply recommended sidecar egress rules")
 				}
 			}
 		}
-		sidecars, err := getSidecars(client, options.workloadName.Namespace, options.workloadName.Name)
+		sidecars, err := getSidecars(client, options.namespaceID, options.workloadID)
 		if err != nil {
 			return errors.WrapIf(err, "could not retrieve sidecars through graphql")
 		}
 
 		fmt.Fprintf(cli.Out(), "\nRecommendations were successfully applied\n")
 
-		return Output(cli, options.workloadName, sidecars, false, false)
+		return Output(cli, options.namespaceID, options.workloadID, sidecars, false, false)
 	}
 
 	return nil
@@ -156,18 +166,18 @@ func (c *recommendCommand) run(cli cli.CLI, options *RecommendOptions) error {
 
 func getRecommendations(client graphql.Client, options *RecommendOptions) ([]graphql.Sidecar, error) {
 	var sidecars []graphql.Sidecar
-	if options.workloadName.Name != "*" {
-		wl, err := client.GetWorkloadWithSidecarRecommendation(options.workloadName.Namespace, options.workloadName.Name, options.isolationLevel, options.labelWhitelist)
+	if options.workloadID != "" {
+		wl, err := client.GetWorkloadWithSidecarRecommendation(options.namespaceID, options.workloadID, options.isolationLevel, options.labelWhitelist)
 		if err != nil {
 			return nil, errors.Wrap(err, "couldn't query workload sidecar recommendations")
 		}
 		if len(wl.RecommendedSidecars) == 0 {
-			log.Infof("no sidecar recommendations found for %s", options.workloadName)
+			log.Infof("no sidecar recommendations found for %s/%s", options.namespaceID, options.workloadID)
 			return nil, nil
 		}
 		sidecars = wl.RecommendedSidecars
 	} else {
-		resp, err := client.GetNamespaceWithSidecarRecommendation(options.workloadName.Namespace, options.isolationLevel)
+		resp, err := client.GetNamespaceWithSidecarRecommendation(options.namespaceID, options.isolationLevel)
 		if err != nil {
 			return nil, errors.Wrap(err, "couldn't query namespace sidecar recommendations")
 		}

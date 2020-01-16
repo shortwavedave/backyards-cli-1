@@ -18,7 +18,6 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
@@ -32,8 +31,8 @@ import (
 type setCommand struct{}
 
 type setOptions struct {
-	workloadID   string
-	workloadName types.NamespacedName
+	workloadID  string
+	namespaceID string
 
 	bind           string
 	hosts          []string
@@ -50,24 +49,34 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	options := &setOptions{}
 
 	cmd := &cobra.Command{
-		Use:           "set --workload namespace/[workload|*] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2]",
+		Use:           "set [--namespace] namespace [--workload name] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2]",
 		Short:         "Set sidecar egress rule for a workload",
-		Args:          cobra.ArbitraryArgs,
+		Args:          cobra.MaximumNArgs(2),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 
-			if len(args) > 0 {
-				options.workloadID = args[0]
+			if len(args) == 1 {
+				if options.namespaceID == "" {
+					options.namespaceID = args[0]
+				} else if options.workloadID == "" {
+					options.workloadID = args[0]
+				}
+			}
+			if len(args) == 2 {
+				options.namespaceID = args[0]
+				options.workloadID = args[1]
 			}
 
-			if options.workloadID == "" {
-				return errors.New("workload must be specified")
+			if options.namespaceID == "" {
+				return errors.New("namespace must be specified")
 			}
 
-			options.workloadName, err = util.ParseK8sResourceIDAllowWildcard(options.workloadID)
-			if err != nil {
-				return errors.WrapIf(err, "could not parse workload ID")
+			if options.workloadID != "" {
+				_, err = util.ParseK8sResourceID(options.namespaceID + "/" + options.workloadID)
+				if err != nil {
+					return errors.WrapIf(err, "could not parse workload ID")
+				}
 			}
 
 			options.parsedBind, options.parsedPort, err = common.ParseSidecarEgressBind(options.bind)
@@ -85,7 +94,8 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.StringVar(&options.workloadID, "workload", "", "Workload name [namespace/[workload|*]]")
+	flags.StringVar(&options.namespaceID, "namespace", "", "Workload name")
+	flags.StringVar(&options.workloadID, "workload", "", "Namespace name")
 	flags.StringVarP(&options.bind, "bind", "b", "", "Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]")
 	flags.StringArrayVar(&options.hosts, "hosts", options.hosts, "Egress listener Hosts")
 	flags.StringArrayVarP(&options.labelWhitelist, "labelWhitelist", "l", options.labelWhitelist, "Labels to include in the workload selector")
@@ -110,7 +120,7 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 	defer client.Close()
 
-	response, err := applyEgress(client, options.workloadName.Namespace, options.workloadName.Name, options.parsedBind, options.hosts, options.parsedPort, options.labelWhitelist)
+	response, err := applyEgress(client, options.namespaceID, options.workloadID, options.parsedBind, options.hosts, options.parsedPort, options.labelWhitelist)
 	if err != nil {
 		return errors.WrapIf(err, "could not apply sidecar egress rules")
 	}
@@ -120,23 +130,23 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 
 	var sidecars []graphql.Sidecar
-	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadWithSidecar(options.workloadName.Namespace, options.workloadName.Name)
+	if options.workloadID != "" {
+		workload, err := client.GetWorkloadWithSidecar(options.namespaceID, options.workloadID)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
 		sidecars = workload.Sidecars
 	} else {
-		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		resp, err := client.GetNamespaceWithSidecar(options.namespaceID)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query namespace sidecars")
 		}
 		sidecars = resp.Namespace.Sidecars
 	}
 
-	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
+	log.Infof("sidecar egress for %s/%s set successfully\n\n", options.namespaceID, options.workloadID)
 
-	return Output(cli, options.workloadName, sidecars, false, false)
+	return Output(cli, options.namespaceID, options.workloadID, sidecars, false, false)
 }
 
 func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port, labelWhitelist []string) (bool, error) {
@@ -149,7 +159,7 @@ func applyEgress(client graphql.Client, namespace, name, bind string, hosts []st
 		},
 	}
 
-	if name != "*" {
+	if name != "" {
 		workload, err := client.GetWorkloadWithSidecar(namespace, name)
 		if err != nil {
 			return false, errors.WrapIf(err, "could not find workload in mesh, check the workload ID")

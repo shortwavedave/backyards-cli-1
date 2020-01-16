@@ -1,13 +1,13 @@
 ## backyards sidecar-proxy egress get
 
-Get sidecar configuration for a workload
+Get sidecar configuration for a namespace or a workload
 
 ### Synopsis
 
-Get sidecar configuration for a workload
+Get sidecar configuration for a namespace or a workload
 
 ```
-backyards sidecar-proxy egress get [[--workload=]namespace/workloadname] [flags]
+backyards sidecar-proxy egress get [--namespace] namespace [--workload name] [flags]
 ```
 
 ### Options

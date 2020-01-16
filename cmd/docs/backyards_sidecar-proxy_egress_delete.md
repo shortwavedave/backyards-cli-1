@@ -1,13 +1,13 @@
 ## backyards sidecar-proxy egress delete
 
-Delete sidecar egress rule for a workload
+Delete sidecar egress rule for a workload, or for a namespace
 
 ### Synopsis
 
-Delete sidecar egress rule for a workload
+Delete sidecar egress rule for a workload, or for a namespace
 
 ```
-backyards sidecar-proxy egress delete --workload namespace/[workload|*] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [flags]
+backyards sidecar-proxy egress delete [--namespace] namespace [--workload name] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [flags]
 ```
 
 ### Options
@@ -15,7 +15,7 @@ backyards sidecar-proxy egress delete --workload namespace/[workload|*] [--bind 
 ```
   -b, --bind string       Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]
   -h, --help              help for delete
-      --workload string   Workload name [namespace/[workload|*]]
+      --workload string   Workload name
 ```
 
 ### Options inherited from parent commands
