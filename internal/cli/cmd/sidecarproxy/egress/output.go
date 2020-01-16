@@ -15,14 +15,14 @@
 package egress
 
 import (
+	"bytes"
 	"fmt"
+
+	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
 
 	"emperror.dev/errors"
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/output"
@@ -30,21 +30,38 @@ import (
 
 type Out struct {
 	Sidecar     string      `json:"sidecar,omitempty"`
-	Hosts       []string    `json:"hosts,omitempty"`
+	Selector    string      `json:"selector:omitempty"`
+	Hosts       string      `json:"hosts,omitempty"`
 	Port        common.Port `json:"port,omitempty"`
 	Bind        string      `json:"bind,omitempty"`
 	CaptureMode string      `json:"capture_mode,omitempty"`
 }
 
-func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1alpha3.IstioEgressListener) error {
+func Output(cli cli.CLI, namespace, workload string, sidecars []graphql.Sidecar, recommendation, apply bool) error {
 	var err error
 
 	outs := make([]Out, 0)
-	for sidecarName, egress := range sc {
-		for _, e := range egress {
+	for _, sc := range sidecars {
+		var selector string
+		if sc.Spec.WorkloadSelector != nil {
+			b := new(bytes.Buffer)
+			for key, value := range sc.Spec.WorkloadSelector.Labels {
+				fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
+			}
+			selector = b.String()
+		}
+		for _, e := range sc.Spec.Egress {
+			var hosts string
+			b := new(bytes.Buffer)
+			for _, h := range e.Hosts {
+				fmt.Fprintf(b, "%s\n", h)
+			}
+			hosts = b.String()
+
 			o := Out{}
-			o.Sidecar = sidecarName
-			o.Hosts = e.Hosts
+			o.Sidecar = sc.Name
+			o.Selector = selector
+			o.Hosts = hosts
 			o.Bind = e.Bind
 			if e.Port != nil {
 				o.Port = common.Port(*e.Port)
@@ -55,13 +72,33 @@ func Output(cli cli.CLI, workloadName types.NamespacedName, sc map[string][]*v1a
 		}
 	}
 
+	if len(outs) == 0 {
+		if recommendation {
+			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s/%s\n\n", namespace, workload)
+		} else {
+			fmt.Fprintf(cli.Out(), "no egress rule found for %s/%s\n\n", namespace, workload)
+		}
+		return nil
+	}
+
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
-		fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s\n\n", workloadName)
+		if recommendation {
+			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s/%s\n\n", namespace, workload)
+		} else {
+			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s/%s\n\n", namespace, workload)
+		}
 	}
 
 	err = show(cli, outs)
 	if err != nil {
 		return err
+	}
+
+	if recommendation {
+		// recommendation shouldn't contain more than 1 sidecar, and we don't want to print a hint when there's no recommendation
+		if len(sidecars) == 1 {
+			printRecommendationHint(cli, namespace, workload, sidecars[0], apply)
+		}
 	}
 
 	if cli.Interactive() {
@@ -76,8 +113,8 @@ func show(cli output.FormatContext, data interface{}) error {
 		Out:     cli.Out(),
 		Color:   cli.Color(),
 		Format:  cli.OutputFormat(),
-		Fields:  []string{"Sidecar", "Hosts", "Bind", "Port", "CaptureMode"},
-		Headers: []string{"Sidecar", "Hosts", "Bind", "Port", "Capture Mode"},
+		Fields:  []string{"Sidecar", "Selector", "Hosts", "Bind", "Port", "CaptureMode"},
+		Headers: []string{"Sidecar", "Selector", "Hosts", "Bind", "Port", "Capture Mode"},
 	}
 
 	err := output.Output(ctx, data)
@@ -86,4 +123,40 @@ func show(cli output.FormatContext, data interface{}) error {
 	}
 
 	return nil
+}
+
+func printRecommendationHint(cli output.FormatContext, namespace, workload string, sidecar graphql.Sidecar, apply bool) {
+	var hosts []string
+	for _, e := range sidecar.Spec.Egress {
+		// recommendations are always for egress without bind and port
+		if e.Port == nil && e.Bind == "" {
+			hosts = e.Hosts
+			break
+		}
+	}
+
+	// couldn't find recommended hosts, we don't print anything
+	if len(hosts) == 0 {
+		return
+	}
+
+	var applyCommand = fmt.Sprintf("> backyards sp egress set --namespace %s --workload	 %s", namespace, workload)
+	for _, h := range hosts {
+		applyCommand += fmt.Sprintf(" --hosts=%s", h)
+	}
+	if sidecar.Spec.WorkloadSelector != nil {
+		for l := range sidecar.Spec.WorkloadSelector.Labels {
+			applyCommand += fmt.Sprintf(" -l=%s", l)
+		}
+	}
+	var hint string
+	if apply {
+		hint = fmt.Sprintf("\nHint: use this command to apply these recommendations manually:\n"+
+			"%s\n\n", applyCommand)
+	} else {
+		hint = fmt.Sprintf("\nHint: to apply these recommendations, use the --apply switch, or apply it manually using this command:\n"+
+			"%s\n\n", applyCommand)
+
+	}
+	fmt.Fprintf(cli.Out(), "%s", hint)
 }

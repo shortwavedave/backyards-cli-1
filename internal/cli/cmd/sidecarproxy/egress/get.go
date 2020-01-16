@@ -18,11 +18,8 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
-
-	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/sidecarproxy/common"
+	"github.com/banzaicloud/backyards-cli/pkg/graphql"
 
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
@@ -32,8 +29,8 @@ import (
 type getCommand struct{}
 
 type GetOptions struct {
-	workloadID   string
-	workloadName types.NamespacedName
+	workloadID  string
+	namespaceID string
 }
 
 func NewGetOptions() *GetOptions {
@@ -45,24 +42,32 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 	options := NewGetOptions()
 
 	cmd := &cobra.Command{
-		Use:           "get [[--workload=]namespace/workloadname]",
-		Short:         "Get sidecar configuration for a workload",
-		Args:          cobra.MaximumNArgs(1),
+		Use:           "get [--namespace] namespace [--workload name]",
+		Short:         "Get sidecar configuration for a namespace or a workload",
+		Args:          cobra.MaximumNArgs(2),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-
-			if len(args) > 0 {
-				options.workloadID = args[0]
+			if len(args) == 1 {
+				if options.namespaceID == "" {
+					options.namespaceID = args[0]
+				} else if options.workloadID == "" {
+					options.workloadID = args[0]
+				}
+			}
+			if len(args) == 2 {
+				options.namespaceID = args[0]
+				options.workloadID = args[1]
 			}
 
-			if options.workloadID == "" {
-				return errors.New("workload must be specified")
+			if options.namespaceID == "" {
+				return errors.New("namespace must be specified")
 			}
 
-			options.workloadName, err = util.ParseK8sResourceIDAllowWildcard(options.workloadID)
-			if err != nil {
-				return errors.WrapIf(err, "could not parse workload ID")
+			if options.workloadID != "" {
+				_, err := util.ParseK8sResourceID(options.namespaceID + "/" + options.workloadID)
+				if err != nil {
+					return errors.WrapIf(err, "could not parse workload ID")
+				}
 			}
 
 			return c.run(cli, options)
@@ -70,6 +75,7 @@ func NewGetCommand(cli cli.CLI) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
+	flags.StringVar(&options.namespaceID, "namespace", "", "Namespace name")
 	flags.StringVar(&options.workloadID, "workload", "", "Workload name")
 
 	return cmd
@@ -84,31 +90,34 @@ func (c *getCommand) run(cli cli.CLI, options *GetOptions) error {
 	}
 	defer client.Close()
 
-	var egressListeners map[string][]*v1alpha3.IstioEgressListener
-	if options.workloadName.Name != "*" {
-		wl, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+	sidecars, err := getSidecars(client, options.namespaceID, options.workloadID)
+	if err != nil {
+		return errors.WrapIf(err, "could not retrieve sidecars through graphql")
+	}
+
+	return Output(cli, options.namespaceID, options.workloadID, sidecars, false, false)
+}
+
+func getSidecars(client graphql.Client, namespace, name string) ([]graphql.Sidecar, error) {
+	var sidecars []graphql.Sidecar
+	if name != "" {
+		wl, err := client.GetWorkloadWithSidecar(namespace, name)
 		if err != nil {
-			return errors.Wrap(err, "couldn't query workload sidecars")
+			return nil, errors.Wrap(err, "couldn't query workload sidecars")
 		}
 
 		if len(wl.Sidecars) == 0 {
-			log.Infof("no sidecar found for %s", options.workloadName)
-			return nil
+			log.Infof("no sidecar found for %s/%s", namespace, name)
+			return nil, nil
 		}
 
-		egressListeners = common.GetEgressListenerMap(wl.Sidecars)
+		sidecars = wl.Sidecars
 	} else {
-		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		resp, err := client.GetNamespaceWithSidecar(namespace)
 		if err != nil {
-			return errors.Wrap(err, "couldn't query namespace sidecars")
+			return nil, errors.Wrap(err, "couldn't query namespace sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
+		sidecars = resp.Namespace.Sidecars
 	}
-
-	if len(egressListeners) == 0 {
-		log.Infof("no egress rule found for %s", options.workloadName)
-		return nil
-	}
-
-	return Output(cli, options.workloadName, egressListeners)
+	return sidecars, nil
 }

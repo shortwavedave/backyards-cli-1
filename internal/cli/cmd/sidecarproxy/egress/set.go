@@ -18,7 +18,6 @@ import (
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/banzaicloud/istio-client-go/pkg/networking/v1alpha3"
 
@@ -32,11 +31,12 @@ import (
 type setCommand struct{}
 
 type setOptions struct {
-	workloadID   string
-	workloadName types.NamespacedName
+	workloadID  string
+	namespaceID string
 
-	bind  string
-	hosts []string
+	bind           string
+	hosts          []string
+	labelWhitelist []string
 
 	parsedBind string
 	parsedPort *v1alpha3.Port
@@ -49,24 +49,34 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	options := &setOptions{}
 
 	cmd := &cobra.Command{
-		Use:           "set --workload namespace/[workload|*] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2]",
+		Use:           "set [--namespace] namespace [--workload name] [--bind [PROTOCOL://[IP]:port]|[unix://socket] [--hosts h1,h2]",
 		Short:         "Set sidecar egress rule for a workload",
-		Args:          cobra.ArbitraryArgs,
+		Args:          cobra.MaximumNArgs(2),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 
-			if len(args) > 0 {
-				options.workloadID = args[0]
+			if len(args) == 1 {
+				if options.namespaceID == "" {
+					options.namespaceID = args[0]
+				} else if options.workloadID == "" {
+					options.workloadID = args[0]
+				}
+			}
+			if len(args) == 2 {
+				options.namespaceID = args[0]
+				options.workloadID = args[1]
 			}
 
-			if options.workloadID == "" {
-				return errors.New("workload must be specified")
+			if options.namespaceID == "" {
+				return errors.New("namespace must be specified")
 			}
 
-			options.workloadName, err = util.ParseK8sResourceIDAllowWildcard(options.workloadID)
-			if err != nil {
-				return errors.WrapIf(err, "could not parse workload ID")
+			if options.workloadID != "" {
+				_, err = util.ParseK8sResourceID(options.namespaceID + "/" + options.workloadID)
+				if err != nil {
+					return errors.WrapIf(err, "could not parse workload ID")
+				}
 			}
 
 			options.parsedBind, options.parsedPort, err = common.ParseSidecarEgressBind(options.bind)
@@ -84,9 +94,11 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.StringVar(&options.workloadID, "workload", "", "Workload name [namespace/[workload|*]]")
+	flags.StringVar(&options.namespaceID, "namespace", "", "Workload name")
+	flags.StringVar(&options.workloadID, "workload", "", "Namespace name")
 	flags.StringVarP(&options.bind, "bind", "b", "", "Egress listener bind [PROTOCOL://[IP]:port]|[unix://socket]")
 	flags.StringArrayVar(&options.hosts, "hosts", options.hosts, "Egress listener Hosts")
+	flags.StringArrayVarP(&options.labelWhitelist, "labelWhitelist", "l", options.labelWhitelist, "Labels to include in the workload selector")
 
 	return cmd
 }
@@ -108,56 +120,78 @@ func (c *setCommand) run(cli cli.CLI, options *setOptions) error {
 	}
 	defer client.Close()
 
-	req := graphql.ApplySidecarEgressInput{
-		Selector: graphql.SidecarEgressSelector{
-			Namespace: options.workloadName.Namespace,
-		},
-		Egress: graphql.Egress{
-			Hosts: options.hosts,
-		},
-	}
-
-	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
-		if err != nil {
-			return errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
-		}
-		req.Selector.WorkloadLabels = &workload.Labels
-	}
-
-	if options.parsedBind != "" {
-		req.Selector.Bind = &options.parsedBind
-	}
-
-	if options.parsedPort != nil {
-		req.Selector.Port = options.parsedPort
-	}
-
-	response, err := client.ApplySidecarEgress(req)
+	response, err := applyEgress(client, options.namespaceID, options.workloadID, options.parsedBind, options.hosts, options.parsedPort, options.labelWhitelist)
 	if err != nil {
-		return errors.WrapIf(err, "could not apply sidecar egress")
+		return errors.WrapIf(err, "could not apply sidecar egress rules")
 	}
 
 	if !response {
 		return errors.New("unknown internal error: could not apply sidecar egress")
 	}
 
-	var egressListeners map[string][]*v1alpha3.IstioEgressListener
-	if options.workloadName.Name != "*" {
-		workload, err := client.GetWorkloadSidecar(options.workloadName.Namespace, options.workloadName.Name)
+	var sidecars []graphql.Sidecar
+	if options.workloadID != "" {
+		workload, err := client.GetWorkloadWithSidecar(options.namespaceID, options.workloadID)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query workload sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(workload.Sidecars)
+		sidecars = workload.Sidecars
 	} else {
-		resp, err := client.GetNamespaceWithSidecar(options.workloadName.Namespace)
+		resp, err := client.GetNamespaceWithSidecar(options.namespaceID)
 		if err != nil {
 			return errors.Wrap(err, "couldn't query namespace sidecars")
 		}
-		egressListeners = common.GetEgressListenerMap(resp.Namespace.Sidecars)
+		sidecars = resp.Namespace.Sidecars
 	}
 
-	log.Infof("sidecar egress for %s set successfully\n\n", options.workloadName)
+	log.Infof("sidecar egress for %s/%s set successfully\n\n", options.namespaceID, options.workloadID)
 
-	return Output(cli, options.workloadName, egressListeners)
+	return Output(cli, options.namespaceID, options.workloadID, sidecars, false, false)
+}
+
+func applyEgress(client graphql.Client, namespace, name, bind string, hosts []string, port *v1alpha3.Port, labelWhitelist []string) (bool, error) {
+	req := graphql.ApplySidecarEgressInput{
+		Selector: graphql.SidecarEgressSelector{
+			Namespace: namespace,
+		},
+		Egress: graphql.Egress{
+			Hosts: hosts,
+		},
+	}
+
+	if name != "" {
+		workload, err := client.GetWorkloadWithSidecar(namespace, name)
+		if err != nil {
+			return false, errors.WrapIf(err, "could not find workload in mesh, check the workload ID")
+		}
+		if len(labelWhitelist) > 0 {
+			labels := make(map[string]string)
+			for _, l := range labelWhitelist {
+				if wl, ok := workload.Labels[l]; ok {
+					labels[l] = wl
+				}
+			}
+			if len(labels) == 0 {
+				return false, errors.New("workload has no matching label from label whitelist")
+			}
+			req.Selector.WorkloadLabels = &labels
+		} else {
+			req.Selector.WorkloadLabels = &workload.Labels
+		}
+
+	}
+
+	if bind != "" {
+		req.Selector.Bind = &bind
+	}
+
+	if port != nil {
+		req.Selector.Port = port
+	}
+
+	response, err := client.ApplySidecarEgress(req)
+	if err != nil {
+		return false, errors.WrapIf(err, "could not apply sidecar egress")
+	}
+	return bool(response), nil
 }

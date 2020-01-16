@@ -21,8 +21,9 @@ import (
 )
 
 type IstioNamespace struct {
-	Name     string    `json:"name"`
-	Sidecars []Sidecar `json:"sidecars"`
+	Name                string    `json:"name"`
+	Sidecars            []Sidecar `json:"sidecars"`
+	RecommendedSidecars []Sidecar `json:"recommendedSidecars"`
 }
 
 type NamespacesResponse struct {
@@ -88,6 +89,46 @@ func (c *client) GetNamespaceWithSidecar(name string) (NamespaceResponse, error)
         }`)
 	r := c.NewRequest(request)
 	r.Var("name", name)
+
+	var respData NamespaceResponse
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return respData, err
+	}
+
+	return respData, nil
+}
+
+func (c *client) GetNamespaceWithSidecarRecommendation(name string, isolationLevel string) (NamespaceResponse, error) {
+	request := heredoc.Doc(`
+		query($name: String!, $isolationLevel: IsolationLevel){
+          namespace(name: $name) {
+            name
+            recommendedSidecars(isolationLevel: $isolationLevel) {
+              name
+              namespace
+              spec {
+                workloadSelector {
+                  labels
+                }
+                egress {
+                  port {
+                    number
+                    protocol
+                    name
+                  }
+                  bind
+                  captureMode
+                  hosts
+                }
+              }
+            }    
+          }
+        }`)
+	r := c.NewRequest(request)
+	r.Var("name", name)
+	if isolationLevel != "" {
+		r.Var("isolationLevel", isolationLevel)
+	}
 
 	var respData NamespaceResponse
 	if err := c.client.Run(context.Background(), r, &respData); err != nil {
