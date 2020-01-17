@@ -19,6 +19,14 @@ spec:
     - {{ include "ingressgateway.fullname" . }}
   http:
     - match:
+      - authority:
+          exact: accesslog
+      route:
+      - destination:
+          host: {{ include "als.fullname" . }}
+          port:
+            number: {{ .Values.als.service.port }}
+    - match:
       - uri:
           prefix: /api
       - uri:

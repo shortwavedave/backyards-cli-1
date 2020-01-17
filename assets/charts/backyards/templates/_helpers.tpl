@@ -26,6 +26,10 @@ Expand the name of the chart.
 {{- printf "%s-ingressgateway" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "als.name" -}}
+{{- printf "%s-als" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
@@ -77,6 +81,13 @@ Create a default fully qualified app name for the Ingress gateway component
 */}}
 {{- define "ingressgateway.fullname" -}}
 {{- printf "%s-ingressgateway" (include "backyards.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name for the Ingress gateway component
+*/}}
+{{- define "als.fullname" -}}
+{{- printf "%s-als" (include "backyards.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*

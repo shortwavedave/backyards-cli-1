@@ -179,6 +179,16 @@ type Values struct {
 			Scopes          []string `json:"scopes,omitempty"`
 		} `json:"config,omitempty"`
 	} `json:"impersonation"`
+
+	ALS struct {
+		Enabled   bool                        `json:"enabled"`
+		Image     helm.Image                  `json:"image"`
+		Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+		Service   struct {
+			Type string `json:"type"`
+			Port int    `json:"port"`
+		} `json:"service"`
+	} `json:"als"`
 }
 
 func (values *Values) SetDefaults(releaseName, istioNamespace string) {

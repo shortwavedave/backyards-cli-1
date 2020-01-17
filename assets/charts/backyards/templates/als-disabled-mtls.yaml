@@ -1,0 +1,34 @@
+apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: {{ include "als.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "als.name" . }}
+    app.kubernetes.io/name: {{ include "als.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: als
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+spec:
+  targets:
+  - name: {{ include "als.fullname" . }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: {{ include "als.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "als.name" . }}
+    app.kubernetes.io/name: {{ include "als.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: als
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+spec:
+  host: {{ include "als.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local

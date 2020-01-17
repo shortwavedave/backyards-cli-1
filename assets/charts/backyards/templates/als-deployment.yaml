@@ -1,0 +1,66 @@
+{{- if .Values.als.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "als.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "als.name" . }}
+    app.kubernetes.io/name: {{ include "als.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: als
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+spec:
+  replicas: {{ .Values.als.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "als.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: als
+      app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: {{ include "als.name" . }}
+        app.kubernetes.io/name: {{ include "als.name" . }}
+        helm.sh/chart: {{ include "backyards.chart" . }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+        app.kubernetes.io/component: als
+        app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+    spec:
+      serviceAccountName: {{ include "als.fullname" . }}
+      containers:
+      - name: als
+        ports:
+        - name: grpc-als
+          containerPort: 50600
+        - name: http-health
+          containerPort: 8081
+        image: "{{ required "An ALS image name is required!" .Values.als.image.repository }}:{{ required "An ALS image tag is required!" .Values.als.image.tag }}"
+        imagePullPolicy: {{ .Values.als.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http-health
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-health
+          initialDelaySeconds: 5
+          timeoutSeconds: 30
+        {{- with .Values.als.resources }}
+        resources:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        securityContext:
+          runAsUser: 65534
+{{- end }}

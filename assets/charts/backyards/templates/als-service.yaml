@@ -1,0 +1,26 @@
+{{- if .Values.als.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "als.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "als.name" . }}
+    app.kubernetes.io/name: {{ include "als.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: als
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+spec:
+  type: {{ .Values.als.service.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "als.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+  - name: grpc-als
+    port: {{ .Values.als.service.port }}
+    protocol: TCP
+    targetPort: grpc-als
+{{- end }}
