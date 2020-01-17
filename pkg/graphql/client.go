@@ -21,6 +21,8 @@ import (
 )
 
 type Client interface {
+	WSClient() *WSClient
+	NewSubscribeRequest(q string) *Request
 	SetJWTToken(string)
 	GetNamespaces() (NamespacesResponse, error)
 	GetNamespaceWithSidecar(name string) (NamespaceResponse, error)
@@ -54,11 +56,14 @@ type client struct {
 	jwtToken string
 	endpoint endpoint.Endpoint
 	client   *graphql.Client
+	wsClient *WSClient
 }
 
 func NewClient(endpoint endpoint.Endpoint, path string) Client {
+	url := endpoint.URLForPath(path)
 	return &client{
-		client:   graphql.NewClient(endpoint.URLForPath(path), graphql.WithHTTPClient(endpoint.HTTPClient())),
+		client:   graphql.NewClient(url, graphql.WithHTTPClient(endpoint.HTTPClient())),
+		wsClient: NewWSClient(url, WithHTTPClient(endpoint.HTTPClient())),
 		endpoint: endpoint,
 	}
 }
@@ -68,15 +73,34 @@ func (c *client) SetJWTToken(token string) {
 }
 
 func (c *client) NewRequest(q string) *graphql.Request {
-	r := graphql.NewRequest(q)
+	r := c.newRequest(q)
+	gr := graphql.NewRequest(q)
+	gr.Header = r.GetHeader()
+
+	return gr
+}
+
+func (c *client) NewSubscribeRequest(q string) *Request {
+	return c.newRequest(q)
+}
+
+func (c *client) newRequest(q string) *Request {
+	r := &Request{}
+
+	// set query string
+	r.Query(q)
 
 	// set header fields
 	if c.jwtToken != "" {
-		r.Header.Set("Authorization", "Bearer "+c.jwtToken)
+		r.GetHeader().Set("Authorization", "Bearer "+c.jwtToken)
 	}
-	r.Header.Set("Cache-Control", "no-cache")
+	r.GetHeader().Set("Cache-Control", "no-cache")
 
 	return r
+}
+
+func (c *client) WSClient() *WSClient {
+	return c.wsClient
 }
 
 func (c *client) Close() {

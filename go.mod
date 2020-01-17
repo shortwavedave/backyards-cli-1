@@ -4,19 +4,23 @@ go 1.13
 
 require (
 	emperror.dev/errors v0.4.2
-	emperror.dev/handler/logrus v0.1.0
 	github.com/AlecAivazis/survey/v2 v2.0.2
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/banzaicloud/istio-client-go v0.0.0-20191203163313-928801ec5028
 	github.com/banzaicloud/istio-operator v0.0.0-20191212123221-6e3658721f00
 	github.com/banzaicloud/k8s-objectmatcher v1.0.1
+	github.com/envoyproxy/go-control-plane v0.9.1
+	github.com/gogo/protobuf v1.3.0
+	github.com/golang/protobuf v1.3.2
+	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-retryablehttp v0.6.2
 	github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.8
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moogar0880/problems v0.1.1
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pborman/uuid v1.2.0
@@ -37,7 +41,6 @@ require (
 	k8s.io/apimachinery v0.0.0-20190704094733-8f6ac2502e51
 	k8s.io/client-go v11.0.1-0.20190516230509-ae8359b20417+incompatible
 	k8s.io/helm v2.14.3+incompatible
-	knative.dev/pkg v0.0.0-20190903162800-3dd5d66573f6
 	sigs.k8s.io/controller-runtime v0.2.0-beta.4
 	sigs.k8s.io/yaml v1.1.0
 )
