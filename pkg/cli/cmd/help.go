@@ -45,12 +45,17 @@ func init() {
 	commandUsage := `
 Usage:
   {{.Cmd.UseLine}}
-
+{{if .Cmd.HasExample}}
+Examples:\
+{{.Cmd.Example}}
+{{end}}\
 {{ if .Cmd.HasParent }}\
+{{if .Cmd.HasAvailableSubCommands}}\
 Commands:
 {{range .Cmd.Commands }}\
 {{ $formatedAliases := formatAlias .Aliases }}\
 {{rpad .Name .NamePadding }} {{.Short}} {{ $formatedAliases }}
+{{end}}\
 {{end}}\
 {{end}}\
 {{ if not .Cmd.HasParent }}\
@@ -91,7 +96,6 @@ Commands:
 {{end}}\
 {{ if not .Cmd.HasParent }}\
 
-
 Components commands:
 {{range .ComponentCommands}}\
 {{ $formatedAliases := formatAlias .Aliases }}\
@@ -99,15 +103,14 @@ Components commands:
 {{rpad .Name .NamePadding }} {{.Short}} {{ $formatedAliases }}
 {{end}}\
 {{end}}\
-{{end}}\
+{{end}}
 {{if .Cmd.HasLocalFlags}}\
-
 Flags:
 {{ .Cmd.LocalFlags.FlagUsages}}\
 {{end}}\
 {{if .Cmd.HasAvailableInheritedFlags}}\
 
-GlobalFlags: 
+GlobalFlags:
 {{ .Cmd.InheritedFlags.FlagUsages}}\
 {{end}}\
 
