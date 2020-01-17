@@ -15,6 +15,7 @@
 package clusters
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -129,10 +130,15 @@ func (c *attachCommand) run(options *AttachOptions) error {
 		return errors.WrapIf(err, "could not get secret for service account")
 	}
 
+	caData := s.Data["ca.crt"]
+	if !bytes.Contains(caData, k8sconfig.CAData) {
+		caData = append(append(caData, []byte("\n")...), k8sconfig.CAData...)
+	}
+
 	ok, err = client.AttachPeerCluster(graphql.AttachPeerClusterRequest{
 		Name:                     options.name,
 		URL:                      k8sconfig.Host,
-		CertificateAuthorityData: base64.StdEncoding.EncodeToString(s.Data["ca.crt"]),
+		CertificateAuthorityData: base64.StdEncoding.EncodeToString(caData),
 		ServiceAccountToken:      string(s.Data["token"]),
 	})
 	if err != nil {
