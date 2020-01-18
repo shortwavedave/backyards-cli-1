@@ -71,7 +71,7 @@ func parseMTLSArgs(options *mTLSOptions, args []string, cli cli.CLI, meshSupport
 			Name: meshWidePolicy,
 		}
 	case !strings.Contains(options.resourceID, "/"):
-		if !util.ValidateFormat(options.resourceID) {
+		if !util.IsValidK8sResourceName(options.resourceID) {
 			return errors.Errorf("%s is not in a valid format", options.resourceID)
 		}
 		options.resourceName = types.NamespacedName{

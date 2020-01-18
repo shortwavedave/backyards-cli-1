@@ -29,10 +29,6 @@ const (
 
 var dns1123LabelRegexp = regexp.MustCompile("^" + dns1123LabelFmt + "$")
 
-func ValidateFormat(str string) bool {
-	return dns1123LabelRegexp.MatchString(str)
-}
-
 func IsValidK8sResourceName(name string) bool {
 	return dns1123LabelRegexp.MatchString(name)
 }
@@ -44,7 +40,7 @@ func ParseK8sResourceID(id string) (types.NamespacedName, error) {
 	}
 
 	for _, p := range parts {
-		validFormat := ValidateFormat(p)
+		validFormat := IsValidK8sResourceName(p)
 		if !validFormat {
 			return types.NamespacedName{}, errors.Errorf("invalid resource ID: '%s': format must be <namespace>/<name>", id)
 		}
