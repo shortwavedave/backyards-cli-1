@@ -55,14 +55,51 @@ type IstioEgressListener struct {
 	Hosts       []string             `json:"hosts"`
 }
 
-type MeshWorkloadSidecar struct {
+type MeshWorkload struct {
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	Namespace string            `json:"namespace,omitempty"`
 	Labels    map[string]string `json:"labels,omitempty"`
+}
 
-	Sidecars            []Sidecar `json:"sidecars"`
-	RecommendedSidecars []Sidecar `json:"recommendedSidecars"`
+type MeshWorkloadSidecar struct {
+	MeshWorkload `json:",inline"`
+
+	Sidecars            []Sidecar `json:"sidecars,omitempty"`
+	RecommendedSidecars []Sidecar `json:"recommendedSidecars,omitempty"`
+}
+
+func (c *client) GetWorkload(namespace, name string) (*MeshWorkload, error) {
+	request := heredoc.Doc(`
+	query($namespace: String!, $name: String!) {
+      workload(namespace: $namespace, name: $name) {
+        id
+        name
+        namespace
+        labels
+	  }
+    }
+`)
+
+	type Response struct {
+		Workload MeshWorkload `json:"workload"`
+	}
+
+	r := c.NewRequest(request)
+	r.Var("name", name)
+	r.Var("namespace", namespace)
+
+	// run it and capture the response
+	var respData Response
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return nil, err
+	}
+
+	if respData.Workload.ID == "" {
+		return nil, errors.New("not found")
+	}
+
+	return &respData.Workload, nil
 }
 
 func (c *client) GetWorkloadWithSidecar(namespace, name string) (*MeshWorkloadSidecar, error) {

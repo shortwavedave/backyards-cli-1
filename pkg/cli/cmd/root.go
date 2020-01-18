@@ -163,6 +163,7 @@ func init() {
 	RootCmd.AddCommand(sidecarproxy.NewRootCmd(cliRef))
 	RootCmd.AddCommand(mtls.NewRootCmd(cliRef))
 	RootCmd.AddCommand(cmd.NewLicenseCommand(cliRef))
+	RootCmd.AddCommand(cmd.NewTapCmd(cliRef, cmd.NewTapOptions()))
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		err := cliRef.Initialize()
 		if err != nil {

@@ -59,6 +59,23 @@ func (c *client) GetNamespaces() (NamespacesResponse, error) {
 	return respData, nil
 }
 
+func (c *client) GetNamespace(name string) (NamespaceResponse, error) {
+	request := heredoc.Doc(`
+	  query namespace($name: String!) {
+		namespace(name: $name) {
+		  name
+		}
+	  }`)
+	r := c.NewRequest(request)
+	r.Var("name", name)
+	var respData NamespaceResponse
+	if err := c.client.Run(context.Background(), r, &respData); err != nil {
+		return respData, err
+	}
+
+	return respData, nil
+}
+
 func (c *client) GetNamespaceWithSidecar(name string) (NamespaceResponse, error) {
 	request := heredoc.Doc(`
 		query($name: String!){

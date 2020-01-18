@@ -103,10 +103,11 @@ func (c *WSClient) runWithJSON(ctx context.Context, req *Request, resp chan inte
 		}
 	}
 
-	wsc, _, err := dialer.Dial(u.String(), req.GetHeader().Clone())
+	wsc, r, err := dialer.Dial(u.String(), req.GetHeader().Clone())
 	if err != nil {
 		return errors.WrapIf(err, "could not connect to websocket")
 	}
+	defer r.Body.Close()
 	defer wsc.Close()
 
 	initMessage := operationMessage{Type: connectionInitMsg}
@@ -148,32 +149,37 @@ func (c *WSClient) runWithJSON(ctx context.Context, req *Request, resp chan inte
 			return errors.WrapIf(err, "could not unmarshal data")
 		}
 
-		// fmt.Printf("%#v\n", msg)
-
 		type graphErr struct {
 			Message string
 		}
 		type Errors []graphErr
 
 		switch msg.Type {
+		case connectionAckMsg, connectionKaMsg:
 		case "complete":
 			return nil
-		case "error":
+		case errorMsg:
 			var errs Errors
-			mapstructure.Decode(msg.Payload, &errs)
+			err = mapstructure.Decode(msg.Payload, &errs)
+			if err != nil {
+				return err
+			}
 			if len(errs) > 0 {
 				return errors.New(errs[0].Message)
 			}
-		case "data":
+		case dataMsg:
 			select {
 			default:
 				if data, ok := msg.Payload.(map[string]interface{}); ok {
-					if data["data"] != nil {
-						resp <- data["data"]
+					if data[dataMsg] != nil {
+						resp <- data[dataMsg]
 					}
 					if data["errors"] != nil {
 						var errs Errors
-						mapstructure.Decode(data["errors"], &errs)
+						err = mapstructure.Decode(data["errors"], &errs)
+						if err != nil {
+							return err
+						}
 						if len(errs) > 0 {
 							return errors.New(errs[0].Message)
 						}

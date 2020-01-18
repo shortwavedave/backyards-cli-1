@@ -33,6 +33,10 @@ func ValidateFormat(str string) bool {
 	return dns1123LabelRegexp.MatchString(str)
 }
 
+func IsValidK8sResourceName(name string) bool {
+	return dns1123LabelRegexp.MatchString(name)
+}
+
 func ParseK8sResourceID(id string) (types.NamespacedName, error) {
 	parts := strings.Split(id, "/")
 	if len(parts) != 2 {
