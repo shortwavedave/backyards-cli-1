@@ -49,9 +49,15 @@ func New(le *al_proto.HTTPAccessLogEntry) (*HTTPAccessLogEntry, error) {
 	e.Latency = e.getDurationFromProto(cp.GetTimeToLastDownstreamTxByte())
 	e.setDurations()
 	e.setSource()
-	e.setSourceMetadata()
+	err := e.setSourceMetadata()
+	if err != nil {
+		return nil, errors.WrapIf(err, "could not set source metadata")
+	}
 	e.setDestination()
-	e.setDestinationMetadata()
+	err = e.setDestinationMetadata()
+	if err != nil {
+		return nil, errors.WrapIf(err, "could not set destination metadata")
+	}
 	e.setRequest()
 	e.setResponse()
 	e.setAuthinfo()
@@ -92,7 +98,7 @@ func (e *HTTPAccessLogEntry) LatencyInMiliseconds() int64 {
 
 func (e *HTTPAccessLogEntry) FormattedString(tpl *template.Template) string {
 	var buf bytes.Buffer
-	tpl.Execute(&buf, e)
+	_ = tpl.Execute(&buf, e)
 
 	return buf.String()
 }

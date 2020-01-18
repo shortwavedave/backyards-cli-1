@@ -45,7 +45,6 @@ func newOffCommand(cli cli.CLI) *cobra.Command {
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			if len(args) > 0 {
 				options.namespaceName = args[0]
 			}

@@ -297,7 +297,7 @@ func parseArgs(str string, separator rune) ([]string, error) {
 			isSeparator = false
 			lastQuote = c
 		case c == separator:
-			if 0 == i || isSeparator {
+			if i == 0 || isSeparator {
 				continue
 			}
 			isSeparator = true

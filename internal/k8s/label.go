@@ -49,7 +49,6 @@ const (
 )
 
 func NewLabelManager(interactive bool, version string) k8s.LabelManager {
-
 	return &labelManager{
 		interactive: interactive,
 		version:     sanitizedVersion(version),

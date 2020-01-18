@@ -30,6 +30,7 @@ func (hs Headers) GetMetadata() (md string) {
 }
 
 func (hs Headers) GetAllWithoutMetadataHeaders() (headers map[string]string) {
+	headers = make(map[string]string)
 	mdh := make(map[string]bool)
 	for _, n := range metadataHeaders {
 		mdh[n] = true

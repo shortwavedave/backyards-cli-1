@@ -156,7 +156,6 @@ func printRecommendationHint(cli output.FormatContext, namespace, workload strin
 	} else {
 		hint = fmt.Sprintf("\nHint: to apply these recommendations, use the --apply switch, or apply it manually using this command:\n"+
 			"%s\n\n", applyCommand)
-
 	}
 	fmt.Fprintf(cli.Out(), "%s", hint)
 }

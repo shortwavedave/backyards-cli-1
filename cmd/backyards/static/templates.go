@@ -53,6 +53,7 @@ var PeerClusterAssetsSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), 
 
 // getRepoRoot returns the full path to the root of the repo
 func getRepoRoot() string {
+	//+nolint
 	_, filename, _, _ := runtime.Caller(0)
 
 	dir := filepath.Dir(filename)

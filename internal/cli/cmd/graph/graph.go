@@ -220,7 +220,6 @@ func createGatherer(dashboardDss, userDss []model.Datasource) (metric.Gatherer, 
 }
 
 func createApp(ctx context.Context, appCfg view.AppConfig, dashboard model.Dashboard, ctrl controller.Controller, renderer render.Renderer, options *graphOptions) (*view.App, error) {
-
 	filter := getFilter(options)
 	titleSuffix = " " + getTitleSuffix(options)
 

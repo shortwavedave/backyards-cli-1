@@ -104,7 +104,6 @@ func newSetCommand(cli cli.CLI) *cobra.Command {
 }
 
 func (c *setCommand) validateOptions(options *setOptions) error {
-
 	// TODO 2: configurable port, bind -> len(hosts)!=0 is conditional
 	if len(options.hosts) == 0 {
 		return errors.New("at least one host must be specified")
@@ -178,7 +177,6 @@ func applyEgress(client graphql.Client, namespace, name, bind string, hosts []st
 		} else {
 			req.Selector.WorkloadLabels = &workload.Labels
 		}
-
 	}
 
 	if bind != "" {

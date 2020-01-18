@@ -90,7 +90,6 @@ func CustomColumn(name, tpl string) (*Column, error) {
 }
 
 func NewTable(data interface{}, fields []string, headers []string) *Table {
-
 	buf := new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetHeader(headers)

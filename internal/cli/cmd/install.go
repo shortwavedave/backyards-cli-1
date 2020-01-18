@@ -249,7 +249,10 @@ func (c *installCommand) run(options *InstallOptions) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(c.cli.Out(), yaml)
+		_, err = c.cli.Out().Write([]byte(yaml))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

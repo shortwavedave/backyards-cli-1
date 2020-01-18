@@ -98,7 +98,6 @@ func NewRecommendCommand(cli cli.CLI) *cobra.Command {
 }
 
 func (c *recommendCommand) validateOptions(options *RecommendOptions) error {
-
 	if len(options.isolationLevel) != 0 && options.isolationLevel != "WORKLOAD" && options.isolationLevel != "NAMESPACE" {
 		return errors.New("isolation level must be one of WORKLOAD or NAMESPACE")
 	}
