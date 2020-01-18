@@ -76,7 +76,7 @@ func NewTapCmd(cli cli.CLI, options *TapOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "tap [[ns|workload|pod]/resource-name]",
-		Short: "Listen to a traffic stream",
+		Short: "Tap into HTTP/GRPC mesh traffic",
 		Example: `
   # tap the movies-v1 deployment in the default namespace
   backyards tap workload/movies-v1
@@ -132,7 +132,7 @@ func NewTapCmd(cli cli.CLI, options *TapOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&options.namespace, "ns", options.namespace, "Namespace of the specified resource (default \"default\")")
+	cmd.Flags().StringVar(&options.namespace, "ns", options.namespace, "Namespace of the specified resource")
 	cmd.Flags().StringVar(&options.destinationNamespace, "destination-ns", options.destinationNamespace, "Namespace of the destination resource; by default the current \"--namespace\" is used")
 	cmd.Flags().StringVar(&options.destinationResource, "destination", options.destinationResource, "Show requests to this resource")
 

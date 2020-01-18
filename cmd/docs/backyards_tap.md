@@ -1,12 +1,48 @@
-## backyards
+## backyards tap
 
-Install and manage Backyards
+Tap into HTTP/GRPC mesh traffic
 
 ### Synopsis
 
-Install and manage Backyards
+Tap into HTTP/GRPC mesh traffic
+
+```
+backyards tap [[ns|workload|pod]/resource-name] [flags]
+```
+
+### Examples
+
+```
+
+  # tap the movies-v1 deployment in the default namespace
+  backyards tap workload/movies-v1
+
+  # tap the movies-v1-7f9645bfd7-8vgm9 pod in the default namespace
+  backyards tap pod/movies-v1-7f9645bfd7-8vgm9
+
+  # tap the backyards-demo namespace
+  backyards tap ns/backyards-demo
+
+  # tap the backyards-demo namespace request to test namespace
+  backyards tap ns/backyards-demo --destination ns/test
+```
 
 ### Options
+
+```
+      --authority string        Show requests with this authority
+      --destination string      Show requests to this resource
+      --destination-ns string   Namespace of the destination resource; by default the current "--namespace" is used
+      --direction string        Show requests with this direction (inbound|outbound)
+  -h, --help                    help for tap
+      --method string           Show requests with this request method
+      --ns string               Namespace of the specified resource (default "default")
+      --path string             Show requests with paths with this prefix
+      --response-code uints     Show request with this response code (default [])
+      --scheme string           Show requests with this scheme
+```
+
+### Options inherited from parent commands
 
 ```
       --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/evaluation-license
@@ -15,7 +51,6 @@ Install and manage Backyards
       --color                           use colors on non-tty outputs (default true)
       --context string                  name of the kubeconfig context to use
       --formatting.force-color          force color even when non in a terminal
-  -h, --help                            help for backyards
       --interactive                     ask questions interactively even if stdin or stdout is non-tty
   -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
   -p, --local-port int                  Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
@@ -30,20 +65,5 @@ Install and manage Backyards
 
 ### SEE ALSO
 
-* [backyards canary](backyards_canary.md)	 - Install and manage canary feature
-* [backyards cert-manager](backyards_cert-manager.md)	 - Install and manage cert-manager
-* [backyards config](backyards_config.md)	 - View and manage persistent configuration
-* [backyards dashboard](backyards_dashboard.md)	 - Open the Backyards dashboard in a web browser
-* [backyards demoapp](backyards_demoapp.md)	 - Install and manage demo application
-* [backyards graph](backyards_graph.md)	 - Show graph
-* [backyards install](backyards_install.md)	 - Install Backyards
-* [backyards istio](backyards_istio.md)	 - Install and manage Istio
-* [backyards license](backyards_license.md)	 - Shows Backyards license
-* [backyards login](backyards_login.md)	 - Log in to Backyards
-* [backyards mtls](backyards_mtls.md)	 - Manage mTLS policy related configurations
-* [backyards routing](backyards_routing.md)	 - Manage service routing configurations
-* [backyards sidecar-proxy](backyards_sidecar-proxy.md)	 - Manage sidecar-proxy related configurations
-* [backyards tap](backyards_tap.md)	 - Tap into HTTP/GRPC mesh traffic
-* [backyards uninstall](backyards_uninstall.md)	 - Uninstall Backyards
-* [backyards version](backyards_version.md)	 - Print the client and api version information
+* [backyards](backyards.md)	 - Install and manage Backyards
 
