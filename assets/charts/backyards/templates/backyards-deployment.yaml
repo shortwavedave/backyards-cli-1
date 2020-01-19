@@ -39,6 +39,9 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "10000"
+        {{- if .Values.als.enabled }}
+        traffic.sidecar.istio.io/excludeOutboundPorts: "50600"
+        {{- end }}
     spec:
       serviceAccountName: {{ include "backyards.fullname" . }}
       containers:
@@ -152,6 +155,10 @@ spec:
           {{- else }}
             - name: AUTH_JWT_SIGNING_KEY_FILE
               value: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          {{- end }}
+          {{- if .Values.als.enabled }}
+            - name: ALS_ADDRESS
+              value: "backyards-als.{{ .Release.Namespace }}.svc.cluster.local:50600"
           {{- end }}
           volumeMounts:
           {{- if .Values.auditsink.enabled }}

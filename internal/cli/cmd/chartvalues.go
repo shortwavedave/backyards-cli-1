@@ -222,8 +222,8 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 	values.Prometheus.Enabled = true
 	values.Prometheus.Resources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
 		},
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("2"),

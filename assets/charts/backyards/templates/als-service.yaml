@@ -20,6 +20,10 @@ spec:
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
   - name: grpc-als
+    port: 50600
+    protocol: TCP
+    targetPort: grpc-als
+  - name: grpc-als-alt
     port: {{ .Values.als.service.port }}
     protocol: TCP
     targetPort: grpc-als
