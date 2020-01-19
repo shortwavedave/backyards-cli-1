@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: backyards-als
+    app.kubernetes.io/component: als
+    app.kubernetes.io/instance: backyards
+    app.kubernetes.io/name: backyards-als
+    app.kubernetes.io/part-of: backyards
+  name: backyards-als
+  namespace: backyards-system
+spec:
+  ports:
+  - name: grpc-als
+    port: 50600
+    protocol: TCP
+    targetPort: grpc-als
+  - name: grpc-als-alt
+    port: 8080
+    protocol: TCP
+    targetPort: grpc-als
+  selector:
+    app.kubernetes.io/instance: backyards
+    app.kubernetes.io/name: backyards-als
+  type: ClusterIP
