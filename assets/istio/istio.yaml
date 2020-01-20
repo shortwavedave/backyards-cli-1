@@ -3,7 +3,7 @@ kind: Istio
 metadata:
   name: mesh
 spec:
-  version: "1.4.0"
+  version: "1.4.3"
   mtls: false
   autoMtls: true
   meshExpansion: true
@@ -17,9 +17,21 @@ spec:
     egress:
       enabled: false
   pilot:
-    image: banzaicloud/istio-pilot:1.4.0-bzc
+    image: banzaicloud/istio-pilot:1.4.2-bzc
+  proxy:
+    useMetadataExchangeFilter: true
+    envoyAccessLogService:
+      enabled: true
+      host: backyards-als.backyards-system.svc.cluster.local
+      port: 8080
+      tcpKeepalive:
+        interval: 10s
+        probes: 3
+        time: 10s
+      tlsSettings:
+        mode: DISABLE
   mixer:
-    image: banzaicloud/istio-mixer:1.4.0-bzc
+    image: banzaicloud/istio-mixer:1.4.2-bzc
     multiClusterSupport: true
   tracing:
     enabled: true

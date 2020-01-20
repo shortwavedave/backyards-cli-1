@@ -1,0 +1,32 @@
+{{- if .Values.als.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: als-metadata-fix
+  namespace: istio-system
+spec:
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: ANY
+      listener:
+        filterChain:
+          filter:
+            name: envoy.http_connection_manager
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        config:
+          inlineCode: |
+            function envoy_on_response(response_handle)
+              if response_handle:headers():get("x-envoy-peer-metadata") ~= nil then
+                response_handle:headers():add("x-by-metadata", response_handle:headers():get("x-envoy-peer-metadata"))
+              end
+            end
+            function envoy_on_request(request_handle)
+              if request_handle:headers():get("x-envoy-peer-metadata") ~= nil then
+                request_handle:headers():add("x-by-metadata", request_handle:headers():get("x-envoy-peer-metadata"))
+              end
+            end
+        name: envoy.lua
+{{- end }}
