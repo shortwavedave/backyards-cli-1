@@ -10,6 +10,10 @@ To install and launch Backyards with a demo application in a few minutes, run th
 curl https://getbackyards.sh | sh && backyards install -a --run-demo
 ```
 
+## Documentation
+
+You can find the full Backyards documentation at: https://banzaicloud.com/docs/backyards
+
 ## Installation
 
 Run the following command:
