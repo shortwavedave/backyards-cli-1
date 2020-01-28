@@ -72,20 +72,27 @@ func Output(cli cli.CLI, namespace, workload string, sidecars []graphql.Sidecar,
 		}
 	}
 
+	var target string
+	if workload == "" {
+		target = "namespace " + namespace
+	} else {
+		target = namespace + "/" + workload
+	}
+
 	if len(outs) == 0 {
 		if recommendation {
-			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s/%s\n\n", namespace, workload)
+			fmt.Fprintf(cli.Out(), "no recommended egress rule found for %s\n\n", target)
 		} else {
-			fmt.Fprintf(cli.Out(), "no egress rule found for %s/%s\n\n", namespace, workload)
+			fmt.Fprintf(cli.Out(), "no egress rule found for %s\n\n", target)
 		}
 		return nil
 	}
 
 	if cli.OutputFormat() == output.OutputFormatTable && cli.Interactive() {
 		if recommendation {
-			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s/%s\n\n", namespace, workload)
+			fmt.Fprintf(cli.Out(), "Recommended sidecar egress rules for %s\n\n", target)
 		} else {
-			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s/%s\n\n", namespace, workload)
+			fmt.Fprintf(cli.Out(), "Sidecar egress rules for %s\n\n", target)
 		}
 	}
 
@@ -140,9 +147,16 @@ func printRecommendationHint(cli output.FormatContext, namespace, workload strin
 		return
 	}
 
-	var applyCommand = fmt.Sprintf("> backyards sp egress set --namespace %s --workload	 %s", namespace, workload)
+	var targetArgs string
+	if workload == "" {
+		targetArgs = "--namespace " + namespace
+	} else {
+		targetArgs = fmt.Sprintf("--namespace %s --workload %s", namespace, workload)
+	}
+
+	var applyCommand = fmt.Sprintf("> backyards sp egress set %s", targetArgs)
 	for _, h := range hosts {
-		applyCommand += fmt.Sprintf(" --hosts=%s", h)
+		applyCommand += fmt.Sprintf(" --hosts='%s'", h)
 	}
 	if sidecar.Spec.WorkloadSelector != nil {
 		for l := range sidecar.Spec.WorkloadSelector.Labels {
