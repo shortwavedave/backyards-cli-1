@@ -156,7 +156,7 @@ func printRecommendationHint(cli output.FormatContext, namespace, workload strin
 
 	var applyCommand = fmt.Sprintf("> backyards sp egress set %s", targetArgs)
 	for _, h := range hosts {
-		applyCommand += fmt.Sprintf(" --hosts=%s", h)
+		applyCommand += fmt.Sprintf(" --hosts='%s'", h)
 	}
 	if sidecar.Spec.WorkloadSelector != nil {
 		for l := range sidecar.Spec.WorkloadSelector.Labels {
