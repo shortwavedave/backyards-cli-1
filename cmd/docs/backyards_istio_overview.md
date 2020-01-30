@@ -21,6 +21,7 @@ backyards istio overview [flags]
 
 ```
       --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/evaluation-license
+      --backyards-namespace string      Namespace in which Backyards is installed [$BACKYARDS_NAMESPACE] (default "backyards-system")
       --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
       --cacert string                   The CA to use for verifying Backyards' server certificate
       --color                           use colors on non-tty outputs (default true)
