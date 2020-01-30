@@ -54,13 +54,9 @@ The following components can be installed/uninstalled individually as well with 
 - [backyards (backend and UI)](cmd/docs/backyards.md): `backyards [install|uninstall]`
 - [demo application](cmd/docs/backyards_demoapp.md): `backyards demoapp [install|uninstall]`
 
-### Handy features
+### Features
 
-- Istio can be installed with a customized CR with: `backyards istio install -f your_istio_cr.yaml`
-- The Backyards UI can be opened with: `backyards dashboard`
-- You can display a graph with the most important RED metrics of your cluster with: `backyards graph`
-- [Traffic Shifting](docs/traffic_shifting.md) can be configured
-- [Circuit Breaking](docs/circuit_breaking.md) can be configured
+You can find all available Backyards features documented at: https://banzaicloud.com/docs/backyards/features
 
 ### All commands
 
@@ -70,42 +66,48 @@ Install and manage Backyards
 Usage:
   backyards [flags]
 
-
 Commands:
-  install      Install Backyards
-  uninstall    Uninstall Backyards
+  install       Install Backyards
+  uninstall     Uninstall Backyards
 
-  dashboard    Open the Backyards dashboard in a web browser
-  graph        Show graph
-  login        Log in to Backyards (aliases: l)
-  routing      Manage service routing configurations (aliases: r)
+  dashboard     Open the Backyards dashboard in a web browser
+  graph         Show graph
+  login         Log in to Backyards (aliases: l)
+  mtls          Manage mTLS policy related configurations
+  routing       Manage service routing configurations (aliases: r)
   sidecar-proxy Manage sidecar-proxy related configurations (aliases: sp)
+  tap           Tap into HTTP/GRPC mesh traffic
 
   config        View and manage persistent configuration
-  version      Print the client and api version information
-  help         Help about any command
-
+  license       Shows Backyards license
+  version       Print the client and api version information
+  help          Help about any command
 
 Components commands:
-  canary       Install and manage Canary feature
-  cert-manager Install and manage cert-manager
-  demoapp      Install and manage demo application
-  istio        Install and manage Istio
+  canary        Install and manage canary feature
+  cert-manager  Install and manage cert-manager
+  demoapp       Install and manage demo application
+  istio         Install and manage Istio
 
 Flags:
-  -u, --base-url string     Custom Backyards base URL. Uses automatic port forwarding / proxying if empty
-      --cacert string       The CA to use for verifying Backyards' server certificate
-      --context string      name of the kubeconfig context to use
-  -h, --help                help for backyards
-      --interactive         ask questions interactively even if stdin or stdout is non-tty
-  -c, --kubeconfig string   path to the kubeconfig file to use for CLI requests
-  -p, --local-port int      Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
-  -n, --namespace string    namespace in which Backyards is installed [$BACKYARDS_NAMESPACE] (default "backyards-system")
-      --non-interactive     never ask questions interactively
-  -o, --output string       output format (table|yaml|json) (default "table")
-      --use-portforward     Use port forwarding instead of proxying to reach Backyards
-  -v, --verbose             turn on debug logging
-      --version             version for backyards
+      --accept-license                  Accept the license: https://banzaicloud.com/docs/backyards/evaluation-license
+      --base-url string                 Custom Backyards base URL (uses port forwarding or proxying if empty)
+      --cacert string                   The CA to use for verifying Backyards' server certificate
+      --color                           use colors on non-tty outputs (default true)
+      --context string                  name of the kubeconfig context to use
+      --formatting.force-color          force color even when non in a terminal
+  -h, --help                            help for backyards
+      --interactive                     ask questions interactively even if stdin or stdout is non-tty
+  -c, --kubeconfig string               path to the kubeconfig file to use for CLI requests
+  -p, --local-port int                  Use this local port for port forwarding / proxying to Backyards (when set to 0, a random port will be used) (default -1)
+  -n, --namespace string                Namespace in which Backyards is installed [$BACKYARDS_NAMESPACE] (default "backyards-system")
+      --non-interactive                 never ask questions interactively
+  -o, --output string                   output format (table|yaml|json) (default "table")
+      --persistent-config-file string   Backyards persistent config file to use instead of the default at ~/.banzai/backyards/
+      --token string                    Authentication token to use to communicate with Backyards
+      --use-portforward                 Use port forwarding instead of proxying to reach Backyards
+  -v, --verbose                         turn on debug logging
+      --version                         version for backyards
 
 Use "backyards [command] --help" for more information about a command.
 ```
