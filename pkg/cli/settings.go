@@ -24,6 +24,9 @@ import (
 )
 
 const (
+	// TODO Deprecated after 1.1.1, to be removed in v1.3.0(?) or v2.0.0
+	NamespaceDeprecated = "backyards.namespaceDeprecated"
+
 	Namespace        = "backyards.namespace"
 	URL              = "backyards.url"
 	CACert           = "backyards.cacert"
@@ -35,12 +38,14 @@ const (
 )
 
 type Setting struct {
-	Flag        string
-	Default     string
-	Description string
-	Shorthand   string
-	Kind        reflect.Kind
-	Env         string
+	Flag                string
+	Default             string
+	Description         string
+	Shorthand           string
+	Kind                reflect.Kind
+	Env                 string
+	Deprecated          string
+	ShorthandDeprecated string
 }
 
 type Settings map[string]Setting
@@ -52,11 +57,20 @@ var PersistentGlobalSettings = Settings{
 }
 
 var PersistentSettings = Settings{
+	NamespaceDeprecated: {
+		Flag:                "namespace",
+		Default:             "backyards-system",
+		Description:         "Namespace in which Backyards is installed [$BACKYARDS_NAMESPACE]",
+		Shorthand:           "n",
+		Kind:                reflect.String,
+		Env:                 "BACKYARDS_NAMESPACE",
+		Deprecated:          "please use --backyards-namespace instead",
+		ShorthandDeprecated: "please use --backyards-namespace instead",
+	},
 	Namespace: {
-		Flag:        "namespace",
+		Flag:        "backyards-namespace",
 		Default:     "backyards-system",
 		Description: "Namespace in which Backyards is installed [$BACKYARDS_NAMESPACE]",
-		Shorthand:   "n",
 		Kind:        reflect.String,
 		Env:         "BACKYARDS_NAMESPACE",
 	},
@@ -110,6 +124,18 @@ func (i Settings) Configure(flags *flag.FlagSet) {
 				_ = flags.BoolP(item.Flag, item.Shorthand, cast.ToBool(item.Default), item.Description)
 			default:
 				logrus.Errorf("Unsupported field type: %s", item.Kind)
+			}
+
+			if item.Deprecated != "" {
+				if err := flags.MarkDeprecated(item.Flag, item.Deprecated); err != nil {
+					panic(err)
+				}
+			}
+
+			if item.ShorthandDeprecated != "" {
+				if err := flags.MarkShorthandDeprecated(item.Flag, item.ShorthandDeprecated); err != nil {
+					panic(err)
+				}
 			}
 		}
 	}
