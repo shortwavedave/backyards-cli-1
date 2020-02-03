@@ -1,6 +1,6 @@
-{{- if .Values.als.enabled }}
-kind: Service
-apiVersion: v1
+{{- if and .Values.als.enabled .Values.als.multiCluster.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
   name: {{ include "als.fullname" . }}
   namespace: {{ .Release.Namespace }}
@@ -14,13 +14,16 @@ metadata:
     app.kubernetes.io/component: als
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
 spec:
-  type: {{ .Values.als.service.type }}
-  selector:
-    app.kubernetes.io/name: {{ include "als.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-  ports:
-  - name: grpc-als
-    port: {{ .Values.als.service.port }}
-    protocol: TCP
-    targetPort: grpc-als
+  gateways:
+  - {{ include "als.fullname" . }}
+  hosts:
+  - "*"
+  tcp:
+  - match:
+    - port: {{ .Values.als.service.port }}
+    route:
+    - destination:
+        host: {{ include "als.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.als.service.port }}
 {{- end }}

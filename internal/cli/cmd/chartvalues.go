@@ -100,6 +100,7 @@ type Values struct {
 			Type string `json:"type"`
 			Port int    `json:"port"`
 		} `json:"service"`
+		InMesh bool `json:"inMesh"`
 	} `json:"prometheus"`
 
 	Grafana struct {
@@ -136,6 +137,12 @@ type Values struct {
 			Type         string            `json:"type"`
 			ExternalPort int               `json:"externalPort"`
 		} `json:"service"`
+		MTLS struct {
+			Enabled bool `json:"enabled"`
+		} `json:"mtls"`
+		MultiCluster struct {
+			Enabled bool `json:"enabled"`
+		} `json:"multiCluster"`
 	} `json:"tracing"`
 
 	IngressGateway struct {
@@ -188,6 +195,12 @@ type Values struct {
 			Type string `json:"type"`
 			Port int    `json:"port"`
 		} `json:"service"`
+		MTLS struct {
+			Enabled bool `json:"enabled"`
+		} `json:"mtls"`
+		MultiCluster struct {
+			Enabled bool `json:"enabled"`
+		} `json:"multiCluster"`
 	} `json:"als"`
 }
 
@@ -234,6 +247,7 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 	values.Prometheus.Config.Global.ScrapeInterval = "10s" //nolint
 	values.Prometheus.Config.Global.ScrapeTimeout = "10s"
 	values.Prometheus.Config.Global.EvaluationInterval = "10s"
+	values.Prometheus.InMesh = false
 
 	values.Grafana.Enabled = true
 	values.Grafana.Resources = corev1.ResourceRequirements{

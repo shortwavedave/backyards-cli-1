@@ -10,16 +10,5 @@ metadata:
   name: backyards-als
   namespace: backyards-system
 spec:
-  ports:
-  - name: grpc-als
-    port: 50600
-    protocol: TCP
-    targetPort: grpc-als
-  - name: grpc-als-alt
-    port: 8080
-    protocol: TCP
-    targetPort: grpc-als
-  selector:
-    app.kubernetes.io/instance: backyards
-    app.kubernetes.io/name: backyards-als
-  type: ClusterIP
+  externalName: istio-pilot.istio-system.svc.cluster.local
+  type: ExternalName

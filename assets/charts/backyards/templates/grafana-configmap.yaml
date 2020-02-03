@@ -20,7 +20,7 @@ data:
     - name: Prometheus
       type: prometheus
       orgId: 1
-      url: http://{{ include "prometheus.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:9090/prometheus
+      url: http://{{ include "prometheus.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.prometheus.service.port }}/prometheus
       access: proxy
       isDefault: true
       jsonData:

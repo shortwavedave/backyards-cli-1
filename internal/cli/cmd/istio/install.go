@@ -149,7 +149,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 			}
 
 			if !confirmed {
-				return errors.New("upgrade cancelled")
+				return nil
 			}
 		} else if isExternalIstioCR && nameDiffers {
 			if options.Force {

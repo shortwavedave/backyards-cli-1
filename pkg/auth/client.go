@@ -28,7 +28,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/servererror"
 )
 
-const defaultLoginTimeout = time.Second * 2
+const defaultLoginTimeout = time.Second * 10
 
 type Client interface {
 	Login() (*Credentials, error)

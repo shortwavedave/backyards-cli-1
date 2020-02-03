@@ -122,7 +122,7 @@ spec:
               value: {{ .Values.istio.namespace | quote }}
           {{- if .Values.prometheus.enabled }}
             - name: APP_PROMETHEUS
-              value: "http://{{ include "prometheus.fullname" . }}:9090{{ .Values.prometheus.externalUrl }}"
+              value: "http://{{ include "prometheus.fullname" . }}:{{ .Values.prometheus.service.port }}{{ .Values.prometheus.externalUrl }}"
           {{- else }}
             - name: APP_PROMETHEUS
               value: {{ (required "Prometheus URL is required!" .Values.prometheus.url) | quote }}

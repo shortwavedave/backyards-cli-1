@@ -48,7 +48,7 @@ affinity: {}
 application:
   image:
     repository: banzaicloud/backyards
-    tag: 1.1.0
+    tag: 1.1.3
     pullPolicy: Always
 
   env: {}
@@ -64,7 +64,7 @@ web:
   enabled: false
   image:
     repository: banzaicloud/backyards-web
-    tag: 1.1.0
+    tag: 1.1.3
     pullPolicy: Always
 
   env: {}
@@ -89,7 +89,7 @@ prometheus:
   replicas: 1
   image:
     repository: prom/prometheus
-    tag: v2.11.1
+    tag: v2.15.2
     pullPolicy: Always
   resources:
     {}
@@ -106,7 +106,8 @@ prometheus:
       evaluationInterval: 10s
   service:
     type: ClusterIP
-    port: 9090
+    port: 59090
+  inMesh: false
 
 grafana:
   enabled: true
@@ -126,7 +127,7 @@ tracing:
   jaeger:
     image:
       repository: docker.io/jaegertracing/all-in-one
-      tag: 1.12
+      tag: 1.16
       pullPolicy: Always
     memory:
       max_traces: 50000
@@ -139,7 +140,11 @@ tracing:
     annotations: {}
     name: backyards-zipkin
     type: ClusterIP
-    externalPort: 9411
+    externalPort: 59411
+  mtls:
+    enabled: true
+  multiCluster:
+    enabled: true
 
 # requires certmanager to be present and functional for the actual namespace
 auditsink:
@@ -203,4 +208,8 @@ als:
     #   memory: 50Mi
   service:
     type: ClusterIP
-    port: 8080
+    port: 50600
+  mtls:
+    enabled: true
+  multiCluster:
+    enabled: true

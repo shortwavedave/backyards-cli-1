@@ -1,6 +1,6 @@
-{{- if .Values.als.enabled }}
-kind: Service
-apiVersion: v1
+{{- if and .Values.als.enabled .Values.als.multiCluster.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
 metadata:
   name: {{ include "als.fullname" . }}
   namespace: {{ .Release.Namespace }}
@@ -14,13 +14,16 @@ metadata:
     app.kubernetes.io/component: als
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
 spec:
-  type: {{ .Values.als.service.type }}
   selector:
-    app.kubernetes.io/name: {{ include "als.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-  ports:
-  - name: grpc-als
-    port: {{ .Values.als.service.port }}
-    protocol: TCP
-    targetPort: grpc-als
+    app: istio-ingressgateway
+    istio: ingressgateway
+  servers:
+  - hosts:
+    - '*'
+    port:
+      name: tls-als-grpc
+      number: {{ .Values.als.service.port }}
+      protocol: TLS
+    tls:
+      mode: ISTIO_MUTUAL
 {{- end }}

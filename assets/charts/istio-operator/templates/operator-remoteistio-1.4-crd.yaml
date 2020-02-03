@@ -22,8 +22,8 @@ spec:
     name: Error
     type: string
   - JSONPath: .status.GatewayAddress
-    description: Ingress gateways of the resource
-    name: Gateways
+    description: Ingress gateway addresses of the resource
+    name: Ingress IPs
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -61,6 +61,12 @@ spec:
             citadel:
               description: Citadel configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 caSecretName:
@@ -317,6 +323,12 @@ spec:
             sidecarInjector:
               description: SidecarInjector configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 alwaysInjectSelector:
@@ -415,6 +427,15 @@ spec:
           - enabledServices
           type: object
         status:
+          properties:
+            ErrorMessage:
+              type: string
+            GatewayAddress:
+              items:
+                type: string
+              type: array
+            Status:
+              type: string
           type: object
   version: v1beta1
 status:

@@ -15,6 +15,8 @@
 package demoapp
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 )
 
@@ -34,6 +36,8 @@ type Values struct {
 	Payments       bool       `json:"payments"`
 	Database       bool       `json:"database"`
 	Bombardier     bool       `json:"bombardier"`
+
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	UseNamespaceResource bool `json:"useNamespaceResource"`
 }

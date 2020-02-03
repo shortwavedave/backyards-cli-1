@@ -22,8 +22,8 @@ spec:
     name: Error
     type: string
   - JSONPath: .status.GatewayAddress
-    description: Ingress gateways of the resource
-    name: Gateways
+    description: Ingress gateway addresses of the resource
+    name: Ingress IPs
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -86,6 +86,12 @@ spec:
             citadel:
               description: Citadel configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 caSecretName:
@@ -165,6 +171,12 @@ spec:
             galley:
               description: Galley configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 configValidation:
@@ -413,6 +425,12 @@ spec:
             mixer:
               description: Mixer configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 checksEnabled:
@@ -516,6 +534,12 @@ spec:
             pilot:
               description: Pilot configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 enableProtocolSniffingInbound:
@@ -787,6 +811,12 @@ spec:
             sidecarInjector:
               description: SidecarInjector configuration options
               properties:
+                additionalContainerArgs:
+                  description: If present will be appended at the end of the initial/preconfigured
+                    container arguments
+                  items:
+                    type: string
+                  type: array
                 affinity:
                   type: object
                 alwaysInjectSelector:
@@ -997,6 +1027,29 @@ spec:
                         in the same namespace as the other istio components.
                       pattern: ^[^\:]+:[0-9]{1,5}$
                       type: string
+                    tlsSettings:
+                      description: TLS setting for Zipkin endpoint.
+                      properties:
+                        caCertificates:
+                          type: string
+                        clientCertificate:
+                          type: string
+                        mode:
+                          enum:
+                          - DISABLE
+                          - SIMPLE
+                          - MUTUAL
+                          - ISTIO_MUTUAL
+                          type: string
+                        privateKey:
+                          type: string
+                        sni:
+                          type: string
+                        subjectAltNames:
+                          items:
+                            type: string
+                          type: array
+                      type: object
                   type: object
               type: object
             trustDomain:
@@ -1033,6 +1086,15 @@ spec:
           - mtls
           type: object
         status:
+          properties:
+            ErrorMessage:
+              type: string
+            GatewayAddress:
+              items:
+                type: string
+              type: array
+            Status:
+              type: string
           type: object
   version: v1beta1
 status:

@@ -1,0 +1,29 @@
+{{- if and .Values.tracing.enabled .Values.tracing.multiCluster.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ include "tracing.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "tracing.name" . }}
+    app.kubernetes.io/name: {{ include "tracing.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+spec:
+  gateways:
+  - {{ include "tracing.fullname" . }}
+  hosts:
+  - "*"
+  tcp:
+  - match:
+    - port: {{ .Values.tracing.service.externalPort }}
+    route:
+    - destination:
+        host: {{ .Values.tracing.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.tracing.service.externalPort }}
+{{- end }}

@@ -1,0 +1,29 @@
+{{- if and .Values.tracing.enabled .Values.tracing.multiCluster.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{ include "tracing.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "tracing.name" . }}
+    app.kubernetes.io/name: {{ include "tracing.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+spec:
+  selector:
+    app: istio-ingressgateway
+    istio: ingressgateway
+  servers:
+  - hosts:
+    - '*'
+    port:
+      name: tls-zipkin-http
+      number: {{ .Values.tracing.service.externalPort }}
+      protocol: TLS
+    tls:
+      mode: ISTIO_MUTUAL
+{{- end }}

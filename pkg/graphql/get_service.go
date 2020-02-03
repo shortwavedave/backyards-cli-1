@@ -142,6 +142,8 @@ func (c *client) GetService(namespace, name string) (*MeshService, error) {
 					exact
 				  }
 				  sourceLabels
+				  port
+				  ignoreUriCase
 				}
 			  }
 			}

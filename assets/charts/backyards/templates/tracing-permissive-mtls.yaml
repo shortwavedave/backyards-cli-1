@@ -1,5 +1,4 @@
 {{- if .Values.tracing.enabled }}
-# Make it possible to reach Backyards without mTLS (eg. using kube-proxy)
 apiVersion: "authentication.istio.io/v1alpha1"
 kind: "Policy"
 metadata:
@@ -39,7 +38,11 @@ spec:
   host: {{ include "tracing.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:
     tls:
+      {{- if or .Values.tracing.mtls.enabled .Values.tracing.multiCluster.enabled }}
+      mode: ISTIO_MUTUAL
+      {{- else }}
       mode: DISABLE
+      {{- end }}
 ---
 apiVersion: "authentication.istio.io/v1alpha1"
 kind: "Policy"
@@ -80,5 +83,9 @@ spec:
   host: {{ .Values.tracing.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:
     tls:
+      {{- if or .Values.tracing.mtls.enabled .Values.tracing.multiCluster.enabled }}
+      mode: ISTIO_MUTUAL
+      {{- else }}
       mode: DISABLE
+      {{- end }}
 {{- end }}
