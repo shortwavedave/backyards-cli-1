@@ -28,6 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sapimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,6 +52,9 @@ var (
 		"istios.istio.banzaicloud.io",
 		"remoteistios.istio.banzaicloud.io",
 	}
+
+	IstioCRNotFoundError = errors.New("no Istio CR found")
+	IstioCRMultipleError = errors.New("multiple Istio CRs found")
 )
 
 type installCommand struct {
@@ -106,16 +110,16 @@ The installer automatically detects whether the CRDs are installed or not, and b
 }
 
 func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
-	existingIstioCRName, err := c.fetchIstioCRName()
-	if err != nil {
-		return errors.WrapIf(err, "unable to get possibly existing Istio CR name")
-	}
-
 	objects, err := getIstioOperatorObjects(options.releaseName)
 	if err != nil {
 		return err
 	}
 	objects.Sort(helm.InstallObjectOrder())
+
+	existingIstioCRName, err := c.getExistingIstioCRName()
+	if err != nil {
+		return errors.WrapIf(err, "unable to check existing Istio CR")
+	}
 
 	istioCRObj, err := getIstioCR(options.istioCRFilename, existingIstioCRName)
 	if err != nil {
@@ -161,6 +165,23 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 	}
 
 	return nil
+}
+
+func (c *installCommand) getExistingIstioCRName() (*string, error) {
+	cl, err := c.cli.GetK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	existingIstioCR, err := FetchIstioCR(cl)
+	if err != nil && !k8sapimeta.IsNoMatchError(errors.Cause(err)) && err != IstioCRMultipleError && err != IstioCRNotFoundError {
+		return nil, errors.WrapIf(err, "unable to check existing Istio CR")
+	}
+	if existingIstioCR != nil {
+		return &existingIstioCR.Name, nil
+	}
+
+	return nil, nil
 }
 
 func (c *installCommand) applyResources(crds, objects object.K8sObjects) error {
@@ -325,6 +346,9 @@ func getIstioCR(filename string, name *string) (*object.K8sObject, error) {
 	if name != nil {
 		metadata["name"] = *name
 	}
+	// call these two funcs to reset yaml and json manifests within the object
+	obj.AddLabels(nil)
+	obj.UnstructuredObject().SetLabels(nil)
 
 	return obj, nil
 }
@@ -354,35 +378,7 @@ func (c *installCommand) isCRDsExists(crdNames []string) (bool, error) {
 	return found == len(crdNames), nil
 }
 
-// fetchIstioCRName finds the name of the sole installed Istio CR. Returns nil if no Istio CR is found, and
-// returns an error when multiple installed Istio CRs are found.
-func (c *installCommand) fetchIstioCRName() (*string, error) {
-	cl, err := c.cli.GetK8sClient()
-	if err != nil {
-		return nil, err
-	}
-
-	// If Istio CRD is not installed, then looking for Istio CR would fail, so exit early with a happy nil.
-	crdsExists, err := c.isCRDsExists(istioCRDs)
-	if err != nil {
-		return nil, err
-	}
-	if !crdsExists {
-		return nil, nil
-	}
-
-	istioCR, err := FetchIstioCRMaybe(cl)
-	if err != nil {
-		return nil, err
-	}
-
-	if istioCR == nil {
-		return nil, nil
-	}
-	return &istioCR.Name, nil
-}
-
-func FetchIstioCRMaybe(cl client.Client) (*v1beta1.Istio, error) {
+func FetchIstioCR(cl client.Client) (*v1beta1.Istio, error) {
 	var istios v1beta1.IstioList
 	err := cl.List(context.Background(), &istios, client.InNamespace(IstioNamespace))
 	if err != nil {
@@ -390,22 +386,10 @@ func FetchIstioCRMaybe(cl client.Client) (*v1beta1.Istio, error) {
 	}
 
 	if len(istios.Items) == 0 {
-		return nil, nil
+		return nil, IstioCRNotFoundError
 	} else if len(istios.Items) > 1 {
-		return nil, errors.New("multiple Istio CRs found")
+		return nil, IstioCRMultipleError
 	}
 
 	return &istios.Items[0], nil
-}
-
-func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
-	istioCR, err := FetchIstioCRMaybe(cl)
-	if err != nil {
-		return v1beta1.Istio{}, err
-	}
-
-	if istioCR == nil {
-		return v1beta1.Istio{}, errors.New("no Istio CR found")
-	}
-	return *istioCR, nil
 }

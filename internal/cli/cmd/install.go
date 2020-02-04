@@ -317,7 +317,7 @@ func (c *installCommand) setTracingAddress(values Values) error {
 	}}
 	payloadBytes, _ := json.Marshal(payload)
 
-	err = cl.Patch(context.Background(), &istioCR, client.ConstantPatch(types.JSONPatchType, payloadBytes))
+	err = cl.Patch(context.Background(), istioCR, client.ConstantPatch(types.JSONPatchType, payloadBytes))
 	if err != nil {
 		return errors.WrapIf(err, "could not patch Istio CR")
 	}

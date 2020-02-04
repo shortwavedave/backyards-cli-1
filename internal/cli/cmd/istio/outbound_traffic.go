@@ -102,7 +102,7 @@ func (c *outboundTrafficCommand) set(cli cli.CLI, mode string) error {
 
 	istio.Spec.OutboundTrafficPolicy.Mode = mode
 
-	err = client.Update(context.Background(), &istio)
+	err = client.Update(context.Background(), istio)
 	if err != nil {
 		return errors.WrapIf(err, "could not set outbound traffic policy")
 	}
