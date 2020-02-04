@@ -106,13 +106,18 @@ The installer automatically detects whether the CRDs are installed or not, and b
 }
 
 func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
+	existingIstioCRName, err := c.fetchIstioCRName()
+	if err != nil {
+		return errors.WrapIf(err, "unable to get possibly existing Istio CR name")
+	}
+
 	objects, err := getIstioOperatorObjects(options.releaseName)
 	if err != nil {
 		return err
 	}
 	objects.Sort(helm.InstallObjectOrder())
 
-	istioCRObj, err := getIstioCR(options.istioCRFilename)
+	istioCRObj, err := getIstioCR(options.istioCRFilename, existingIstioCRName)
 	if err != nil {
 		return err
 	}
@@ -291,7 +296,7 @@ func getIstioOperatorObjects(releaseName string) (object.K8sObjects, error) {
 	return objects, nil
 }
 
-func getIstioCR(filename string) (*object.K8sObject, error) {
+func getIstioCR(filename string, name *string) (*object.K8sObject, error) {
 	var err error
 	var istioCRFile http.File
 	if filename != "" {
@@ -317,6 +322,9 @@ func getIstioCR(filename string) (*object.K8sObject, error) {
 
 	metadata := obj.UnstructuredObject().Object["metadata"].(map[string]interface{})
 	metadata["namespace"] = IstioNamespace
+	if name != nil {
+		metadata["name"] = *name
+	}
 
 	return obj, nil
 }
@@ -346,19 +354,49 @@ func (c *installCommand) isCRDsExists(crdNames []string) (bool, error) {
 	return found == len(crdNames), nil
 }
 
-func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
-	var istioCR v1beta1.Istio
+// fetchIstioCRName finds the name of the sole installed Istio CR. Returns nil if no Istio CR is found, and
+// returns an error when multiple installed Istio CRs are found.
+func (c *installCommand) fetchIstioCRName() (*string, error) {
+	cl, err := c.cli.GetK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	istioCR, err := FetchIstioCRMaybe(cl)
+	if err != nil {
+		return nil, err
+	}
+
+	if istioCR == nil {
+		return nil, nil
+	}
+	return &istioCR.Name, nil
+}
+
+func FetchIstioCRMaybe(cl client.Client) (*v1beta1.Istio, error) {
 	var istios v1beta1.IstioList
 	err := cl.List(context.Background(), &istios, client.InNamespace(IstioNamespace))
 	if err != nil {
-		return istioCR, errors.WrapIf(err, "could not list istios")
+		return nil, errors.WrapIf(err, "could not list istios")
 	}
 
 	if len(istios.Items) == 0 {
-		return istioCR, errors.New("no Istio CR found")
+		return nil, nil
 	} else if len(istios.Items) > 1 {
-		return istioCR, errors.New("multiple Istio CRs found")
+		return nil, errors.New("multiple Istio CRs found")
 	}
 
-	return istios.Items[0], nil
+	return &istios.Items[0], nil
+}
+
+func FetchIstioCR(cl client.Client) (v1beta1.Istio, error) {
+	istioCR, err := FetchIstioCRMaybe(cl)
+	if err != nil {
+		return v1beta1.Istio{}, err
+	}
+
+	if istioCR == nil {
+		return v1beta1.Istio{}, errors.New("no Istio CR found")
+	}
+	return *istioCR, nil
 }
