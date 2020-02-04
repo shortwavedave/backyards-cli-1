@@ -362,6 +362,15 @@ func (c *installCommand) fetchIstioCRName() (*string, error) {
 		return nil, err
 	}
 
+	// If Istio CRD is not installed, then looking for Istio CR would fail, so exit early with a happy nil.
+	crdsExists, err := c.isCRDsExists(istioCRDs)
+	if err != nil {
+		return nil, err
+	}
+	if !crdsExists {
+		return nil, nil
+	}
+
 	istioCR, err := FetchIstioCRMaybe(cl)
 	if err != nil {
 		return nil, err
