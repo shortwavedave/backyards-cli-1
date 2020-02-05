@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
 	appsv1 "k8s.io/api/apps/v1"
@@ -121,10 +122,40 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 		return errors.WrapIf(err, "unable to check existing Istio CR")
 	}
 
-	istioCRObj, err := getIstioCR(options.istioCRFilename, existingIstioCRName)
+	istioCRObj, err := getIstioCR(options.istioCRFilename)
 	if err != nil {
 		return err
 	}
+
+	isUpgrade := existingIstioCRName != nil
+	if isUpgrade {
+		isExternalIstioCR := options.istioCRFilename != ""
+		nameDiffers := istioCRObj.Name != *existingIstioCRName // TODO is `istioCRObj.Name` correct?
+
+		if cli.Interactive() {
+			var question string
+			if isExternalIstioCR && nameDiffers {
+				question = fmt.Sprintf("Istio is already installed with name '%s'. Do you want to upgrade it?",
+					*existingIstioCRName)
+			} else {
+				question = fmt.Sprintf("Istio is already installed. Do you want to upgrade it?")
+			}
+
+			confirmed := false
+			if err := survey.AskOne(&survey.Confirm{Message: question}, &confirmed); err != nil {
+				return err
+			}
+
+			if !confirmed {
+				return errors.New("upgrade cancelled")
+			}
+		} else if isExternalIstioCR && nameDiffers {
+			return errors.New(
+				fmt.Sprintf("Istio is already installed with name '%s' which is different than '%s' found in '%s'. Cannot proceed with Istio upgrade.",
+					*existingIstioCRName, istioCRObj.Name, options.istioCRFilename)) // TODO is `istioCRObj.Name` correct?
+		}
+	}
+	modifyIstioCR(istioCRObj, IstioNamespace, existingIstioCRName)
 
 	crds := make(object.K8sObjects, 0)
 	objs := make(object.K8sObjects, 0)
@@ -317,7 +348,7 @@ func getIstioOperatorObjects(releaseName string) (object.K8sObjects, error) {
 	return objects, nil
 }
 
-func getIstioCR(filename string, name *string) (*object.K8sObject, error) {
+func getIstioCR(filename string) (*object.K8sObject, error) {
 	var err error
 	var istioCRFile http.File
 	if filename != "" {
@@ -341,16 +372,18 @@ func getIstioCR(filename string, name *string) (*object.K8sObject, error) {
 		return nil, errors.WrapIf(err, "could not parse Istio YAML to K8s object")
 	}
 
+	return obj, nil
+}
+
+func modifyIstioCR(obj *object.K8sObject, namespace string, name *string) {
 	metadata := obj.UnstructuredObject().Object["metadata"].(map[string]interface{})
-	metadata["namespace"] = IstioNamespace
+	metadata["namespace"] = namespace
 	if name != nil {
 		metadata["name"] = *name
 	}
 	// call these two funcs to reset yaml and json manifests within the object
 	obj.AddLabels(nil)
 	obj.UnstructuredObject().SetLabels(nil)
-
-	return obj, nil
 }
 
 func (c *installCommand) isCRDsExists(crdNames []string) (bool, error) {
