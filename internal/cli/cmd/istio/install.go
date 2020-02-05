@@ -174,7 +174,7 @@ func (c *installCommand) getExistingIstioCRName() (*string, error) {
 	}
 
 	existingIstioCR, err := FetchIstioCR(cl)
-	if err != nil && !k8sapimeta.IsNoMatchError(errors.Cause(err)) && err != ErrIstioCRMultiple && err != ErrIstioCRNotFound {
+	if err != nil && !k8sapimeta.IsNoMatchError(errors.Cause(err)) && err != ErrIstioCRNotFound {
 		return nil, errors.WrapIf(err, "unable to check existing Istio CR")
 	}
 	if existingIstioCR != nil {
