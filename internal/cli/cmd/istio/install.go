@@ -53,8 +53,8 @@ var (
 		"remoteistios.istio.banzaicloud.io",
 	}
 
-	IstioCRNotFoundError = errors.New("no Istio CR found")
-	IstioCRMultipleError = errors.New("multiple Istio CRs found")
+	ErrIstioCRNotFound = errors.New("no Istio CR found")
+	ErrIstioCRMultiple = errors.New("multiple Istio CRs found")
 )
 
 type installCommand struct {
@@ -174,7 +174,7 @@ func (c *installCommand) getExistingIstioCRName() (*string, error) {
 	}
 
 	existingIstioCR, err := FetchIstioCR(cl)
-	if err != nil && !k8sapimeta.IsNoMatchError(errors.Cause(err)) && err != IstioCRMultipleError && err != IstioCRNotFoundError {
+	if err != nil && !k8sapimeta.IsNoMatchError(errors.Cause(err)) && err != ErrIstioCRMultiple && err != ErrIstioCRNotFound {
 		return nil, errors.WrapIf(err, "unable to check existing Istio CR")
 	}
 	if existingIstioCR != nil {
@@ -386,9 +386,9 @@ func FetchIstioCR(cl client.Client) (*v1beta1.Istio, error) {
 	}
 
 	if len(istios.Items) == 0 {
-		return nil, IstioCRNotFoundError
+		return nil, ErrIstioCRNotFound
 	} else if len(istios.Items) > 1 {
-		return nil, IstioCRMultipleError
+		return nil, ErrIstioCRMultiple
 	}
 
 	return &istios.Items[0], nil
