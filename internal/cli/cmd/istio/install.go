@@ -64,6 +64,7 @@ type installCommand struct {
 
 type InstallOptions struct {
 	DumpResources bool
+	Force         bool
 
 	istioCRFilename string
 	releaseName     string
@@ -106,6 +107,7 @@ The installer automatically detects whether the CRDs are installed or not, and b
 	cmd.Flags().StringVarP(&options.istioCRFilename, "istio-cr-file", "f", "", "Filename of a custom Istio CR yaml")
 
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
+	cmd.Flags().BoolVarP(&options.Force, "force", "", options.Force, "Force Istio upgrade (only applicable in non-interactive mode)")
 
 	return cmd
 }
@@ -150,9 +152,13 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 				return errors.New("upgrade cancelled")
 			}
 		} else if isExternalIstioCR && nameDiffers {
-			return errors.New(
-				fmt.Sprintf("Istio is already installed with name '%s' which is different than '%s' found in '%s'. Cannot proceed with Istio upgrade.",
-					*existingIstioCRName, istioCRObj.Name, options.istioCRFilename)) // TODO is `istioCRObj.Name` correct?
+			if options.Force {
+				fmt.Fprintln(os.Stderr, fmt.Sprintf("Upgrading Istio named '%s'.", *existingIstioCRName))
+			} else {
+				return errors.New(
+					fmt.Sprintf("Istio is already installed with name '%s' which is different than '%s' found in '%s'. Cannot proceed with Istio upgrade.",
+						*existingIstioCRName, istioCRObj.Name, options.istioCRFilename)) // TODO is `istioCRObj.Name` correct?
+			}
 		}
 	}
 	modifyIstioCR(istioCRObj, IstioNamespace, existingIstioCRName)

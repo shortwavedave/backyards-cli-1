@@ -30,6 +30,7 @@ backyards istio install [flags]
 
 ```
   -d, --dump-resources         Dump resources to stdout instead of applying them
+      --force                  Force Istio upgrade (only applicable in non-interactive mode)
   -h, --help                   help for install
   -f, --istio-cr-file string   Filename of a custom Istio CR yaml
       --release-name string    Name of the release (default "istio-operator")
