@@ -8,7 +8,7 @@ metadata:
     app: bombardier
     {{ include "backyards-demo.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: 0
   progressDeadlineSeconds: 600
   revisionHistoryLimit: 10
   selector:
@@ -28,9 +28,9 @@ spec:
         - --rate=20
         - --duration=100h
         - http://frontpage:8080
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
       terminationGracePeriodSeconds: 2
 {{ end }}
