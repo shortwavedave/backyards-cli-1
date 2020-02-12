@@ -40,8 +40,8 @@ spec:
           value: "frontpage"
         - name: REQUESTS
           value: "http://catalog:8080/#2 http://bookings:8080#1"
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}

@@ -40,8 +40,8 @@ spec:
           value: "movies list response v3"
         - name: REQUESTS
           value: "tcp://database:8083/#1"
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}

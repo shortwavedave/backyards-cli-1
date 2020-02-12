@@ -40,8 +40,8 @@ spec:
           value: "payment received"
         - name: REQUESTS
           value: "http://notifications:8080#1"
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}
