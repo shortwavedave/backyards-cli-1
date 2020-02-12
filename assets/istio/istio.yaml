@@ -3,7 +3,7 @@ kind: Istio
 metadata:
   name: mesh
 spec:
-  version: "1.4.3"
+  version: "1.4.4"
   mtls: false
   autoMtls: true
   meshExpansion: true
@@ -42,9 +42,10 @@ spec:
     egress:
       enabled: false
   pilot:
-    image: banzaicloud/istio-pilot:1.4.3-bzc
+    maxReplicas: 2
+    image: banzaicloud/istio-pilot:1.4.4-bzc
   proxy:
-    image: banzaicloud/istio-proxyv2:1.4.3-bzc
+    image: banzaicloud/istio-proxyv2:1.4.4-bzc
     useMetadataExchangeFilter: true
     envoyAccessLogService:
       enabled: true
@@ -57,8 +58,13 @@ spec:
       tlsSettings:
         mode: ISTIO_MUTUAL
   mixer:
-    image: banzaicloud/istio-mixer:1.4.3-bzc
+    maxReplicas: 2
+    image: banzaicloud/istio-mixer:1.4.4-bzc
     multiClusterSupport: true
+  telemetry:
+    maxReplicas: 2
+  policy:
+    maxReplicas: 1
   tracing:
     enabled: true
     tracer: zipkin

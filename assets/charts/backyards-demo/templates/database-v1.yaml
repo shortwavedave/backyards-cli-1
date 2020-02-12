@@ -28,8 +28,8 @@ spec:
         - containerPort: 8080
         - containerPort: 8082
         - containerPort: 8083
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}

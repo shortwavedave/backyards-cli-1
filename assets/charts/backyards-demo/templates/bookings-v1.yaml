@@ -35,8 +35,8 @@ spec:
           value: "bookings service response"
         - name: REQUESTS
           value: "http://analytics:8080/#1 http://payments:8080/#1"
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}

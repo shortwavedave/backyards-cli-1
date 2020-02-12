@@ -40,8 +40,8 @@ spec:
           value: "cinema catalog response"
         - name: REQUESTS
           value: "grpc://movies:8082/allspark/Incoming#1"
-      {{- with .Values.resources }}
-      resources:
-        {{ toYaml . | nindent 12 }}
-      {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
 {{ end }}
