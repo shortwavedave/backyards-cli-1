@@ -1,0 +1,27 @@
+{{ if and .Values.prometheus.enabled .Values.kubestatemetrics.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubestatemetrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "kubestatemetrics.name" . }}
+    app.kubernetes.io/name: {{ include "kubestatemetrics.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: kubestatemetrics
+    app.kubernetes.io/part-of: {{ include "kubestatemetrics.name" . }}
+spec:
+  clusterIP: None
+  ports:
+  - name: http-monitoring
+    port: {{ .Values.kubestatemetrics.service.monitoringPort }}
+    targetPort: http-monitoring
+  - name: http-telemetry
+    port: {{ .Values.kubestatemetrics.service.telemetryPort }}
+    targetPort: http-telemetry
+  selector:
+    app.kubernetes.io/name: {{ include "kubestatemetrics.fullname" . }}
+{{ end }}

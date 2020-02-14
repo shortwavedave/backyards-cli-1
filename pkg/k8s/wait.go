@@ -87,8 +87,14 @@ func ReadyReplicasConditionCheck(obj *unstructured.Unstructured, k8serror error)
 		return true
 	}
 
+	var daemonset appsv1.DaemonSet
+	daemonsetErr := k8sclient.GetScheme().Convert(obj, &daemonset, nil)
+	if daemonsetErr == nil && daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady {
+		return true
+	}
+
 	// return true for unconvertable objects
-	if deploymentErr != nil && statefulsetErr != nil {
+	if deploymentErr != nil && statefulsetErr != nil && daemonsetErr != nil {
 		return true
 	}
 

@@ -21,6 +21,8 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
+      annotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "443"
       labels:
         app: {{ include "grafana.name" . }}
         app.kubernetes.io/name: {{ include "grafana.name" . }}
@@ -31,10 +33,44 @@ spec:
         app.kubernetes.io/part-of: {{ include "backyards.name" . }}
         helm.sh/chart: {{ include "backyards.chart" . }}
     spec:
+      serviceAccountName: {{ include "grafana.fullname" . }}
       securityContext:
         runAsUser: 472
         fsGroup: 472
+      initContainers:
+      - env:
+        - name: METHOD
+          value: LIST
+        - name: LABEL
+          value: grafana_datasource
+        - name: FOLDER
+          value: /etc/grafana/provisioning/datasources
+        - name: RESOURCE
+          value: configmap
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        image: kiwigrid/k8s-sidecar:0.1.20
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-datasources
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
       containers:
+        - env:
+          - name: LABEL
+            value: grafana_dashboard
+          - name: FOLDER
+            value: /tmp/dashboards
+          - name: RESOURCE
+            value: configmap
+          image: kiwigrid/k8s-sidecar:0.1.20
+          imagePullPolicy: IfNotPresent
+          name: grafana-sc-dashboard
+          resources: {}
+          volumeMounts:
+          - mountPath: /tmp/dashboards
+            name: sc-dashboard-volume
         - name: grafana
           image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
           imagePullPolicy: {{ .Values.grafana.image.pullPolicy | default "Always" }}
@@ -80,6 +116,8 @@ spec:
             value: /data/grafana
           - name: GF_SECURITY_ALLOW_EMBEDDING
             value: "true"
+          - name: GF_INSTALL_PLUGINS
+            value: {{ join "," .Values.grafana.plugins }}
           {{- range $key, $value := .Values.grafana.env }}
           - name: {{ $key }}
             value: {{ $value | quote }}
@@ -98,17 +136,11 @@ spec:
           volumeMounts:
           - name: data
             mountPath: /data/grafana
-          {{- range $path, $bytes := .Files.Glob "resources/*.json" }}
-          {{- $filename := trimSuffix (ext $path) (base $path) }}
-          - name: dashboards-istio-{{ $filename }}
-            mountPath: "/var/lib/grafana/dashboards/istio/{{ base $path }}"
-            subPath: {{ base $path }}
-            readOnly: true
-          {{- end }}
-          - name: config
-            mountPath: "/etc/grafana/provisioning/datasources/datasources.yaml"
-            subPath: datasources.yaml
-          - name: config
+          - name: sc-dashboard-volume
+            mountPath: /tmp/dashboards
+          - name: sc-datasources-volume
+            mountPath: /etc/grafana/provisioning/datasources
+          - name: dashboardprovider
             mountPath: "/etc/grafana/provisioning/dashboards/dashboardproviders.yaml"
             subPath: dashboardproviders.yaml
 {{- if .Values.grafana.tolerations }}
@@ -116,15 +148,13 @@ spec:
 {{ toYaml .Values.grafana.tolerations | indent 6 }}
 {{- end }}
       volumes:
-      - name: config
+      - name: dashboardprovider
         configMap:
-          name: {{ include "grafana.fullname" . }}
+          name: {{ include "grafana.fullname" . }}-dbp-0
       - name: data
         emptyDir: {}
-{{- range $path, $bytes := .Files.Glob "resources/*.json" }}
-{{- $filename := trimSuffix (ext $path) (base $path) }}
-      - name: dashboards-istio-{{ $filename }}
-        configMap:
-          name:  {{ include "grafana.fullname" $ }}-dashboards-{{ $filename }}
-{{- end }}
+      - name: sc-dashboard-volume
+        emptyDir: {}
+      - name: sc-datasources-volume
+        emptyDir: {}
 {{- end }}

@@ -1,0 +1,26 @@
+{{- if .Values.prometheus.enabled }}
+{{- $files := .Files }}
+  {{- range $path, $bytes := .Files.Glob "resources/*-rules.yaml" }}
+  {{- $filename := trimSuffix (ext $path) (base $path) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus.fullname" $ }}-{{ $filename }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ include "prometheus.name" $ }}
+    app.kubernetes.io/name: {{ include "prometheus.name" $ }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/version: {{ $.Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/part-of: {{ include "backyards.name" $ }}
+    helm.sh/chart: {{ include "backyards.chart" $ }}
+    prometheus_rule: "1"
+data:
+  {{ base $path }}: |-
+{{ $files.Get $path | indent 4 }}
+
+---
+{{- end }}
+{{- end }}

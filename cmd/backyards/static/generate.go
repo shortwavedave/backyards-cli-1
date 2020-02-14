@@ -121,4 +121,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = vfsgen.Generate(static.NodeExporterChartSource, vfsgen.Options{
+		Filename:     "static/nodeexporter/chart.gogen.go",
+		PackageName:  "nodeexporter",
+		VariableName: "Chart",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

@@ -31,177 +31,193 @@ const (
 type Values struct {
 	NameOverride         string                      `json:"nameOverride,omitempty"`
 	FullnameOverride     string                      `json:"fullnameOverride,omitempty"`
-	ReplicaCount         int                         `json:"replicaCount"`
-	UseNamespaceResource bool                        `json:"useNamespaceResource"`
+	ReplicaCount         int                         `json:"replicaCount,omitempty"`
+	UseNamespaceResource bool                        `json:"useNamespaceResource,omitempty"`
 	Resources            corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	Ingress struct {
-		Enabled     bool              `json:"enabled"`
-		Annotations map[string]string `json:"annotations"`
+		Enabled     bool              `json:"enabled,omitempty"`
+		Annotations map[string]string `json:"annotations,omitempty"`
 		Paths       struct {
-			Application string `json:"application"`
-			Web         string `json:"web"`
-		} `json:"paths"`
-		BasePath string   `json:"basePath"`
-		Hosts    []string `json:"hosts"`
+			Application string `json:"application,omitempty"`
+			Web         string `json:"web,omitempty"`
+		} `json:"paths,omitempty"`
+		BasePath string   `json:"basePath,omitempty"`
+		Hosts    []string `json:"hosts,omitempty"`
 		TLS      []struct {
-			SecretName string   `json:"secretName"`
-			Hosts      []string `json:"hosts"`
-		} `json:"tls"`
-	} `json:"ingress"`
+			SecretName string   `json:"secretName,omitempty"`
+			Hosts      []string `json:"hosts,omitempty"`
+		} `json:"tls,omitempty"`
+	} `json:"ingress,omitempty"`
 
 	Autoscaling struct {
-		Enabled                           bool `json:"enabled"`
-		MinReplicas                       int  `json:"minReplicas"`
-		MaxReplicas                       int  `json:"maxReplicas"`
-		TargetCPUUtilizationPercentage    int  `json:"targetCPUUtilizationPercentage"`
-		TargetMemoryUtilizationPercentage int  `json:"targetMemoryUtilizationPercentage"`
-	} `json:"autoscaling"`
+		Enabled                           bool `json:"enabled,omitempty"`
+		MinReplicas                       int  `json:"minReplicas,omitempty"`
+		MaxReplicas                       int  `json:"maxReplicas,omitempty"`
+		TargetCPUUtilizationPercentage    int  `json:"targetCPUUtilizationPercentage,omitempty"`
+		TargetMemoryUtilizationPercentage int  `json:"targetMemoryUtilizationPercentage,omitempty"`
+	} `json:"autoscaling,omitempty"`
 
 	Application struct {
 		helm.EnvironmentVariables
-		Image   helm.Image `json:"image"`
+		Image   helm.Image `json:"image,omitempty"`
 		Service struct {
-			Type string `json:"type"`
-			Port int    `json:"port"`
-		} `json:"service"`
-	} `json:"application"`
+			Type string `json:"type,omitempty"`
+			Port int    `json:"port,omitempty"`
+		} `json:"service,omitempty"`
+	} `json:"application,omitempty"`
 
 	Web struct {
 		helm.EnvironmentVariables
-		Enabled   bool                        `json:"enabled"`
-		Image     helm.Image                  `json:"image"`
+		Enabled   bool                        `json:"enabled,omitempty"`
+		Image     helm.Image                  `json:"image,omitempty"`
 		Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 		Service   struct {
-			Type string `json:"type"`
-			Port int    `json:"port"`
-		} `json:"service"`
-	} `json:"web"`
+			Type string `json:"type,omitempty"`
+			Port int    `json:"port,omitempty"`
+		} `json:"service,omitempty"`
+	} `json:"web,omitempty"`
 
 	Istio struct {
-		Namespace          string `json:"namespace"`
-		CRName             string `json:"CRName"`
-		ServiceAccountName string `json:"serviceAccountName"`
-	} `json:"istio"`
+		Namespace          string `json:"namespace,omitempty"`
+		CRName             string `json:"CRName,omitempty"`
+		ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	} `json:"istio,omitempty"`
 
 	Prometheus struct {
-		Enabled     bool                        `json:"enabled"`
-		Image       helm.Image                  `json:"image"`
+		Enabled     bool                        `json:"enabled,omitempty"`
+		Image       helm.Image                  `json:"image,omitempty"`
 		Resources   corev1.ResourceRequirements `json:"resources,omitempty"`
-		ExternalURL string                      `json:"externalUrl"`
+		ExternalURL string                      `json:"externalUrl,omitempty"`
 		Config      struct {
 			Global struct {
-				ScrapeInterval     string `json:"scrapeInterval"`
-				ScrapeTimeout      string `json:"scrapeTimeout"`
-				EvaluationInterval string `json:"evaluationInterval"`
-			} `json:"global"`
-		} `json:"config"`
+				ScrapeInterval     string `json:"scrapeInterval,omitempty"`
+				ScrapeTimeout      string `json:"scrapeTimeout,omitempty"`
+				EvaluationInterval string `json:"evaluationInterval,omitempty"`
+			} `json:"global,omitempty"`
+		} `json:"config,omitempty"`
 		Service struct {
-			Type string `json:"type"`
-			Port int    `json:"port"`
-		} `json:"service"`
-		InMesh bool `json:"inMesh"`
-	} `json:"prometheus"`
+			Type string `json:"type,omitempty"`
+			Port int    `json:"port,omitempty"`
+		} `json:"service,omitempty"`
+		InMesh bool `json:"inMesh,omitempty"`
+	} `json:"prometheus,omitempty"`
 
 	Grafana struct {
-		Enabled   bool                        `json:"enabled"`
-		Image     helm.Image                  `json:"image"`
+		Enabled   bool                        `json:"enabled,omitempty"`
+		Image     helm.Image                  `json:"image,omitempty"`
 		Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 		Security  struct {
-			Enabled       bool   `json:"enabled"`
+			Enabled       bool   `json:"enabled,omitempty"`
 			UsernameKey   string `json:"usernameKey,omitempty"`
 			SecretName    string `json:"secretName,omitempty"`
 			PassphraseKey string `json:"passphraseKey,omitempty"`
-		} `json:"security"`
-		ExternalURL string `json:"externalUrl"`
-	} `json:"grafana"`
+		} `json:"security,omitempty"`
+		ExternalURL string   `json:"externalUrl,omitempty"`
+		Plugins     []string `json:"plugins,omitempty"`
+	} `json:"grafana,omitempty"`
 
 	Tracing struct {
-		Enabled     bool   `json:"enabled"`
-		ExternalURL string `json:"externalUrl"`
-		Provider    string `json:"provider"`
+		Enabled     bool   `json:"enabled,omitempty"`
+		ExternalURL string `json:"externalUrl,omitempty"`
+		Provider    string `json:"provider,omitempty"`
 		Jaeger      struct {
-			Image     helm.Image                  `json:"image"`
+			Image     helm.Image                  `json:"image,omitempty"`
 			Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 			Memory    struct {
-				MaxTraces string `json:"max_traces"`
-			} `json:"memory"`
-			SpanStorageType  string `json:"spanStorageType"`
-			Persist          bool   `json:"persist"`
-			StorageClassName string `json:"storageClassName"`
-			AccessMode       string `json:"accessMode"`
-		} `json:"jaeger"`
+				MaxTraces string `json:"max_traces,omitempty"`
+			} `json:"memory,omitempty"`
+			SpanStorageType  string `json:"spanStorageType,omitempty"`
+			Persist          bool   `json:"persist,omitempty"`
+			StorageClassName string `json:"storageClassName,omitempty"`
+			AccessMode       string `json:"accessMode,omitempty"`
+		} `json:"jaeger,omitempty"`
 		Service struct {
-			Annotations  map[string]string `json:"annotations"`
-			Name         string            `json:"name"`
-			Type         string            `json:"type"`
-			ExternalPort int               `json:"externalPort"`
-		} `json:"service"`
+			Annotations  map[string]string `json:"annotations,omitempty"`
+			Name         string            `json:"name,omitempty"`
+			Type         string            `json:"type,omitempty"`
+			ExternalPort int               `json:"externalPort,omitempty"`
+		} `json:"service,omitempty"`
 		MTLS struct {
-			Enabled bool `json:"enabled"`
-		} `json:"mtls"`
+			Enabled bool `json:"enabled,omitempty"`
+		} `json:"mtls,omitempty"`
 		MultiCluster struct {
-			Enabled bool `json:"enabled"`
-		} `json:"multiCluster"`
-	} `json:"tracing"`
+			Enabled bool `json:"enabled,omitempty"`
+		} `json:"multiCluster,omitempty"`
+	} `json:"tracing,omitempty"`
 
 	IngressGateway struct {
 		MeshGateway struct {
-			Enabled bool `json:"enabled"`
-		} `json:"meshgateway"`
+			Enabled bool `json:"enabled,omitempty"`
+		} `json:"meshgateway,omitempty"`
 		Service struct {
-			Type string `json:"type"`
-		} `json:"service"`
-	} `json:"ingressgateway"`
+			Type string `json:"type,omitempty"`
+		} `json:"service,omitempty"`
+	} `json:"ingressgateway,omitempty"`
 
 	AuditSink struct {
-		Enabled     bool                        `json:"enabled"`
-		Image       helm.Image                  `json:"image"`
-		Resources   corev1.ResourceRequirements `json:"resources"`
-		Tolerations []corev1.Toleration         `json:"tolerations"`
-		Mode        string                      `json:"mode"`
+		Enabled     bool                        `json:"enabled,omitempty"`
+		Image       helm.Image                  `json:"image,omitempty"`
+		Resources   corev1.ResourceRequirements `json:"resources,omitempty"`
+		Tolerations []corev1.Toleration         `json:"tolerations,omitempty"`
+		Mode        string                      `json:"mode,omitempty"`
 		HTTP        struct {
-			Timeout        string `json:"timeout"`
-			RetryWaitMin   string `json:"retryWaitMin"`
-			RetryWaitMax   string `json:"retryWaitMax"`
-			RetryMax       int    `json:"retryMax"`
-			PanicOnFailure bool   `json:"panicOnFailure"`
-		} `json:"http"`
-	} `json:"auditsink"`
+			Timeout        string `json:"timeout,omitempty"`
+			RetryWaitMin   string `json:"retryWaitMin,omitempty"`
+			RetryWaitMax   string `json:"retryWaitMax,omitempty"`
+			RetryMax       int    `json:"retryMax,omitempty"`
+			PanicOnFailure bool   `json:"panicOnFailure,omitempty"`
+		} `json:"http,omitempty"`
+	} `json:"auditsink,omitempty"`
 
 	CertManager struct {
-		Enabled bool `json:"enabled"`
-	} `json:"certmanager"`
+		Enabled bool `json:"enabled,omitempty"`
+	} `json:"certmanager,omitempty"`
 
 	Auth struct {
-		Mode AuthMode `json:"mode"`
-	} `json:"auth"`
+		Mode AuthMode `json:"mode,omitempty"`
+	} `json:"auth,omitempty"`
 
 	Impersonation struct {
-		Enabled bool `json:"enabled"`
+		Enabled bool `json:"enabled,omitempty"`
 		Config  struct {
 			Users           []string `json:"users,omitempty"`
 			Groups          []string `json:"groups,omitempty"`
 			ServiceAccounts []string `json:"serviceaccounts,omitempty"`
 			Scopes          []string `json:"scopes,omitempty"`
 		} `json:"config,omitempty"`
-	} `json:"impersonation"`
+	} `json:"impersonation,omitempty"`
 
 	ALS struct {
-		Enabled   bool                        `json:"enabled"`
-		Image     helm.Image                  `json:"image"`
+		Enabled   bool                        `json:"enabled,omitempty"`
+		Image     helm.Image                  `json:"image,omitempty"`
 		Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 		Service   struct {
-			Type string `json:"type"`
-			Port int    `json:"port"`
-		} `json:"service"`
+			Type string `json:"type,omitempty"`
+			Port int    `json:"port,omitempty"`
+		} `json:"service,omitempty"`
 		MTLS struct {
-			Enabled bool `json:"enabled"`
-		} `json:"mtls"`
+			Enabled bool `json:"enabled,omitempty"`
+		} `json:"mtls,omitempty"`
 		MultiCluster struct {
-			Enabled bool `json:"enabled"`
-		} `json:"multiCluster"`
-	} `json:"als"`
+			Enabled bool `json:"enabled,omitempty"`
+		} `json:"multiCluster,omitempty"`
+	} `json:"als,omitempty"`
+
+	KubeStateMetrics struct {
+		Enabled   bool                        `json:"enabled,omitempty"`
+		Replicas  int                         `json:"replicas,omitempty"`
+		Image     helm.Image                  `json:"image,omitempty"`
+		Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+		Ports     struct {
+			Monitoring int `json:"monitoring,omitempty"`
+			Telemetry  int `json:"telemetry,omitempty"`
+		} `json:"ports,omitempty"`
+		Service struct {
+			MonitoringPort int `json:"monitoringPort,omitempty"`
+			TelemetryPort  int `json:"telemetryPort,omitempty"`
+		} `json:"service,omitempty"`
+	} `json:"kubestatemetrics,omitempty"`
 }
 
 func (values *Values) SetDefaults(releaseName, istioNamespace string) {
@@ -280,4 +296,6 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 
 	values.Auth.Mode = anonymous
 	values.Impersonation.Enabled = false
+
+	values.KubeStateMetrics.Enabled = true
 }

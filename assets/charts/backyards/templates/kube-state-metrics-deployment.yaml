@@ -1,0 +1,94 @@
+{{- if and .Values.prometheus.enabled .Values.kubestatemetrics.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "kubestatemetrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "kubestatemetrics.fullname" . }}
+    app.kubernetes.io/name: {{ include "kubestatemetrics.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: kube-state-metrics
+    app.kubernetes.io/part-of: {{ include "kubestatemetrics.name" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kubestatemetrics.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: kube-state-metrics
+      app.kubernetes.io/part-of: {{ include "kubestatemetrics.name" . }}
+  template:
+    metadata:
+      annotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "443"
+      labels:
+        app: {{ include "kubestatemetrics.fullname" . }}
+        app.kubernetes.io/name: {{ include "kubestatemetrics.name" . }}
+        helm.sh/chart: {{ include "backyards.chart" . }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+        app.kubernetes.io/component: kube-state-metrics
+        app.kubernetes.io/part-of: {{ include "kubestatemetrics.name" . }}
+    spec:
+      containers:
+      - name: kube-state-metrics
+        image: "{{ required "A kubestatemetrics image name is required!" .Values.kubestatemetrics.image.repository }}:{{ required "A kubestatemetrics image tag is required!" .Values.kubestatemetrics.image.tag }}"
+        imagePullPolicy: {{ .Values.kubestatemetrics.image.pullPolicy }}
+        args:
+          - --port={{ .Values.kubestatemetrics.ports.monitoring }}
+          - --telemetry-port={{ .Values.kubestatemetrics.ports.telemetry }}
+          - --collectors=certificatesigningrequests
+          - --collectors=configmaps
+          - --collectors=cronjobs
+          - --collectors=daemonsets
+          - --collectors=deployments
+          - --collectors=endpoints
+          - --collectors=horizontalpodautoscalers
+          - --collectors=ingresses
+          - --collectors=jobs
+          - --collectors=limitranges
+          - --collectors=namespaces
+          - --collectors=nodes
+          - --collectors=persistentvolumeclaims
+          - --collectors=persistentvolumes
+          - --collectors=poddisruptionbudgets
+          - --collectors=pods
+          - --collectors=replicasets
+          - --collectors=replicationcontrollers
+          - --collectors=resourcequotas
+          - --collectors=secrets
+          - --collectors=services
+          - --collectors=statefulsets
+          - --collectors=storageclasses
+        ports:
+        - name: http-monitoring
+          containerPort: {{ .Values.kubestatemetrics.ports.monitoring }}
+        - name: http-telemetry
+          containerPort: {{ .Values.kubestatemetrics.ports.telemetry }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.kubestatemetrics.ports.telemetry }}
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.kubestatemetrics.ports.monitoring }}
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        {{- with .Values.kubestatemetrics.resources }}
+        resources:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        securityContext:
+          runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: {{ include "kubestatemetrics.fullname" . }}
+{{- end }}
