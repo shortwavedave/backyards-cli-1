@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: {{ include "kubeletdiscovery.name" . }}
+    app.kubernetes.io/name: {{ include "kubeletdiscovery.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: kubelet-discovery
+    app.kubernetes.io/part-of: {{ include "kubeletdiscovery.name" . }}
+    k8s-app: {{ include "kubeletdiscovery.name" . }}
+  name: {{ include "kubeletdiscovery.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kubeletdiscovery.fullname" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kubeletdiscovery.fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: pause
+        image: gcr.io/google_containers/pause-amd64:3.0
+        imagePullPolicy: IfNotPresent
+        resources: {}
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      restartPolicy: Always
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate

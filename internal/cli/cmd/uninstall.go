@@ -32,9 +32,13 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s/resourcemanager"
+	"github.com/banzaicloud/backyards-cli/pkg/nodeexporter"
 )
 
-type uninstallCommand struct{}
+type uninstallCommand struct {
+	cli cli.CLI
+}
 
 type UninstallOptions struct {
 	releaseName    string
@@ -45,7 +49,9 @@ type UninstallOptions struct {
 }
 
 func NewUninstallCommand(cli cli.CLI) *cobra.Command {
-	c := &uninstallCommand{}
+	c := &uninstallCommand{
+		cli: cli,
+	}
 	options := &UninstallOptions{}
 
 	cmd := &cobra.Command{
@@ -87,12 +93,18 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 					}
 					options.uninstallEverything = response == AnswerAll
 				}
-				err := c.run(cli, options)
+				err := c.run(options)
 				if err != nil {
 					return err
 				}
+
+				err = c.runNodeExporterUninstall(options)
+				if err != nil {
+					return err
+				}
+
 				cli.GetPersistentConfig().SetToken("")
-				return c.runSubcommands(cli, options)
+				return c.runSubcommands(options)
 			})
 		},
 	}
@@ -106,13 +118,13 @@ It can only dump the removable resources with the '--dump-resources' option.`,
 	return cmd
 }
 
-func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
+func (c *uninstallCommand) run(options *UninstallOptions) error {
 	values, err := getValues(options.releaseName, options.istioNamespace, nil)
 	if err != nil {
 		return err
 	}
 
-	objects, err := getBackyardsObjects(values, cli)
+	objects, err := getBackyardsObjects(values, c.cli)
 	if err != nil {
 		return err
 	}
@@ -120,12 +132,12 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 	objects.Sort(helm.UninstallObjectOrder())
 
 	if !options.dumpResources {
-		client, err := cli.GetK8sClient()
+		client, err := c.cli.GetK8sClient()
 		if err != nil {
 			return err
 		}
 
-		err = k8s.DeleteResources(client, cli.LabelManager(), objects, k8s.WaitForResourceConditions(wait.Backoff{
+		err = k8s.DeleteResources(client, c.cli.LabelManager(), objects, k8s.WaitForResourceConditions(wait.Backoff{
 			Duration: time.Second * 5,
 			Factor:   1,
 			Jitter:   0,
@@ -141,12 +153,12 @@ func (c *uninstallCommand) run(cli cli.CLI, options *UninstallOptions) error {
 	if err != nil {
 		return errors.WrapIf(err, "could not render YAML manifest")
 	}
-	fmt.Fprint(cli.Out(), yaml)
+	fmt.Fprint(c.cli.Out(), yaml)
 
 	return nil
 }
 
-func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions) error {
+func (c *uninstallCommand) runSubcommands(options *UninstallOptions) error {
 	var err error
 	var scmd *cobra.Command
 
@@ -158,7 +170,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.uninstallEverything {
 			scmdOptions.UninstallEverything = true
 		}
-		scmd = demoapp.NewUninstallCommand(cli, scmdOptions)
+		scmd = demoapp.NewUninstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during demo application uninstall")
@@ -173,7 +185,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.uninstallEverything {
 			scmdOptions.UninstallEverything = true
 		}
-		scmd = canary.NewUninstallCommand(cli, scmdOptions)
+		scmd = canary.NewUninstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during Canary feature uninstall")
@@ -188,7 +200,7 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.uninstallEverything {
 			scmdOptions.UninstallEverything = true
 		}
-		scmd = certmanager.NewUninstallCommand(cli, scmdOptions)
+		scmd = certmanager.NewUninstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during cert-manager uninstall")
@@ -203,10 +215,39 @@ func (c *uninstallCommand) runSubcommands(cli cli.CLI, options *UninstallOptions
 		if options.uninstallEverything {
 			scmdOptions.UninstallEverything = true
 		}
-		scmd = istio.NewUninstallCommand(cli, scmdOptions)
+		scmd = istio.NewUninstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during Istio mesh uninstall")
+		}
+	}
+
+	return nil
+}
+
+func (c *uninstallCommand) runNodeExporterUninstall(options *UninstallOptions) error {
+	client, err := c.cli.GetK8sClient()
+	if err != nil {
+		return err
+	}
+
+	m, err := nodeexporter.NewNodeExporterManager(resourcemanager.New(client, c.cli.LabelManager()), c.cli.GetPersistentConfig().Namespace())
+	if err != nil {
+		return err
+	}
+	if options.dumpResources {
+		yaml, err := m.Install().YAML()
+		if err != nil {
+			return err
+		}
+		_, err = c.cli.Out().Write([]byte(yaml))
+		if err != nil {
+			return err
+		}
+	} else {
+		err = m.Uninstall().Do()
+		if err != nil {
+			return err
 		}
 	}
 

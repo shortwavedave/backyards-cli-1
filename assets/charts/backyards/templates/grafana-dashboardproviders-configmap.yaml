@@ -1,0 +1,27 @@
+{{- if .Values.grafana.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "grafana.fullname" . }}-dbp-0
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "grafana.name" . }}
+    app.kubernetes.io/name: {{ include "grafana.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+    helm.sh/chart: {{ include "backyards.chart" . }}
+data:
+  dashboardproviders.yaml: |-
+    apiVersion: 1
+    providers:
+    - name: 'sidecarProvider'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      options:
+        path: /tmp/dashboards
+{{- end }}

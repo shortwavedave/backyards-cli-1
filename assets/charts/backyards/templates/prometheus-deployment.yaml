@@ -25,6 +25,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: {{ .Values.prometheus.inMesh | quote }}
+        traffic.sidecar.istio.io/excludeOutboundPorts: "443,10250,15014,15090,42422"
       labels:
         app: {{ include "prometheus.fullname" . }}
         app.kubernetes.io/name: {{ include "prometheus.name" . }}
@@ -42,7 +43,41 @@ spec:
       - name: prometheus-config
         configMap:
           name: {{ include "prometheus.fullname" . }}
+      - name: prometheus-rules
+        emptyDir: {}
       containers:
+      - env:
+        - name: LABEL
+          value: prometheus_rule
+        - name: FOLDER
+          value: /etc/prometheus/rules/
+        - name: RESOURCE
+          value: configmap
+        - name: REQ_URL
+          value: http://127.0.0.1:9090/prometheus/-/reload
+        - name: REQ_METHOD
+          value: POST
+        image: kiwigrid/k8s-sidecar:0.1.20
+        imagePullPolicy: IfNotPresent
+        name: rules-loader
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/prometheus/rules/
+          name: prometheus-rules
+      - args:
+        - --webhook-url=http://127.0.0.1:9090/prometheus/-/reload
+        - --volume-dir=/etc/prometheus
+        image: quay.io/coreos/configmap-reload:v0.0.1
+        imagePullPolicy: IfNotPresent
+        name: rules-configmap-reloader
+        resources:
+          limits:
+            cpu: 100m
+            memory: 25Mi
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+          readOnly: true
       - name: prometheus
         ports:
         - name: http
@@ -53,6 +88,9 @@ spec:
         - name: prometheus-config
           mountPath: /etc/prometheus
           readOnly: true
+        - mountPath: /etc/prometheus/rules/
+          name: prometheus-rules
+          readOnly: true
         image: "{{ required "A prometheus image name is required!" .Values.prometheus.image.repository }}:{{ required "An prometheus image tag is required!" .Values.prometheus.image.tag }}"
         imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
         args:
@@ -61,6 +99,7 @@ spec:
         - "--config.file=/etc/prometheus/prometheus.yml"
         - "--log.level=info"
         - "--web.external-url={{ .Values.prometheus.externalUrl }}"
+        - --web.enable-lifecycle
         readinessProbe:
           httpGet:
             path: {{ .Values.prometheus.externalUrl }}/-/ready

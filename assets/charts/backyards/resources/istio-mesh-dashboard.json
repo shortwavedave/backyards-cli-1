@@ -1197,7 +1197,9 @@
   "refresh": "10s",
   "schemaVersion": 16,
   "style": "light",
-  "tags": [],
+  "tags": [
+      "istio"
+  ],
   "templating": {
     "list": [
       {

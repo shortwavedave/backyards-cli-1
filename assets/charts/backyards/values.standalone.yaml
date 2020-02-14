@@ -30,6 +30,8 @@ prometheus:
     requests:
       cpu: 200m
       memory: 256Mi
+kubestatemetrics:
+  enabled: true
 grafana:
   enabled: true
   externalUrl: /grafana

@@ -89,8 +89,8 @@ prometheus:
   replicas: 1
   image:
     repository: prom/prometheus
-    tag: v2.15.2
-    pullPolicy: Always
+    tag: v2.16.0
+    pullPolicy: IfNotPresent
   resources:
     {}
     # limits:
@@ -107,18 +107,42 @@ prometheus:
   service:
     type: ClusterIP
     port: 59090
-  inMesh: false
+  inMesh: true
+
+kubestatemetrics:
+  enabled: false
+  replicas: 1
+  image:
+    repository: quay.io/coreos/kube-state-metrics
+    tag: v1.9.4
+    pullPolicy: IfNotPresent
+  ports:
+    monitoring: 42422
+    telemetry: 15014
+  service:
+    monitoringPort: 42422
+    telemetryPort: 15014
+  resources:
+    {}
+    # limits:
+    #   cpu: 200m
+    #   memory: 50Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 30Mi
 
 grafana:
   enabled: true
   replicas: 1
   image:
     repository: grafana/grafana
-    tag: 6.3.0
-    pullPolicy: Always
+    tag: 6.6.1
+    pullPolicy: IfNotPresent
   resources: {}
   security:
     enabled: false
+  plugins:
+  - grafana-piechart-panel
 
 tracing:
   enabled: true
@@ -128,7 +152,7 @@ tracing:
     image:
       repository: docker.io/jaegertracing/all-in-one
       tag: 1.16
-      pullPolicy: Always
+      pullPolicy: IfNotPresent
     memory:
       max_traces: 50000
     # spanStorageType value can be "memory" and "badger" for all-in-one image
@@ -152,7 +176,7 @@ auditsink:
   image:
     repository: fluent/fluentd
     tag: v1.7-1
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   resources:
   tolerations:
   mode: http
@@ -198,7 +222,7 @@ als:
   image:
     repository: banzaicloud/backyards-als
     tag: 0.0.1
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   resources:
     requests:
       cpu: 100m

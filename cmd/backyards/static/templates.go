@@ -51,6 +51,9 @@ var Licenses http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/license
 // PeerClusterAssetsSource contains manifest to pre-configure peer clusters before attach
 var PeerClusterAssetsSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/peercluster"))
 
+// NodeExporterChartSource chart that will be rendered by `backyards install`
+var NodeExporterChartSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/charts/prometheus-node-exporter"))
+
 // getRepoRoot returns the full path to the root of the repo
 func getRepoRoot() string {
 	//+nolint

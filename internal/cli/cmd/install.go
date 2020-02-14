@@ -42,6 +42,8 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s/resourcemanager"
+	"github.com/banzaicloud/backyards-cli/pkg/nodeexporter"
 )
 
 const (
@@ -129,6 +131,11 @@ The command can install every component at once with the '--install-everything' 
 			}
 
 			err = c.run(options)
+			if err != nil {
+				return err
+			}
+
+			err = c.runNodeExporterInstall(options)
 			if err != nil {
 				return err
 			}
@@ -266,12 +273,12 @@ func getValues(releaseName, istioNamespace string, valueOverrideFunc func(values
 
 	valuesYAML, err := helm.GetDefaultValues(backyards.Chart)
 	if err != nil {
-		return Values{}, errors.WrapIf(err, "could not get helm default values")
+		return values, errors.WrapIf(err, "could not get helm default values")
 	}
 
 	err = yaml.Unmarshal(valuesYAML, &values)
 	if err != nil {
-		return Values{}, errors.WrapIf(err, "could not unmarshal yaml values")
+		return values, errors.WrapIf(err, "could not unmarshal yaml values")
 	}
 
 	values.SetDefaults(releaseName, istioNamespace)
@@ -552,6 +559,35 @@ func (c *installCommand) runDemoInstall(options *InstallOptions) error {
 		err = dbCmd.RunE(dbCmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during opening dashboard")
+		}
+	}
+
+	return nil
+}
+
+func (c *installCommand) runNodeExporterInstall(options *InstallOptions) error {
+	client, err := c.cli.GetK8sClient()
+	if err != nil {
+		return err
+	}
+
+	m, err := nodeexporter.NewNodeExporterManager(resourcemanager.New(client, c.cli.LabelManager()), c.cli.GetPersistentConfig().Namespace())
+	if err != nil {
+		return err
+	}
+	if options.dumpResources {
+		yaml, err := m.Install().YAML()
+		if err != nil {
+			return err
+		}
+		_, err = c.cli.Out().Write([]byte(yaml))
+		if err != nil {
+			return err
+		}
+	} else {
+		err = m.Install().Do()
+		if err != nil {
+			return err
 		}
 	}
 

@@ -10,6 +10,14 @@ Expand the name of the chart.
 {{- printf "%s-prometheus" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "kubestatemetrics.name" -}}
+{{- printf "%s-kubestatemetrics" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "kubeletdiscovery.name" -}}
+{{- printf "%s-kubelet-discovery" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "grafana.name" -}}
 {{- printf "%s-grafana" (include "backyards.name" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
@@ -53,6 +61,20 @@ Create a default fully qualified app name for the Prometheus component
 */}}
 {{- define "prometheus.fullname" -}}
 {{- printf "%s-prometheus" (include "backyards.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name for the kube-state-metrics component
+*/}}
+{{- define "kubestatemetrics.fullname" -}}
+{{- printf "%s-kubestatemetrics" (include "backyards.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name for the kubelet-discovery component
+*/}}
+{{- define "kubeletdiscovery.fullname" -}}
+{{- printf "%s-kubelet-discovery" (include "backyards.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*

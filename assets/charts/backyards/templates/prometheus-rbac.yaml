@@ -28,8 +28,10 @@ metadata:
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
 rules:
 - apiGroups: [""]
-  resources: ["services", "endpoints", "pods"]
+  resources: ["configmaps", "services", "endpoints", "pods", "nodes/metrics", "nodes", "nodes/proxy"]
   verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
