@@ -20,19 +20,31 @@ import (
 	"github.com/MakeNowJust/heredoc"
 )
 
-func (c *client) SwitchGlobalMTLS(enabled bool) (bool, error) {
+type ApplyMeshPolicyInput struct {
+	MTLSMode *MTLSModeInput `json:"mTLSMode"`
+}
+
+type MTLSModeInput string
+
+const (
+	MTLSModeInputStrict     MTLSModeInput = "STRICT"
+	MTLSModeInputPermissive MTLSModeInput = "PERMISSIVE"
+	MTLSModeInputDISABLED   MTLSModeInput = "DISABLED"
+)
+
+func (c *client) ApplyMeshPolicy(input ApplyMeshPolicyInput) (bool, error) {
 	request := heredoc.Doc(`
-	  mutation switchGlobalMTLS(
-        $enabled: Boolean!
+	  mutation applyMeshPolicy(
+        $input: ApplyMeshPolicyInput!
       ) {
-        switchGlobalMTLS(
-          enabled: $enabled
+        applyMeshPolicy(
+          input: $input
         )
       }
 `)
 
 	r := c.NewRequest(request)
-	r.Var("enabled", enabled)
+	r.Var("input", input)
 
 	// run it and capture the response
 	var respData map[string]bool
@@ -40,5 +52,5 @@ func (c *client) SwitchGlobalMTLS(enabled bool) (bool, error) {
 		return false, err
 	}
 
-	return respData["switchGlobalMTLS"], nil
+	return respData["applyMeshPolicy"], nil
 }

@@ -53,7 +53,7 @@ type Client interface {
 	DisableSidecarEgress(input DisableSidecarEgressInput) (DisableSidecarEgressResponse, error)
 	ApplyPolicyPeers(input ApplyPolicyPeersInput) (bool, error)
 	DisablePolicyPeers(input DisablePolicyPeersInput) (bool, error)
-	SwitchGlobalMTLS(enabled bool) (bool, error)
+	ApplyMeshPolicy(input ApplyMeshPolicyInput) (bool, error)
 	SubscribeToAccessLogs(ctx context.Context, req *GetAccessLogsInput, resp chan interface{}, err chan error)
 	Close()
 }

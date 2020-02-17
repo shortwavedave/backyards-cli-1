@@ -29,12 +29,12 @@ func NewDisableCommand(cli cli.CLI) *cobra.Command {
 	options := newMTLSOptions()
 
 	cmd := &cobra.Command{
-		Use:           "disable [[--resource=]namespace|namespace/servicename[:[portname|portnumber]]]",
+		Use:           "disable [[--resource=]mesh|namespace|namespace/servicename[:[portname|portnumber]]]",
 		Short:         "Set mTLS policy setting for a resource to DISABLED",
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := parseMTLSArgs(options, args, cli, false, true)
+			err := parseMTLSArgs(options, args, cli, true, true)
 			if err != nil {
 				return errors.WrapIf(err, "could not parse arguments")
 			}

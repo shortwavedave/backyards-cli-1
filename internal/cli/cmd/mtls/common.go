@@ -166,10 +166,8 @@ func setMTLS(cli cli.CLI, options *mTLSOptions, client graphql.Client, mode mTLS
 
 	switch {
 	case options.resourceName.Name == meshWidePolicy:
-		if mode == ModeDisabled {
-			return errors.New(meshNotSupportedError)
-		}
-		err := switchGlobalMTLS(client, mode)
+		req := prepareApplyMeshPolicyRequest(mode)
+		err := applyMeshPolicy(client, req)
 		if err != nil {
 			return err
 		}
@@ -228,6 +226,15 @@ func unsetMTLS(cli cli.CLI, options *mTLSOptions, client graphql.Client) error {
 		log.Infof("policy peers for %s unset successfully\n\n", options.resourceName)
 		return getService(cli, options, client)
 	}
+}
+
+func prepareApplyMeshPolicyRequest(mode mTLSMode) graphql.ApplyMeshPolicyInput {
+	mtlsMode := graphql.MTLSModeInput(mode)
+	var req = graphql.ApplyMeshPolicyInput{
+		MTLSMode: &mtlsMode,
+	}
+
+	return req
 }
 
 func prepareApplyPolicyPeersRequest(options *mTLSOptions, mode mTLSMode) graphql.ApplyPolicyPeersInput {
@@ -296,23 +303,14 @@ func prepareDisablePolicyPeersRequest(options *mTLSOptions) graphql.DisablePolic
 	return req
 }
 
-func switchGlobalMTLS(client graphql.Client, mode mTLSMode) error {
-	var enabled bool
-	switch mode {
-	case ModePermissive:
-		enabled = false
-	case ModeStrict:
-		enabled = true
-	default:
-		return errors.New(meshNotSupportedError)
-	}
-	response, err := client.SwitchGlobalMTLS(enabled)
+func applyMeshPolicy(client graphql.Client, req graphql.ApplyMeshPolicyInput) error {
+	response, err := client.ApplyMeshPolicy(req)
 	if err != nil {
-		return errors.WrapIf(err, "could not switch global mTLS")
+		return errors.WrapIf(err, "could not apply mesh policy")
 	}
 
 	if !response {
-		return errors.New("unknown internal error: could not switch global mTLS")
+		return errors.New("unknown internal error: could not apply mesh policy")
 	}
 
 	return nil

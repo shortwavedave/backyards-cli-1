@@ -7,7 +7,7 @@ Set mTLS policy setting for a resource to DISABLED
 Set mTLS policy setting for a resource to DISABLED
 
 ```
-backyards mtls disable [[--resource=]namespace|namespace/servicename[:[portname|portnumber]]] [flags]
+backyards mtls disable [[--resource=]mesh|namespace|namespace/servicename[:[portname|portnumber]]] [flags]
 ```
 
 ### Options
