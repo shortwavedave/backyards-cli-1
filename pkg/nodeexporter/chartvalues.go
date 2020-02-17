@@ -53,3 +53,10 @@ type ChartValues struct {
 		} `json:"monitor,omitempty"`
 	} `json:"prometheus,omitempty"`
 }
+
+func (values *ChartValues) SetDefaults() {
+	values.RBAC.PSPEnabled = true
+
+	values.Service.Port = 19100
+	values.Service.TargetPort = 19100
+}

@@ -58,7 +58,7 @@ func (r *Manager) getObjects() (object.K8sObjects, error) {
 		return nil, errors.WrapIf(err, "could not unmarshal yaml values")
 	}
 
-	values.RBAC.PSPEnabled = true
+	values.SetDefaults()
 
 	rawValues, err := yaml.Marshal(values)
 	if err != nil {
