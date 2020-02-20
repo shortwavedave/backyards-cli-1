@@ -1,0 +1,27 @@
+image:
+  repository: banzaicloud/turbonomic-importer
+  tag: v0.1.6
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+turbonomic:
+  hostname: nginx.turbonomic.svc.cluster.local
+  username: ""
+  password: ""
+  insecureSkipVerify: false
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

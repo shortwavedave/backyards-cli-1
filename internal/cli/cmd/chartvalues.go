@@ -218,6 +218,18 @@ type Values struct {
 			TelemetryPort  int `json:"telemetryPort,omitempty"`
 		} `json:"service,omitempty"`
 	} `json:"kubestatemetrics,omitempty"`
+
+	TurbonomicImporter struct {
+		Enabled    bool                        `json:"enabled,omitempty"`
+		Image      helm.Image                  `json:"image"`
+		Resources  corev1.ResourceRequirements `json:"resources,omitempty"`
+		Turbonomic struct {
+			Hostname           string `json:"hostname,omitempty"`
+			Username           string `json:"username"`
+			Password           string `json:"password"`
+			InsecureSkipVerify bool   `json:"insecureSkipVerify,omitempty"`
+		} `json:"turbonomic"`
+	} `json:"turbonomicimporter"`
 }
 
 func (values *Values) SetDefaults(releaseName, istioNamespace string) {
@@ -298,4 +310,6 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 	values.Impersonation.Enabled = false
 
 	values.KubeStateMetrics.Enabled = true
+
+	values.TurbonomicImporter.Enabled = false
 }

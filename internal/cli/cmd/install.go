@@ -38,6 +38,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/turbonomicimporter"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
@@ -58,11 +59,12 @@ var (
 )
 
 type installCommand struct {
-	cli                      cli.CLI
-	shouldInstallIstio       bool
-	shouldInstallCanary      bool
-	shouldInstallCertManager bool
-	shouldRunDemo            bool
+	cli                             cli.CLI
+	shouldInstallIstio              bool
+	shouldInstallCanary             bool
+	shouldInstallCertManager        bool
+	shouldInstallTurbonomicImporter bool
+	shouldRunDemo                   bool
 }
 
 type InstallOptions struct {
@@ -74,6 +76,12 @@ type InstallOptions struct {
 	anonymousAuth     bool
 	installEverything bool
 	runDemo           bool
+
+	installTurbonomicImporter    bool
+	turbonomicHostname           string
+	turbonomicUsername           string
+	turbonomicPassword           string
+	turbonomicInsecureSkipVerify bool
 
 	apiImage       string
 	webImage       string
@@ -125,6 +133,11 @@ The command can install every component at once with the '--install-everything' 
 				return err
 			}
 
+			err = c.runTurbonomicImporterInstall(options)
+			if err != nil {
+				return err
+			}
+
 			err = c.runSubcommands(options)
 			if err != nil {
 				return err
@@ -155,6 +168,18 @@ The command can install every component at once with the '--install-everything' 
 	cmd.Flags().BoolVarP(&options.installEverything, "install-everything", "a", options.installEverything, "Install all required components at once")
 	cmd.Flags().BoolVar(&options.runDemo, "run-demo", options.runDemo, "Install demo application, send load and open up the dashboard")
 
+	cmd.Flags().BoolVar(&options.installTurbonomicImporter, "install-turbonomic-importer", options.installTurbonomicImporter, "Install turbonomic importer")
+	cmd.Flags().Lookup("install-turbonomic-importer").Hidden = true
+
+	cmd.Flags().StringVar(&options.turbonomicHostname, "turbonomic-hostname", options.turbonomicHostname, "Hostname of Turbonomic service")
+	cmd.Flags().Lookup("turbonomic-hostname").Hidden = true
+	cmd.Flags().StringVar(&options.turbonomicUsername, "turbonomic-username", options.turbonomicUsername, "Username for Turbonomic service")
+	cmd.Flags().Lookup("turbonomic-username").Hidden = true
+	cmd.Flags().StringVar(&options.turbonomicPassword, "turbonomic-password", options.turbonomicPassword, "Password for Turbonomic service")
+	cmd.Flags().Lookup("turbonomic-password").Hidden = true
+	cmd.Flags().BoolVar(&options.turbonomicInsecureSkipVerify, "turbonomic-insecure-skip-verify", options.turbonomicInsecureSkipVerify, "Proceed on insecure TLS connections")
+	cmd.Flags().Lookup("turbonomic-insecure-skip-verify").Hidden = true
+
 	cmd.Flags().BoolVar(&options.enableAuditSink, "enable-auditsink", options.enableAuditSink, "Enable deploying the auditsink service and sending audit logs over http")
 	cmd.Flags().BoolVar(&options.anonymousAuth, "anonymous-auth", options.anonymousAuth, "Switch to anonymous mode")
 
@@ -179,8 +204,8 @@ func (c *installCommand) run(options *InstallOptions) error {
 	}
 
 	values, err := getValues(options.releaseName, options.istioNamespace, func(values *Values) {
-		values.Application.Image.Tag = "1.1.3"
-		values.Web.Image.Tag = "1.1.3"
+		values.Application.Image.Tag = "1.2.0-turbonomic.0"
+		values.Web.Image.Tag = "1.2.0-turbonomic.0"
 
 		if options.enableAuditSink {
 			values.AuditSink.Enabled = true
@@ -482,6 +507,8 @@ func (c *installCommand) shouldInstallComponents(options *InstallOptions) error 
 	}
 	c.shouldRunDemo = options.runDemo || runDemoInteractively
 
+	c.shouldInstallTurbonomicImporter = options.installTurbonomicImporter
+
 	return nil
 }
 
@@ -588,6 +615,29 @@ func (c *installCommand) runNodeExporterInstall(options *InstallOptions) error {
 		err = m.Install().Do()
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *installCommand) runTurbonomicImporterInstall(options *InstallOptions) error {
+	var err error
+	var scmd *cobra.Command
+
+	if c.shouldInstallTurbonomicImporter {
+		scmdOptions := turbonomicimporter.NewInstallOptions()
+		if options.dumpResources {
+			scmdOptions.DumpResources = true
+		}
+		scmdOptions.TurbonomicHostname = options.turbonomicHostname
+		scmdOptions.TurbonomicUsername = options.turbonomicUsername
+		scmdOptions.TurbonomicPassword = options.turbonomicPassword
+		scmdOptions.TurbonomicInsecureSkipVerify = options.turbonomicInsecureSkipVerify
+		scmd = turbonomicimporter.NewInstallCommand(c.cli, scmdOptions)
+		err = scmd.RunE(scmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during demo application install")
 		}
 	}
 

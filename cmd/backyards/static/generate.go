@@ -130,4 +130,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = vfsgen.Generate(static.TurbonomicImporterChartSource, vfsgen.Options{
+		Filename:     "static/turbonomicimporter/chart.gogen.go",
+		PackageName:  "turbonomicimporter",
+		VariableName: "Chart",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

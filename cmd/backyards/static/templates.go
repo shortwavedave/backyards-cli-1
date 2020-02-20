@@ -54,6 +54,9 @@ var PeerClusterAssetsSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), 
 // NodeExporterChartSource chart that will be rendered by `backyards install`
 var NodeExporterChartSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/charts/prometheus-node-exporter"))
 
+// TurbonomicImporterChartSource chart that will be rendered by `backyards install`
+var TurbonomicImporterChartSource http.FileSystem = http.Dir(path.Join(getRepoRoot(), "assets/charts/turbonomic-importer"))
+
 // getRepoRoot returns the full path to the root of the repo
 func getRepoRoot() string {
 	//+nolint

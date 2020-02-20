@@ -28,6 +28,7 @@ import (
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/istio"
+	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/turbonomicimporter"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/util"
 	"github.com/banzaicloud/backyards-cli/pkg/cli"
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
@@ -219,6 +220,18 @@ func (c *uninstallCommand) runSubcommands(options *UninstallOptions) error {
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
 			return errors.WrapIf(err, "error during Istio mesh uninstall")
+		}
+	}
+
+	if options.uninstallEverything {
+		scmdOptions := turbonomicimporter.NewUninstallOptions()
+		if options.dumpResources {
+			scmdOptions.DumpResources = true
+		}
+		scmd = turbonomicimporter.NewUninstallCommand(c.cli, scmdOptions)
+		err = scmd.RunE(scmd, nil)
+		if err != nil {
+			return errors.WrapIf(err, "error during demo application uninstall")
 		}
 	}
 
