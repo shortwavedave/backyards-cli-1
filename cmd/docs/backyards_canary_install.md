@@ -31,7 +31,7 @@ backyards canary install [flags]
   -d, --dump-resources            Dump resources to stdout instead of applying them
   -h, --help                      help for install
       --istio-namespace string    Namespace of Istio sidecar injector (default "istio-system")
-      --prometheus-url string     Prometheus URL for metrics (default "http://backyards-prometheus.backyards-system:9090/prometheus")
+      --prometheus-url string     Prometheus URL for metrics (default "http://backyards-prometheus.backyards-system:59090/prometheus")
       --release-name string       Name of the release (default "canary-operator")
 ```
 
