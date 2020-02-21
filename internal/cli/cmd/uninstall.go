@@ -236,7 +236,7 @@ func (c *uninstallCommand) runNodeExporterUninstall(options *UninstallOptions) e
 		return err
 	}
 	if options.dumpResources {
-		yaml, err := m.Install().YAML()
+		yaml, err := m.Uninstall().YAML()
 		if err != nil {
 			return err
 		}
