@@ -66,7 +66,7 @@ func (r *Manager) getObjects() (object.K8sObjects, error) {
 	}
 
 	objects, err := helm.Render(nodeexporter.Chart, string(rawValues), helm.ReleaseOptions{
-		Name:      "backyards",
+		Name:      "prometheus-node-exporter",
 		IsInstall: true,
 		IsUpgrade: false,
 		Namespace: r.namespace,
