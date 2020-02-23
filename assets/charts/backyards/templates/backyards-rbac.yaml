@@ -1,3 +1,4 @@
+{{- if .Values.application.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -191,3 +192,4 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "backyards.fullname" . }}
   namespace: {{ .Release.Namespace }}
+{{- end }}

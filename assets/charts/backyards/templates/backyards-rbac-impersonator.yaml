@@ -1,4 +1,4 @@
-{{ if .Values.impersonation.enabled -}}
+{{ if and .Values.application.enabled .Values.impersonation.enabled -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

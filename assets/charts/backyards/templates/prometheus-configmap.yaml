@@ -330,4 +330,32 @@ data:
         target_label: metrics_path
         replacement: $1
         action: replace
+    - job_name: 'federate'
+      scrape_interval: 15s
+      honor_labels: true
+      metrics_path: '/prometheus/federate'
+      kubernetes_sd_configs:
+      - role: service
+        namespaces:
+          names:
+          - backyards-system
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_backyards_banzaicloud_io_federated_prometheus]
+        separator: ;
+        regex: 'true'
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_service_label_backyards_banzaicloud_io_cluster_name]
+        separator: ;
+        regex: (.*)
+        target_label: clustername
+        replacement: $1
+        action: replace
+      params:
+        'match[]':
+          - '{job="envoy-stats"}'
+          - '{job="kubelet"}'
+          - '{job="kubelet-cadvisor"}'
+          - '{job="kube-state-metrics"}'
+          - '{job="node-exporter"}'
 {{- end }}

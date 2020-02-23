@@ -1,3 +1,4 @@
+{{- if .Values.application.enabled }}
 # Make it possible to reach Backyards without mTLS (eg. using kube-proxy)
 apiVersion: "authentication.istio.io/v1alpha1"
 kind: "Policy"
@@ -19,3 +20,4 @@ spec:
   peers:
   - mtls:
       mode: PERMISSIVE
+{{- end }}

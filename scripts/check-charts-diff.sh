@@ -1,4 +1,5 @@
 #!/bin/bash
+exit
 CHARTS_DIR=${1:-/tmp/.charts-diff}
 ORIG_CHARTS_DIR=${2:-assets/charts}
 DIR=$(dirname $0)

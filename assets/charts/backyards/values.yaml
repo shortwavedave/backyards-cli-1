@@ -46,6 +46,7 @@ tolerations: []
 affinity: {}
 
 application:
+  enabled: true
   image:
     repository: banzaicloud/backyards
     tag: 1.1.3
@@ -82,6 +83,8 @@ istio:
   CRName: mesh
   namespace: istio-system
 
+useIstioResources: true
+
 prometheus:
   enabled: false
   host: prometheus
@@ -105,9 +108,11 @@ prometheus:
       scrapeTimeout: 10s
       evaluationInterval: 10s
   service:
+    enabled: true
     type: ClusterIP
     port: 59090
   inMesh: true
+  clusterName: master
 
 kubestatemetrics:
   enabled: false
@@ -188,6 +193,7 @@ auditsink:
     panicOnFailure: false
 
 ingressgateway:
+  enabled: true
   meshgateway:
     enabled: true
   service:

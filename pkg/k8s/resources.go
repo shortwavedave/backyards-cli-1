@@ -50,8 +50,10 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 	var err error
 
 	for _, obj := range objects {
+		create := true
 		actual := obj.UnstructuredObject().DeepCopy()
 		desired := obj.UnstructuredObject().DeepCopy()
+		desiredCopy := obj.UnstructuredObject().DeepCopy()
 
 		objectName := GetFormattedName(desired)
 
@@ -59,6 +61,7 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			Name:      actual.GetName(),
 			Namespace: actual.GetNamespace(),
 		}, actual); err == nil {
+			create = false
 			skip, err := labelManager.CheckLabelsBeforeUpdate(actual, desired)
 			if err != nil {
 				log.Errorf("%s failed to check labels: %s", objectName, err)
@@ -84,11 +87,23 @@ func ApplyResources(client k8sclient.Client, labelManager LabelManager, objects 
 			desired = prepareObjectBeforeUpdate(actual, desired)
 
 			err = client.Update(context.Background(), desired)
-			if err != nil {
-				return errors.WrapIfWithDetails(err, "could not update resource", "name", objectName)
+			if k8serrors.IsConflict(err) || k8serrors.IsInvalid(err) {
+				err = client.Delete(context.Background(), desired)
+				if err != nil {
+					return errors.WrapIfWithDetails(err, "could not delete resource", "name", objectName)
+				}
+				log.Infof("%s deleted", objectName)
+				desired = desiredCopy
+				create = true
+			} else {
+				if err != nil {
+					return errors.WrapIfWithDetails(err, "could not update resource", "name", objectName)
+				}
+				log.Infof("%s configured", objectName)
 			}
-			log.Infof("%s configured", objectName)
-		} else {
+		}
+
+		if create {
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(desired); err != nil {
 				log.Error(err, "failed to set last applied annotation", "desired", desired)
 			}
