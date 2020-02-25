@@ -638,7 +638,7 @@ func (c *installCommand) runTurbonomicImporterInstall(options *InstallOptions) e
 		scmd = turbonomicimporter.NewInstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
-			return errors.WrapIf(err, "error during demo application install")
+			return errors.WrapIf(err, "error during turbonomic-importer install")
 		}
 	}
 

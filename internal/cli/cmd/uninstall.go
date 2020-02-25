@@ -231,7 +231,7 @@ func (c *uninstallCommand) runSubcommands(options *UninstallOptions) error {
 		scmd = turbonomicimporter.NewUninstallCommand(c.cli, scmdOptions)
 		err = scmd.RunE(scmd, nil)
 		if err != nil {
-			return errors.WrapIf(err, "error during demo application uninstall")
+			return errors.WrapIf(err, "error during turbonomic-importer uninstall")
 		}
 	}
 
