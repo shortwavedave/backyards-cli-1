@@ -71,6 +71,7 @@ var RootCmd = &cobra.Command{
 	Short:         "Install and manage Backyards",
 	SilenceErrors: true,
 	SilenceUsage:  false,
+	DisableAutoGenTag: true,
 }
 
 // Init is a temporary function to set initial values in the root cmd
