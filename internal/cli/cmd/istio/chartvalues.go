@@ -26,6 +26,8 @@ type Values struct {
 	ReplicaCount         int    `json:"replicaCount"`
 	UseNamespaceResource bool   `json:"useNamespaceResource"`
 
+	OperatorComponentSuffix string `json:"operatorComponentSuffix"`
+
 	RBAC struct {
 		Enabled bool `json:"enabled"`
 		PSP     struct {
@@ -52,4 +54,5 @@ type Values struct {
 func (values *Values) SetDefaults(releaseName string) {
 	values.NameOverride = releaseName
 	values.UseNamespaceResource = true
+	values.OperatorComponentSuffix = "-operator"
 }
