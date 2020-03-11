@@ -5,5 +5,4 @@ metadata:
   name: {{ .Release.Namespace }}
   labels:
 {{ include "turbonomic-importer.labels" . | indent 4 }}
-    istio-injection: enabled
 {{- end }}
