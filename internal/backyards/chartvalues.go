@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package backyards
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -24,8 +24,8 @@ import (
 type AuthMode string
 
 const (
-	anonymous     AuthMode = "anonymous"
-	impersonation AuthMode = "impersonation"
+	AnonymousAuthMode     AuthMode = "anonymous"
+	ImpersonationAuthMode AuthMode = "impersonation"
 )
 
 type Values struct {
@@ -34,6 +34,7 @@ type Values struct {
 	ReplicaCount         int                         `json:"replicaCount,omitempty"`
 	UseNamespaceResource bool                        `json:"useNamespaceResource,omitempty"`
 	Resources            corev1.ResourceRequirements `json:"resources,omitempty"`
+	UseIstioResources    bool                        `json:"useIstioResources,omitempty"`
 
 	Ingress struct {
 		Enabled     bool              `json:"enabled,omitempty"`
@@ -60,6 +61,7 @@ type Values struct {
 
 	Application struct {
 		helm.EnvironmentVariables
+		Enabled bool       `json:"enabled,omitempty"`
 		Image   helm.Image `json:"image,omitempty"`
 		Service struct {
 			Type string `json:"type,omitempty"`
@@ -97,10 +99,12 @@ type Values struct {
 			} `json:"global,omitempty"`
 		} `json:"config,omitempty"`
 		Service struct {
-			Type string `json:"type,omitempty"`
-			Port int    `json:"port,omitempty"`
+			Enabled bool   `json:"enabled,omitempty"`
+			Type    string `json:"type,omitempty"`
+			Port    int    `json:"port,omitempty"`
 		} `json:"service,omitempty"`
-		InMesh bool `json:"inMesh,omitempty"`
+		InMesh      bool   `json:"inMesh,omitempty"`
+		ClusterName string `json:"clusterName,omitempty"`
 	} `json:"prometheus,omitempty"`
 
 	Grafana struct {
@@ -147,6 +151,7 @@ type Values struct {
 	} `json:"tracing,omitempty"`
 
 	IngressGateway struct {
+		Enabled     bool `json:"enabled,omitempty"`
 		MeshGateway struct {
 			Enabled bool `json:"enabled,omitempty"`
 		} `json:"meshgateway,omitempty"`
@@ -294,7 +299,7 @@ func (values *Values) SetDefaults(releaseName, istioNamespace string) {
 	}
 	values.Tracing.Service.Name = "backyards-zipkin"
 
-	values.Auth.Mode = anonymous
+	values.Auth.Mode = AnonymousAuthMode
 	values.Impersonation.Enabled = false
 
 	values.KubeStateMetrics.Enabled = true

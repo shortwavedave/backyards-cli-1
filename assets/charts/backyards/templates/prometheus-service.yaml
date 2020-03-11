@@ -1,8 +1,12 @@
-{{- if .Values.prometheus.enabled }}
+{{- if and .Values.prometheus.enabled .Values.prometheus.service.enabled }}
 kind: Service
 apiVersion: v1
 metadata:
+  {{- if eq .Values.prometheus.clusterName "master" }}
   name: {{ include "prometheus.fullname" . }}
+  {{- else }}
+  name: {{ .Values.prometheus.clusterName }}-prometheus
+  {{- end }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "backyards.name" . }}
@@ -13,11 +17,16 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+    backyards.banzaicloud.io/cluster-name: {{ .Values.prometheus.clusterName }}
+    {{- if ne .Values.prometheus.clusterName "master" }}
+    backyards.banzaicloud.io/federated-prometheus: "true"
+    {{- end }}
 spec:
   type: {{ .Values.prometheus.service.type }}
   selector:
     app.kubernetes.io/name: {{ include "prometheus.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    backyards.banzaicloud.io/cluster-name: {{ .Values.prometheus.clusterName }}
   ports:
   - name: http-admin
     port: {{ .Values.prometheus.service.port }}

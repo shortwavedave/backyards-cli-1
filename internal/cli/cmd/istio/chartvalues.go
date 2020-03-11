@@ -21,11 +21,10 @@ import (
 )
 
 type Values struct {
-	NameOverride         string `json:"nameOverride,omitempty"`
-	FullnameOverride     string `json:"fullnameOverride,omitempty"`
-	ReplicaCount         int    `json:"replicaCount"`
-	UseNamespaceResource bool   `json:"useNamespaceResource"`
-
+	NameOverride            string `json:"nameOverride,omitempty"`
+	FullnameOverride        string `json:"fullnameOverride,omitempty"`
+	ReplicaCount            int    `json:"replicaCount"`
+	UseNamespaceResource    bool   `json:"useNamespaceResource"`
 	OperatorComponentSuffix string `json:"operatorComponentSuffix"`
 
 	RBAC struct {

@@ -13,6 +13,7 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+    backyards.banzaicloud.io/cluster-name: {{ .Values.prometheus.clusterName }}
 spec:
   replicas: {{ .Values.prometheus.replicas }}
   selector:
@@ -21,6 +22,7 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
       app.kubernetes.io/component: prometheus
       app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+      backyards.banzaicloud.io/cluster-name: {{ .Values.prometheus.clusterName }}
   template:
     metadata:
       annotations:
@@ -35,6 +37,7 @@ spec:
         app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
         app.kubernetes.io/component: prometheus
         app.kubernetes.io/part-of: {{ include "backyards.name" . }}
+        backyards.banzaicloud.io/cluster-name: {{ .Values.prometheus.clusterName }}
     spec:
       serviceAccountName: {{ include "prometheus.fullname" . }}
       volumes:

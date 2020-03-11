@@ -1,4 +1,4 @@
-{{- if .Values.ingressgateway.meshgateway.enabled -}}
+{{- if and .Values.application.enabled .Values.ingressgateway.meshgateway.enabled -}}
 apiVersion: istio.banzaicloud.io/v1beta1
 kind: MeshGateway
 metadata:

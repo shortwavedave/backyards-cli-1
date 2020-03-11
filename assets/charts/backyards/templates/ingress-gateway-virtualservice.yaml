@@ -1,3 +1,4 @@
+{{- if .Values.ingressgateway.enabled }}
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -78,3 +79,4 @@ spec:
             host: {{ include "backyards.fullname" . }}-web
             port:
               number: {{ .Values.web.service.port }}
+{{- end }}

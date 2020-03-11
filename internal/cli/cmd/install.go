@@ -33,7 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/backyards"
+	chart "github.com/banzaicloud/backyards-cli/cmd/backyards/static/backyards"
+	"github.com/banzaicloud/backyards-cli/internal/backyards"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/canary"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/certmanager"
 	"github.com/banzaicloud/backyards-cli/internal/cli/cmd/demoapp"
@@ -178,9 +179,9 @@ func (c *installCommand) run(options *InstallOptions) error {
 		return nil
 	}
 
-	values, err := getValues(options.releaseName, options.istioNamespace, func(values *Values) {
-		values.Application.Image.Tag = "1.1.3"
-		values.Web.Image.Tag = "1.1.3"
+	values, err := getValues(options.releaseName, options.istioNamespace, func(values *backyards.Values) {
+		values.Application.Image.Tag = "1.2.0-turbonomic.1"
+		values.Web.Image.Tag = "1.2.0-turbonomic.1"
 
 		if options.enableAuditSink {
 			values.AuditSink.Enabled = true
@@ -190,10 +191,10 @@ func (c *installCommand) run(options *InstallOptions) error {
 			values.CertManager.Enabled = true
 		}
 		if options.anonymousAuth {
-			values.Auth.Mode = anonymous
+			values.Auth.Mode = backyards.AnonymousAuthMode
 			values.Impersonation.Enabled = false
 		} else {
-			values.Auth.Mode = impersonation
+			values.Auth.Mode = backyards.ImpersonationAuthMode
 			values.Impersonation.Enabled = true
 		}
 		if options.apiImage != "" {
@@ -268,10 +269,10 @@ func (c *installCommand) run(options *InstallOptions) error {
 	return nil
 }
 
-func getValues(releaseName, istioNamespace string, valueOverrideFunc func(values *Values)) (Values, error) {
-	var values Values
+func getValues(releaseName, istioNamespace string, valueOverrideFunc func(values *backyards.Values)) (backyards.Values, error) {
+	var values backyards.Values
 
-	valuesYAML, err := helm.GetDefaultValues(backyards.Chart)
+	valuesYAML, err := helm.GetDefaultValues(chart.Chart)
 	if err != nil {
 		return values, errors.WrapIf(err, "could not get helm default values")
 	}
@@ -290,13 +291,13 @@ func getValues(releaseName, istioNamespace string, valueOverrideFunc func(values
 	return values, nil
 }
 
-func getBackyardsObjects(values Values, cli cli.CLI) (object.K8sObjects, error) {
+func getBackyardsObjects(values backyards.Values, cli cli.CLI) (object.K8sObjects, error) {
 	rawValues, err := yaml.Marshal(values)
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not marshal yaml values")
 	}
 
-	objects, err := helm.Render(backyards.Chart, string(rawValues), helm.ReleaseOptions{
+	objects, err := helm.Render(chart.Chart, string(rawValues), helm.ReleaseOptions{
 		Name:      "backyards",
 		IsInstall: true,
 		IsUpgrade: false,
@@ -309,7 +310,7 @@ func getBackyardsObjects(values Values, cli cli.CLI) (object.K8sObjects, error) 
 	return objects, nil
 }
 
-func (c *installCommand) setTracingAddress(values Values) error {
+func (c *installCommand) setTracingAddress(values backyards.Values) error {
 	cl, err := c.cli.GetK8sClient()
 	if err != nil {
 		return errors.WrapIf(err, "could not get k8s client")

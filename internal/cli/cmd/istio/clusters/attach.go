@@ -19,13 +19,16 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	"emperror.dev/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"istio.io/operator/pkg/object"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/banzaicloud/backyards-cli/cmd/backyards/static/peercluster"
 	cmdCommon "github.com/banzaicloud/backyards-cli/internal/cli/cmd/common"
@@ -34,6 +37,9 @@ import (
 	"github.com/banzaicloud/backyards-cli/pkg/helm"
 	"github.com/banzaicloud/backyards-cli/pkg/k8s"
 	k8sclient "github.com/banzaicloud/backyards-cli/pkg/k8s/client"
+	"github.com/banzaicloud/backyards-cli/pkg/k8s/resourcemanager"
+	"github.com/banzaicloud/backyards-cli/pkg/monitoring"
+	"github.com/banzaicloud/backyards-cli/pkg/nodeexporter"
 )
 
 type attachCommand struct {
@@ -146,7 +152,80 @@ func (c *attachCommand) run(options *AttachOptions) error {
 	}
 
 	if ok && c.cli.Interactive() {
-		log.Infof("attaching cluster '%s' is started successfully. Use `backyards istio cluster status` to follow the progress.\n", options.name)
+		log.Infof("attaching cluster '%s' is started successfully.\n", options.name)
+	}
+
+	log.Info("waiting for Istio sidecar injector to be available before install monitoring.")
+
+	err = k8s.WaitForResourcesConditions(k8sclient, []k8s.NamespacedNameWithGVK{
+		{
+			NamespacedName: types.NamespacedName{
+				Name:      "istio-sidecar-injector",
+				Namespace: hostCluster.Namespace,
+			},
+			GroupVersionKind: appsv1.SchemeGroupVersion.WithKind("Deployment"),
+		},
+	}, wait.Backoff{
+		Duration: time.Second * 5,
+		Factor:   1,
+		Jitter:   0,
+		Steps:    60,
+	}, k8s.ExistsConditionCheck, k8s.ReadyReplicasConditionCheck)
+	if err != nil {
+		return err
+	}
+
+	err = c.installMonitoring(k8sclient, options)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *attachCommand) installMonitoring(client k8sclient.Client, options *AttachOptions) error {
+	labelManager := c.cli.LabelManager()
+	m, err := monitoring.NewManager(resourcemanager.New(client, labelManager), c.cli.GetPersistentConfig().Namespace(), monitoring.Options{
+		ClusterName: options.name,
+	})
+	if err != nil {
+		return err
+	}
+
+	masterClient, err := c.cli.GetK8sClient()
+	if err != nil {
+		return err
+	}
+
+	m.Install()
+
+	for _, r := range m.Resources() {
+		if r.GroupVersionKind().GroupKind().Kind != "Service" {
+			continue
+		}
+		labels := r.UnstructuredObject().GetLabels()
+		if labels["backyards.banzaicloud.io/federated-prometheus"] != "true" {
+			continue
+		}
+		err = k8s.ApplyResources(masterClient, labelManager, object.K8sObjects([]*object.K8sObject{r}))
+		if err != nil {
+			return err
+		}
+	}
+
+	m.Install().Resources()
+	err = m.Do()
+	if err != nil {
+		return err
+	}
+
+	neMgr, err := nodeexporter.NewNodeExporterManager(resourcemanager.New(client, labelManager), c.cli.GetPersistentConfig().Namespace())
+	if err != nil {
+		return err
+	}
+	err = neMgr.Install().Do()
+	if err != nil {
+		return err
 	}
 
 	return nil

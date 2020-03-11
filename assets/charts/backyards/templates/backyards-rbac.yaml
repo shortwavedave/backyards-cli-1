@@ -1,3 +1,4 @@
+{{- if .Values.application.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -35,6 +36,8 @@ rules:
   - services
   - pods
   - secrets
+  - nodes
+  - events
   verbs:
   - get
   - list
@@ -159,6 +162,14 @@ rules:
   - list
   - watch
   - create
+- apiGroups:
+  - extensions.banzaicloud.io
+  resources:
+  - metadata
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -181,3 +192,4 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "backyards.fullname" . }}
   namespace: {{ .Release.Namespace }}
+{{- end }}

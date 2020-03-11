@@ -1,3 +1,4 @@
+{{- if .Values.als.enabled }}
 apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
 metadata:
@@ -32,3 +33,4 @@ metadata:
     app.kubernetes.io/part-of: {{ include "backyards.name" . }}
 spec:
   host: {{ include "als.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+{{- end }}
