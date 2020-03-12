@@ -190,6 +190,12 @@ func (c *installCommand) validate(istioNamespace string) error {
 	if err != nil {
 		return errors.WrapIf(err, "could not list pods")
 	}
+	if len(pods.Items) == 0 {
+		err = cl.List(context.Background(), &pods, client.InNamespace(istioNamespace), client.MatchingLabels(util.IstiodSidecarPodLabels))
+		if err != nil {
+			return errors.WrapIf(err, "could not list pods")
+		}
+	}
 
 	for _, pod := range pods.Items {
 		if pod.Status.Phase == v1.PodRunning {

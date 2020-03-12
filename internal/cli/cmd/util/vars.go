@@ -18,6 +18,9 @@ var (
 	SidecarPodLabels = map[string]string{
 		"istio": "sidecar-injector",
 	}
+	IstiodSidecarPodLabels = map[string]string{
+		"istio": "pilot",
+	}
 )
 
 const (

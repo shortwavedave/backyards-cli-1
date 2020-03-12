@@ -1,4 +1,4 @@
-{{ if eq .Values.istioVersion "1.4" }}
+{{ if eq .Values.istioVersion "1.5" }}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -228,8 +228,6 @@ spec:
                       type: array
                     affinity:
                       type: object
-                    applicationPorts:
-                      type: string
                     enabled:
                       type: boolean
                     labels:
@@ -293,8 +291,6 @@ spec:
                       type: array
                     affinity:
                       type: object
-                    applicationPorts:
-                      type: string
                     enabled:
                       type: boolean
                     labels:
@@ -384,6 +380,19 @@ spec:
                     type: object
                   type: array
               type: object
+            istiod:
+              description: Istiod configuration
+              properties:
+                enabled:
+                  type: boolean
+              type: object
+            jwtPolicy:
+              description: 'Configure the policy for validating JWT. Currently, two
+                options are supported: "third-party-jwt" and "first-party-jwt".'
+              enum:
+              - third-party-jwt
+              - first-party-jwt
+              type: string
             localityLB:
               description: Locality based load balancing distribution or failover
                 settings.
@@ -533,6 +542,10 @@ spec:
                     will be enabled
                   type: boolean
               type: object
+            mountMtlsCerts:
+              description: Use the user-specified, secret volume mounted key and certs
+                for Pilot and workloads.
+              type: boolean
             mtls:
               description: 'DEPRECATED: Use meshPolicy instead. MTLS enables or disables
                 global mTLS'
@@ -543,6 +556,10 @@ spec:
                 talk to one another. All meshes should be using Istio mTLS and must
                 have a shared root CA for this model to work.
               type: boolean
+            networkName:
+              description: Network defines the network this cluster belong to. This
+                name corresponds to the networks in the map of mesh networks.
+              type: string
             nodeAgent:
               description: NodeAgent configuration options
               properties:
@@ -590,6 +607,15 @@ spec:
                   type: array
                 affinity:
                   type: object
+                certProvider:
+                  description: 'Configure the certificate provider for control plane
+                    communication. Currently, two providers are supported: "kubernetes"
+                    and "istiod". As some platforms may not have kubernetes signing
+                    APIs, Istiod is the default'
+                  enum:
+                  - kubernetes
+                  - istiod
+                  type: string
                 enableProtocolSniffingInbound:
                   description: If enabled, protocol sniffing will be used for inbound
                     listeners whose port protocol is not specified or unsupported
@@ -911,6 +937,8 @@ spec:
                       description: Must be the same as the environment’s --cni-bin-dir
                         setting (kubelet parameter)
                       type: string
+                    chained:
+                      type: boolean
                     confDir:
                       description: Must be the same as the environment’s --cni-conf-dir
                         setting (kubelet parameter)
@@ -930,6 +958,25 @@ spec:
                     logLevel:
                       description: Logging level for CNI binary
                       type: string
+                    repair:
+                      properties:
+                        brokenPodLabelKey:
+                          type: string
+                        brokenPodLabelValue:
+                          type: string
+                        deletePods:
+                          type: boolean
+                        enabled:
+                          type: boolean
+                        hub:
+                          type: string
+                        initContainerName:
+                          type: string
+                        labelPods:
+                          type: boolean
+                        tag:
+                          type: string
+                      type: object
                   type: object
                 injectedAnnotations:
                   description: 'injectedAnnotations are additional annotations that
@@ -1149,7 +1196,7 @@ spec:
               type: boolean
             version:
               description: Contains the intended Istio version
-              pattern: ^1.4
+              pattern: ^1.5
               type: string
             watchAdapterCRDs:
               description: Whether or not to establish watches for adapter-specific

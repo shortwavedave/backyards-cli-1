@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "istio-operator.fullname" . }}-operator
+  name: {{ include "istio-operator.fullname" . }}{{ .Values.operatorComponentSuffix }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "istio-operator.name" . }}
@@ -15,7 +15,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "istio-operator.fullname" . }}-operator
+  name: {{ include "istio-operator.fullname" . }}{{ .Values.operatorComponentSuffix }}
   labels:
     app.kubernetes.io/name: {{ include "istio-operator.name" . }}
     helm.sh/chart: {{ include "istio-operator.chart" . }}
@@ -63,6 +63,19 @@ rules:
   - update
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
   - apps
   resources:
   - replicasets
@@ -104,6 +117,8 @@ rules:
   - deployments
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - extensions
   resources:
@@ -181,6 +196,15 @@ rules:
   - create
   - get
   - delete
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - istio.banzaicloud.io
   resources:
@@ -203,6 +227,19 @@ rules:
   - update
   - patch
 - apiGroups:
+  - authentication.istio.io
+  - cloud.istio.io
+  - config.istio.io
+  - istio.istio.io
+  - networking.istio.io
+  - rbac.istio.io
+  - security.istio.io
+  - scalingpolicy.istio.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
   - istio.banzaicloud.io
   resources:
   - meshgateways
@@ -223,19 +260,6 @@ rules:
   - get
   - update
   - patch
-- apiGroups:
-  - authentication.istio.io
-  - cloud.istio.io
-  - config.istio.io
-  - istio.istio.io
-  - networking.istio.io
-  - rbac.istio.io
-  - security.istio.io
-  - scalingpolicy.istio.io
-  resources:
-  - '*'
-  verbs:
-  - '*'
 - apiGroups:
   - apps
   resources:
@@ -332,7 +356,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "istio-operator.fullname" . }}-operator
+  name: {{ include "istio-operator.fullname" . }}{{ .Values.operatorComponentSuffix }}
   labels:
     app.kubernetes.io/name: {{ include "istio-operator.name" . }}
     helm.sh/chart: {{ include "istio-operator.chart" . }}
@@ -343,9 +367,9 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "istio-operator.fullname" . }}-operator
+  name: {{ include "istio-operator.fullname" . }}{{ .Values.operatorComponentSuffix }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "istio-operator.fullname" . }}-operator
+  name: {{ include "istio-operator.fullname" . }}{{ .Values.operatorComponentSuffix }}
   namespace: {{ .Release.Namespace }}
 {{- end }}

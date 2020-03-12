@@ -45,7 +45,8 @@ import (
 )
 
 const (
-	istioCRYamlFilename = "istio.yaml"
+	istioCRYamlFilename       = "istio.yaml"
+	withoutIstiodYamlFilename = "without-istiod.yaml"
 )
 
 var (
@@ -68,6 +69,7 @@ type InstallOptions struct {
 
 	istioCRFilename string
 	releaseName     string
+	withoutIstiod   bool
 }
 
 func NewInstallOptions() *InstallOptions {
@@ -105,6 +107,7 @@ The installer automatically detects whether the CRDs are installed or not, and b
 
 	cmd.Flags().StringVar(&options.releaseName, "release-name", "istio-operator", "Name of the release")
 	cmd.Flags().StringVarP(&options.istioCRFilename, "istio-cr-file", "f", "", "Filename of a custom Istio CR yaml")
+	cmd.Flags().BoolVarP(&options.withoutIstiod, "without-istiod", "", options.withoutIstiod, "Use multi-component install without Istiod")
 
 	cmd.Flags().BoolVarP(&options.DumpResources, "dump-resources", "d", options.DumpResources, "Dump resources to stdout instead of applying them")
 	cmd.Flags().BoolVarP(&options.Force, "force", "", options.Force, "Force Istio upgrade (only applicable in non-interactive mode)")
@@ -124,7 +127,7 @@ func (c *installCommand) run(cli cli.CLI, options *InstallOptions) error {
 		return errors.WrapIf(err, "unable to check existing Istio CR")
 	}
 
-	istioCRObj, err := getIstioCR(options.istioCRFilename)
+	istioCRObj, err := getIstioCR(options)
 	if err != nil {
 		return err
 	}
@@ -354,13 +357,19 @@ func getIstioOperatorObjects(releaseName string) (object.K8sObjects, error) {
 	return objects, nil
 }
 
-func getIstioCR(filename string) (*object.K8sObject, error) {
+func getIstioCR(options *InstallOptions) (*object.K8sObject, error) {
+	filename := options.istioCRFilename
+	assetFilename := istioCRYamlFilename
+	if options.withoutIstiod {
+		assetFilename = withoutIstiodYamlFilename
+	}
+
 	var err error
 	var istioCRFile http.File
 	if filename != "" {
 		istioCRFile, err = os.Open(filename)
 	} else {
-		istioCRFile, err = istio_assets.Assets.Open(istioCRYamlFilename)
+		istioCRFile, err = istio_assets.Assets.Open(assetFilename)
 	}
 	if err != nil {
 		return nil, errors.WrapIf(err, "could not open Istio CR YAML")

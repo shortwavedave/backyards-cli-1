@@ -180,8 +180,8 @@ func (c *installCommand) run(options *InstallOptions) error {
 	}
 
 	values, err := getValues(options.releaseName, options.istioNamespace, func(values *backyards.Values) {
-		values.Application.Image.Tag = "1.2.0-turbonomic.1"
-		values.Web.Image.Tag = "1.2.0-turbonomic.1"
+		values.Application.Image.Tag = "1.2.0-drilldown.1"
+		values.Web.Image.Tag = "1.2.0-drilldown.1"
 
 		if options.enableAuditSink {
 			values.AuditSink.Enabled = true
@@ -387,6 +387,13 @@ func (c *installCommand) istioRunning(istioNamespace string) (exists bool, healt
 	if err != nil {
 		err = errors.WrapIf(err, "could not list istio pods")
 		return
+	}
+	if len(pods.Items) == 0 {
+		err = cl.List(context.Background(), &pods, client.InNamespace(istioNamespace), client.MatchingLabels(util.IstiodSidecarPodLabels))
+		if err != nil {
+			err = errors.WrapIf(err, "could not list istio pods")
+			return
+		}
 	}
 	if len(pods.Items) > 0 {
 		exists = true

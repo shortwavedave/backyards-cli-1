@@ -9,13 +9,13 @@ spec:
   meshExpansion: true
   controlPlaneSecurityEnabled: true
   sidecarInjector:
-    enabled: false
+    enabled: true
     rewriteAppHTTPProbe: true
   imagePullPolicy: Always
   citadel:
-    enabled: false
+    enabled: true
   galley:
-    enabled: false
+    enabled: true
   gateways:
     ingress:
       maxReplicas: 1
@@ -47,7 +47,7 @@ spec:
     egress:
       enabled: false
   pilot:
-    enabled: false
+    enabled: true
     maxReplicas: 1
     image: banzaicloud/istio-pilot:1.5.0-bzc
   proxy:
@@ -81,5 +81,5 @@ spec:
       tlsSettings:
         mode: ISTIO_MUTUAL
   istiod:
-    enabled: true
+    enabled: false
   jwtPolicy: first-party-jwt
