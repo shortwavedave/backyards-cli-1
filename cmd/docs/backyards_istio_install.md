@@ -34,6 +34,7 @@ backyards istio install [flags]
   -h, --help                   help for install
   -f, --istio-cr-file string   Filename of a custom Istio CR yaml
       --release-name string    Name of the release (default "istio-operator")
+      --without-istiod         Use multi-component install without Istiod
 ```
 
 ### Options inherited from parent commands
