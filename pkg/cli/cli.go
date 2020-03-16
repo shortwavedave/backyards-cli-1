@@ -293,12 +293,12 @@ func (c *backyardsCLI) withHealthCheck(ep endpoint.Endpoint) (endpoint.Endpoint,
 	level := hclog.Info
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
 		level = hclog.Debug
+		client.Logger = hclog.New(&hclog.LoggerOptions{
+			Name:   "health check",
+			Level:  level,
+			Output: c.rootCmd.ErrOrStderr(),
+		})
 	}
-	client.Logger = hclog.New(&hclog.LoggerOptions{
-		Name:   "health check",
-		Level:  level,
-		Output: c.rootCmd.ErrOrStderr(),
-	})
 	client.HTTPClient = ep.HTTPClient()
 	_, err := client.Get(ep.URLForPath(""))
 	if err != nil {
