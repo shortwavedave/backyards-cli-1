@@ -54,7 +54,7 @@ spec:
     image: banzaicloud/istio-proxyv2:1.5.0-bzc
     useMetadataExchangeFilter: true
     envoyAccessLogService:
-      enabled: false
+      enabled: true
       host: backyards-als.backyards-system.svc.cluster.local
       port: 50600
       tcpKeepalive:
@@ -74,7 +74,7 @@ spec:
     enabled: false
     maxReplicas: 1
   tracing:
-    enabled: false
+    enabled: true
     tracer: zipkin
     zipkin:
       address: backyards-zipkin.backyards-system.svc.cluster.local:59411
